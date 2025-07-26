@@ -1,0 +1,56 @@
+{
+    "name": "edgebinder/core",
+    "description": "Lightweight, storage-agnostic relationship management for clean domain architectures",
+    "type": "library",
+    "license": "Apache-2.0",
+    "keywords": [
+        "relationships",
+        "graph",
+        "vector-database",
+        "domain-driven-design",
+        "ddd",
+        "entities",
+        "metadata"
+    ],
+    "authors": [
+        {
+            "name": "EdgeBinder Contributors",
+            "homepage": "https://github.com/edgebinder/core/contributors"
+        }
+    ],
+    "homepage": "https://github.com/edgebinder/core",
+    "support": {
+        "issues": "https://github.com/edgebinder/core/issues",
+        "source": "https://github.com/edgebinder/core"
+    },
+    "require": {
+        "php": "^8.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "friendsofphp/php-cs-fixer": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "EdgeBinder\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EdgeBinder\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
