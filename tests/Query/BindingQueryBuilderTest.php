@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Tests\Query;
 
-use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Contracts\StorageAdapterInterface;
 use EdgeBinder\Query\BindingQueryBuilder;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class BindingQueryBuilderTest extends TestCase
 {
+    /** @var StorageAdapterInterface&MockObject */
     private StorageAdapterInterface $storage;
     private BindingQueryBuilder $queryBuilder;
 

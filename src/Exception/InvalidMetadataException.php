@@ -13,6 +13,9 @@ namespace EdgeBinder\Exception;
  */
 class InvalidMetadataException extends EdgeBinderException
 {
+    /**
+     * @param array<string, mixed> $invalidMetadata
+     */
     public function __construct(
         string $reason,
         public readonly array $invalidMetadata = [],
@@ -26,6 +29,8 @@ class InvalidMetadataException extends EdgeBinderException
 
     /**
      * Create exception for metadata that exceeds size limits.
+     *
+     * @param array<string, mixed> $metadata
      */
     public static function sizeLimitExceeded(
         int $actualSize,
@@ -42,6 +47,8 @@ class InvalidMetadataException extends EdgeBinderException
 
     /**
      * Create exception for metadata with invalid field types.
+     *
+     * @param array<string, mixed> $metadata
      */
     public static function invalidFieldType(
         string $fieldName,
@@ -59,6 +66,8 @@ class InvalidMetadataException extends EdgeBinderException
 
     /**
      * Create exception for metadata with forbidden field names.
+     *
+     * @param array<string, mixed> $metadata
      */
     public static function forbiddenField(
         string $fieldName,

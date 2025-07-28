@@ -291,6 +291,9 @@ class BindingTest extends TestCase
         $this->assertNotEquals($binding1->getId(), $binding2->getId());
     }
 
+    /**
+     * @param array<string, mixed> $metadata
+     */
     private function createTestBinding(array $metadata = ['test' => 'data']): Binding
     {
         return new Binding(

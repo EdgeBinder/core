@@ -23,7 +23,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
     /**
      * Create a new query builder instance.
      *
-     * @param StorageAdapterInterface $storage Storage adapter for query execution
+     * @param StorageAdapterInterface $storage  Storage adapter for query execution
      * @param array<string, mixed>    $criteria Query criteria
      */
     public function __construct(
@@ -39,7 +39,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
             $entityId = $this->storage->extractEntityId($entity);
         } else {
             $entityType = $entity;
-            if ($entityId === null) {
+            if (null === $entityId) {
                 throw new \InvalidArgumentException('Entity ID is required when entity is provided as string');
             }
         }
@@ -54,7 +54,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
             $entityId = $this->storage->extractEntityId($entity);
         } else {
             $entityType = $entity;
-            if ($entityId === null) {
+            if (null === $entityId) {
                 throw new \InvalidArgumentException('Entity ID is required when entity is provided as string');
             }
         }
@@ -70,7 +70,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
     public function where(string $field, mixed $operator, mixed $value = null): static
     {
         // If only two arguments provided, treat operator as value and use '=' as operator
-        if ($value === null) {
+        if (null === $value) {
             $value = $operator;
             $operator = '=';
         }
@@ -224,7 +224,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
     private function addToArray(string $key, mixed $value): static
     {
         $criteria = $this->criteria;
-        $criteria[$key] = $criteria[$key] ?? [];
+        $criteria[$key] ??= [];
         $criteria[$key][] = $value;
 
         return new self($this->storage, $criteria);
