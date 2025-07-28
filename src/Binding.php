@@ -16,7 +16,7 @@ use EdgeBinder\Contracts\BindingInterface;
  * - Helper methods for relationship queries
  * - Value object semantics
  */
-readonly class Binding implements BindingInterface
+final readonly class Binding implements BindingInterface
 {
     /**
      * Create a new binding instance.
@@ -126,7 +126,7 @@ readonly class Binding implements BindingInterface
 
     public function withMetadata(array $metadata): static
     {
-        return new static(
+        return new self(
             id: $this->id,
             fromType: $this->fromType,
             fromId: $this->fromId,
@@ -203,7 +203,7 @@ readonly class Binding implements BindingInterface
      */
     public function reverse(?string $reverseType = null, ?array $metadata = null): static
     {
-        return new static(
+        return new self(
             id: self::generateId(),
             fromType: $this->toType,
             fromId: $this->toId,
