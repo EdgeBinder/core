@@ -6,7 +6,7 @@ namespace EdgeBinder\Exception;
 
 /**
  * Exception thrown when a binding cannot be found.
- * 
+ *
  * This exception is typically thrown when attempting to retrieve, update,
  * or delete a binding that does not exist in the storage system.
  */
@@ -34,10 +34,10 @@ class BindingNotFoundException extends EdgeBinderException
         ?\Throwable $previous = null
     ): self {
         $message = "Binding of type '{$bindingType}' between {$fromType}:{$fromId} and {$toType}:{$toId} was not found";
-        
+
         $exception = new self('', $previous);
         $exception->message = $message;
-        
+
         return $exception;
     }
 }

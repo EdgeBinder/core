@@ -6,7 +6,7 @@ namespace EdgeBinder\Exception;
 
 /**
  * Exception thrown when metadata validation fails.
- * 
+ *
  * This exception is thrown by storage adapters when metadata does not
  * meet the requirements of the underlying storage system (e.g., size limits,
  * type constraints, schema validation failures).

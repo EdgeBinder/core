@@ -6,7 +6,7 @@ namespace EdgeBinder\Exception;
 
 /**
  * Exception thrown when storage operations fail.
- * 
+ *
  * This exception wraps underlying storage system errors (database connection
  * failures, disk I/O errors, network timeouts, etc.) and provides a consistent
  * interface for handling storage-related failures.

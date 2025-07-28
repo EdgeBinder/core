@@ -10,14 +10,13 @@ use EdgeBinder\Exception\EntityExtractionException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\StorageException;
 use PHPUnit\Framework\TestCase;
-use stdClass;
 
 class ExceptionTest extends TestCase
 {
     public function testEdgeBinderExceptionIsBaseException(): void
     {
         $exception = new EdgeBinderException('Test message');
-        
+
         $this->assertInstanceOf(\Exception::class, $exception);
         $this->assertEquals('Test message', $exception->getMessage());
     }
@@ -25,7 +24,7 @@ class ExceptionTest extends TestCase
     public function testBindingNotFoundExceptionWithId(): void
     {
         $exception = new BindingNotFoundException('binding-123');
-        
+
         $this->assertInstanceOf(EdgeBinderException::class, $exception);
         $this->assertEquals("Binding with ID 'binding-123' was not found", $exception->getMessage());
     }
@@ -39,7 +38,7 @@ class ExceptionTest extends TestCase
             'project-1',
             'has_access'
         );
-        
+
         $this->assertInstanceOf(BindingNotFoundException::class, $exception);
         $this->assertStringContainsString('has_access', $exception->getMessage());
         $this->assertStringContainsString('User:user-1', $exception->getMessage());
@@ -50,7 +49,7 @@ class ExceptionTest extends TestCase
     {
         $metadata = ['invalid' => 'data'];
         $exception = new InvalidMetadataException('Test reason', $metadata);
-        
+
         $this->assertInstanceOf(EdgeBinderException::class, $exception);
         $this->assertEquals('Invalid metadata: Test reason', $exception->getMessage());
         $this->assertEquals($metadata, $exception->invalidMetadata);
@@ -59,7 +58,7 @@ class ExceptionTest extends TestCase
     public function testInvalidMetadataExceptionSizeLimitExceeded(): void
     {
         $exception = InvalidMetadataException::sizeLimitExceeded(1000, 500);
-        
+
         $this->assertStringContainsString('1000 bytes', $exception->getMessage());
         $this->assertStringContainsString('500 bytes', $exception->getMessage());
     }
@@ -67,7 +66,7 @@ class ExceptionTest extends TestCase
     public function testInvalidMetadataExceptionInvalidFieldType(): void
     {
         $exception = InvalidMetadataException::invalidFieldType('field1', 'string', 'integer');
-        
+
         $this->assertStringContainsString('field1', $exception->getMessage());
         $this->assertStringContainsString('string', $exception->getMessage());
         $this->assertStringContainsString('integer', $exception->getMessage());
@@ -77,7 +76,7 @@ class ExceptionTest extends TestCase
     {
         $metadata = ['forbidden_field' => 'value'];
         $exception = InvalidMetadataException::forbiddenField('forbidden_field', $metadata);
-        
+
         $this->assertStringContainsString('forbidden_field', $exception->getMessage());
         $this->assertStringContainsString('not allowed', $exception->getMessage());
         $this->assertEquals($metadata, $exception->invalidMetadata);
@@ -86,7 +85,7 @@ class ExceptionTest extends TestCase
     public function testStorageException(): void
     {
         $exception = new StorageException('save', 'Connection timeout');
-        
+
         $this->assertInstanceOf(EdgeBinderException::class, $exception);
         $this->assertEquals("Storage operation 'save' failed: Connection timeout", $exception->getMessage());
     }
@@ -95,25 +94,25 @@ class ExceptionTest extends TestCase
     {
         $storeException = StorageException::storeFailed('Disk full');
         $this->assertStringContainsString('store', $storeException->getMessage());
-        
+
         $findException = StorageException::findFailed('Index corrupted');
         $this->assertStringContainsString('find', $findException->getMessage());
-        
+
         $deleteException = StorageException::deleteFailed('Permission denied');
         $this->assertStringContainsString('delete', $deleteException->getMessage());
-        
+
         $updateException = StorageException::updateFailed('Lock timeout');
         $this->assertStringContainsString('update', $updateException->getMessage());
-        
+
         $connectionException = StorageException::connectionFailed('Network unreachable');
         $this->assertStringContainsString('connection', $connectionException->getMessage());
     }
 
     public function testEntityExtractionException(): void
     {
-        $entity = new stdClass();
+        $entity = new \stdClass();
         $exception = new EntityExtractionException('Test reason', $entity);
-        
+
         $this->assertInstanceOf(EdgeBinderException::class, $exception);
         $this->assertSame($entity, $exception->entity);
         $this->assertStringContainsString('stdClass', $exception->getMessage());
@@ -122,20 +121,20 @@ class ExceptionTest extends TestCase
 
     public function testEntityExtractionExceptionStaticMethods(): void
     {
-        $entity = new stdClass();
-        
+        $entity = new \stdClass();
+
         $missingIdException = EntityExtractionException::missingId($entity);
         $this->assertStringContainsString('ID property', $missingIdException->getMessage());
         $this->assertSame($entity, $missingIdException->entity);
-        
+
         $invalidIdException = EntityExtractionException::invalidId($entity, null);
         $this->assertStringContainsString('non-empty string', $invalidIdException->getMessage());
         $this->assertSame($entity, $invalidIdException->entity);
-        
+
         $cannotDetermineTypeException = EntityExtractionException::cannotDetermineType($entity);
         $this->assertStringContainsString('determine entity type', $cannotDetermineTypeException->getMessage());
         $this->assertSame($entity, $cannotDetermineTypeException->entity);
-        
+
         $invalidTypeException = EntityExtractionException::invalidType($entity, 123);
         $this->assertStringContainsString('non-empty string', $invalidTypeException->getMessage());
         $this->assertSame($entity, $invalidTypeException->entity);
@@ -144,17 +143,17 @@ class ExceptionTest extends TestCase
     public function testExceptionChaining(): void
     {
         $originalException = new \RuntimeException('Original error');
-        
+
         $bindingException = new BindingNotFoundException('test-id', $originalException);
         $this->assertSame($originalException, $bindingException->getPrevious());
-        
+
         $metadataException = new InvalidMetadataException('test reason', [], $originalException);
         $this->assertSame($originalException, $metadataException->getPrevious());
-        
+
         $storageException = new StorageException('test', 'reason', $originalException);
         $this->assertSame($originalException, $storageException->getPrevious());
-        
-        $entityException = new EntityExtractionException('test', new stdClass(), $originalException);
+
+        $entityException = new EntityExtractionException('test', new \stdClass(), $originalException);
         $this->assertSame($originalException, $entityException->getPrevious());
     }
 }
