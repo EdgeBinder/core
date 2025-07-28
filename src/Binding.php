@@ -126,7 +126,7 @@ readonly class Binding implements BindingInterface
 
     public function withMetadata(array $metadata): static
     {
-        return new self(
+        return new static(
             id: $this->id,
             fromType: $this->fromType,
             fromId: $this->fromId,
@@ -203,7 +203,7 @@ readonly class Binding implements BindingInterface
      */
     public function reverse(?string $reverseType = null, ?array $metadata = null): static
     {
-        return new self(
+        return new static(
             id: self::generateId(),
             fromType: $this->toType,
             fromId: $this->toId,
