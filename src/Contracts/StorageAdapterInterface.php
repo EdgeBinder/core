@@ -102,7 +102,7 @@ interface StorageAdapterInterface
      * Returns bindings where the entity appears as either source or target.
      *
      * @param string $entityType The entity type
-     * @param string $entityId The entity identifier
+     * @param string $entityId   The entity identifier
      *
      * @return BindingInterface[] Array of bindings involving the entity
      *
@@ -113,10 +113,10 @@ interface StorageAdapterInterface
     /**
      * Find bindings between two specific entities.
      *
-     * @param string $fromType Source entity type
-     * @param string $fromId Source entity identifier
-     * @param string $toType Target entity type
-     * @param string $toId Target entity identifier
+     * @param string      $fromType    Source entity type
+     * @param string      $fromId      Source entity identifier
+     * @param string      $toType      Target entity type
+     * @param string      $toId        Target entity identifier
      * @param string|null $bindingType Optional binding type filter
      *
      * @return BindingInterface[] Array of bindings between the entities
