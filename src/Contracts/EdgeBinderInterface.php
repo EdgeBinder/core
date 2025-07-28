@@ -177,7 +177,7 @@ interface EdgeBinderInterface
     /**
      * Get the storage adapter being used.
      *
-     * @return StorageAdapterInterface The storage adapter
+     * @return PersistenceAdapterInterface The storage adapter
      */
-    public function getStorageAdapter(): StorageAdapterInterface;
+    public function getStorageAdapter(): PersistenceAdapterInterface;
 }

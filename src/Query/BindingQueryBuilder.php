@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace EdgeBinder\Query;
 
 use EdgeBinder\Contracts\BindingInterface;
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
-use EdgeBinder\Contracts\StorageAdapterInterface;
 
 /**
  * Fluent query builder for constructing binding queries.
@@ -23,11 +23,11 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
     /**
      * Create a new query builder instance.
      *
-     * @param StorageAdapterInterface $storage  Storage adapter for query execution
-     * @param array<string, mixed>    $criteria Query criteria
+     * @param PersistenceAdapterInterface $storage  Storage adapter for query execution
+     * @param array<string, mixed>        $criteria Query criteria
      */
     public function __construct(
-        private StorageAdapterInterface $storage,
+        private PersistenceAdapterInterface $storage,
         private array $criteria = [],
     ) {
     }

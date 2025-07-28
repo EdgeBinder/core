@@ -7,8 +7,8 @@ namespace EdgeBinder\Tests\Contracts;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EdgeBinderInterface;
 use EdgeBinder\Contracts\EntityInterface;
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
-use EdgeBinder\Contracts\StorageAdapterInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -85,9 +85,9 @@ class InterfaceContractTest extends TestCase
         $this->assertEquals('bool', $returnType->getName());
     }
 
-    public function testStorageAdapterInterfaceContract(): void
+    public function testPersistenceAdapterInterfaceContract(): void
     {
-        $reflection = new \ReflectionClass(StorageAdapterInterface::class);
+        $reflection = new \ReflectionClass(PersistenceAdapterInterface::class);
 
         $this->assertTrue($reflection->isInterface());
 
@@ -205,7 +205,7 @@ class InterfaceContractTest extends TestCase
         $interfaces = [
             EntityInterface::class,
             BindingInterface::class,
-            StorageAdapterInterface::class,
+            PersistenceAdapterInterface::class,
             QueryBuilderInterface::class,
             EdgeBinderInterface::class,
         ];

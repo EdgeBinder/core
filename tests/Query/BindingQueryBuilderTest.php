@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace EdgeBinder\Tests\Query;
 
 use EdgeBinder\Contracts\BindingInterface;
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
-use EdgeBinder\Contracts\StorageAdapterInterface;
 use EdgeBinder\Query\BindingQueryBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class BindingQueryBuilderTest extends TestCase
 {
-    /** @var StorageAdapterInterface&MockObject */
-    private StorageAdapterInterface $storage;
+    /** @var PersistenceAdapterInterface&MockObject */
+    private PersistenceAdapterInterface $storage;
     private BindingQueryBuilder $queryBuilder;
 
     protected function setUp(): void
     {
-        $this->storage = $this->createMock(StorageAdapterInterface::class);
+        $this->storage = $this->createMock(PersistenceAdapterInterface::class);
         $this->queryBuilder = new BindingQueryBuilder($this->storage);
     }
 

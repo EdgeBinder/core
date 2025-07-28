@@ -10,9 +10,9 @@ use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\StorageException;
 
 /**
- * Storage adapter interface for persisting and retrieving bindings.
+ * Persistence adapter interface for persisting and retrieving bindings.
  *
- * Storage adapters are responsible for:
+ * Persistence adapters are responsible for:
  * - Entity identification and validation
  * - Metadata validation and normalization
  * - Persistence operations (CRUD)
@@ -22,7 +22,7 @@ use EdgeBinder\Exception\StorageException;
  * Each adapter can implement storage-specific features while maintaining
  * a consistent interface for the EdgeBinder core.
  */
-interface StorageAdapterInterface
+interface PersistenceAdapterInterface
 {
     /**
      * Extract the unique identifier from an entity object.
