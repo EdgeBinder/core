@@ -6,7 +6,7 @@ namespace EdgeBinder\Contracts;
 
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
-use EdgeBinder\Exception\StorageException;
+use EdgeBinder\Exception\PersistenceException;
 
 /**
  * Main EdgeBinder service interface.
@@ -36,7 +36,7 @@ interface EdgeBinderInterface
      * @return BindingInterface The created binding
      *
      * @throws InvalidMetadataException If metadata is invalid
-     * @throws StorageException         If the binding cannot be stored
+     * @throws PersistenceException         If the binding cannot be stored
      */
     public function bind(
         object $from,
@@ -51,7 +51,7 @@ interface EdgeBinderInterface
      * @param string $bindingId The binding identifier
      *
      * @throws BindingNotFoundException If the binding doesn't exist
-     * @throws StorageException         If the binding cannot be deleted
+     * @throws PersistenceException         If the binding cannot be deleted
      */
     public function unbind(string $bindingId): void;
 
@@ -64,7 +64,7 @@ interface EdgeBinderInterface
      *
      * @return int Number of bindings removed
      *
-     * @throws StorageException If bindings cannot be deleted
+     * @throws PersistenceException If bindings cannot be deleted
      */
     public function unbindEntities(object $from, object $to, ?string $type = null): int;
 
@@ -75,7 +75,7 @@ interface EdgeBinderInterface
      *
      * @return int Number of bindings removed
      *
-     * @throws StorageException If bindings cannot be deleted
+     * @throws PersistenceException If bindings cannot be deleted
      */
     public function unbindEntity(object $entity): int;
 
@@ -93,7 +93,7 @@ interface EdgeBinderInterface
      *
      * @return BindingInterface|null The binding if found, null otherwise
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function findBinding(string $bindingId): ?BindingInterface;
 
@@ -104,7 +104,7 @@ interface EdgeBinderInterface
      *
      * @return BindingInterface[] Array of bindings involving the entity
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function findBindingsFor(object $entity): array;
 
@@ -117,7 +117,7 @@ interface EdgeBinderInterface
      *
      * @return BindingInterface[] Array of bindings between the entities
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function findBindingsBetween(object $from, object $to, ?string $type = null): array;
 
@@ -130,7 +130,7 @@ interface EdgeBinderInterface
      *
      * @return bool True if entities are bound
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function areBound(object $from, object $to, ?string $type = null): bool;
 
@@ -144,7 +144,7 @@ interface EdgeBinderInterface
      *
      * @throws BindingNotFoundException If the binding doesn't exist
      * @throws InvalidMetadataException If metadata is invalid
-     * @throws StorageException         If the update fails
+     * @throws PersistenceException         If the update fails
      */
     public function updateMetadata(string $bindingId, array $metadata): BindingInterface;
 
@@ -158,7 +158,7 @@ interface EdgeBinderInterface
      *
      * @throws BindingNotFoundException If the binding doesn't exist
      * @throws InvalidMetadataException If metadata is invalid
-     * @throws StorageException         If the update fails
+     * @throws PersistenceException         If the update fails
      */
     public function replaceMetadata(string $bindingId, array $metadata): BindingInterface;
 
@@ -170,7 +170,7 @@ interface EdgeBinderInterface
      * @return array<string, mixed> The binding's metadata
      *
      * @throws BindingNotFoundException If the binding doesn't exist
-     * @throws StorageException         If the query fails
+     * @throws PersistenceException         If the query fails
      */
     public function getMetadata(string $bindingId): array;
 

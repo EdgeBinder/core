@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace EdgeBinder\Exception;
 
 /**
- * Exception thrown when storage operations fail.
+ * Exception thrown when persistence operations fail.
  *
- * This exception wraps underlying storage system errors (database connection
+ * This exception wraps underlying persistence system errors (database connection
  * failures, disk I/O errors, network timeouts, etc.) and provides a consistent
- * interface for handling storage-related failures.
+ * interface for handling persistence-related failures.
  */
-class StorageException extends EdgeBinderException
+class PersistenceException extends EdgeBinderException
 {
     public function __construct(
         string $operation,
@@ -19,7 +19,7 @@ class StorageException extends EdgeBinderException
         ?\Throwable $previous = null
     ) {
         parent::__construct(
-            message: "Storage operation '{$operation}' failed: {$reason}",
+            message: "Persistence operation '{$operation}' failed: {$reason}",
             previous: $previous
         );
     }

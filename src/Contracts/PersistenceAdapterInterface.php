@@ -7,7 +7,7 @@ namespace EdgeBinder\Contracts;
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\EntityExtractionException;
 use EdgeBinder\Exception\InvalidMetadataException;
-use EdgeBinder\Exception\StorageException;
+use EdgeBinder\Exception\PersistenceException;
 
 /**
  * Persistence adapter interface for persisting and retrieving bindings.
@@ -81,7 +81,7 @@ interface PersistenceAdapterInterface
      *
      * @param BindingInterface $binding The binding to store
      *
-     * @throws StorageException If the binding cannot be stored
+     * @throws PersistenceException If the binding cannot be stored
      */
     public function store(BindingInterface $binding): void;
 
@@ -92,7 +92,7 @@ interface PersistenceAdapterInterface
      *
      * @return BindingInterface|null The binding if found, null otherwise
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function find(string $bindingId): ?BindingInterface;
 
@@ -106,7 +106,7 @@ interface PersistenceAdapterInterface
      *
      * @return BindingInterface[] Array of bindings involving the entity
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function findByEntity(string $entityType, string $entityId): array;
 
@@ -121,7 +121,7 @@ interface PersistenceAdapterInterface
      *
      * @return BindingInterface[] Array of bindings between the entities
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function findBetweenEntities(
         string $fromType,
@@ -138,7 +138,7 @@ interface PersistenceAdapterInterface
      *
      * @return BindingInterface[] Array of matching bindings
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function executeQuery(QueryBuilderInterface $query): array;
 
@@ -149,7 +149,7 @@ interface PersistenceAdapterInterface
      *
      * @return int Number of matching bindings
      *
-     * @throws StorageException If the query fails
+     * @throws PersistenceException If the query fails
      */
     public function count(QueryBuilderInterface $query): int;
 
@@ -161,7 +161,7 @@ interface PersistenceAdapterInterface
      *
      * @throws BindingNotFoundException If the binding doesn't exist
      * @throws InvalidMetadataException If the metadata is invalid
-     * @throws StorageException         If the update fails
+     * @throws PersistenceException         If the update fails
      */
     public function updateMetadata(string $bindingId, array $metadata): void;
 
@@ -171,7 +171,7 @@ interface PersistenceAdapterInterface
      * @param string $bindingId The binding identifier
      *
      * @throws BindingNotFoundException If the binding doesn't exist
-     * @throws StorageException         If the deletion fails
+     * @throws PersistenceException         If the deletion fails
      */
     public function delete(string $bindingId): void;
 
@@ -183,7 +183,7 @@ interface PersistenceAdapterInterface
      *
      * @return int Number of bindings deleted
      *
-     * @throws StorageException If the deletion fails
+     * @throws PersistenceException If the deletion fails
      */
     public function deleteByEntity(string $entityType, string $entityId): int;
 }

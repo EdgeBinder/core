@@ -8,7 +8,7 @@ use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\EdgeBinderException;
 use EdgeBinder\Exception\EntityExtractionException;
 use EdgeBinder\Exception\InvalidMetadataException;
-use EdgeBinder\Exception\StorageException;
+use EdgeBinder\Exception\PersistenceException;
 use PHPUnit\Framework\TestCase;
 
 class ExceptionTest extends TestCase
@@ -82,29 +82,29 @@ class ExceptionTest extends TestCase
         $this->assertEquals($metadata, $exception->invalidMetadata);
     }
 
-    public function testStorageException(): void
+    public function testPersistenceException(): void
     {
-        $exception = new StorageException('save', 'Connection timeout');
+        $exception = new PersistenceException('save', 'Connection timeout');
 
         $this->assertInstanceOf(EdgeBinderException::class, $exception);
-        $this->assertEquals("Storage operation 'save' failed: Connection timeout", $exception->getMessage());
+        $this->assertEquals("Persistence operation 'save' failed: Connection timeout", $exception->getMessage());
     }
 
-    public function testStorageExceptionStaticMethods(): void
+    public function testPersistenceExceptionStaticMethods(): void
     {
-        $storeException = StorageException::storeFailed('Disk full');
+        $storeException = PersistenceException::storeFailed('Disk full');
         $this->assertStringContainsString('store', $storeException->getMessage());
 
-        $findException = StorageException::findFailed('Index corrupted');
+        $findException = PersistenceException::findFailed('Index corrupted');
         $this->assertStringContainsString('find', $findException->getMessage());
 
-        $deleteException = StorageException::deleteFailed('Permission denied');
+        $deleteException = PersistenceException::deleteFailed('Permission denied');
         $this->assertStringContainsString('delete', $deleteException->getMessage());
 
-        $updateException = StorageException::updateFailed('Lock timeout');
+        $updateException = PersistenceException::updateFailed('Lock timeout');
         $this->assertStringContainsString('update', $updateException->getMessage());
 
-        $connectionException = StorageException::connectionFailed('Network unreachable');
+        $connectionException = PersistenceException::connectionFailed('Network unreachable');
         $this->assertStringContainsString('connection', $connectionException->getMessage());
     }
 
@@ -150,8 +150,8 @@ class ExceptionTest extends TestCase
         $metadataException = new InvalidMetadataException('test reason', [], $originalException);
         $this->assertSame($originalException, $metadataException->getPrevious());
 
-        $storageException = new StorageException('test', 'reason', $originalException);
-        $this->assertSame($originalException, $storageException->getPrevious());
+        $persistenceException = new PersistenceException('test', 'reason', $originalException);
+        $this->assertSame($originalException, $persistenceException->getPrevious());
 
         $entityException = new EntityExtractionException('test', new \stdClass(), $originalException);
         $this->assertSame($originalException, $entityException->getPrevious());
