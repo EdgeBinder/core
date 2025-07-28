@@ -161,7 +161,7 @@ interface PersistenceAdapterInterface
      *
      * @throws BindingNotFoundException If the binding doesn't exist
      * @throws InvalidMetadataException If the metadata is invalid
-     * @throws PersistenceException         If the update fails
+     * @throws PersistenceException     If the update fails
      */
     public function updateMetadata(string $bindingId, array $metadata): void;
 
@@ -171,7 +171,7 @@ interface PersistenceAdapterInterface
      * @param string $bindingId The binding identifier
      *
      * @throws BindingNotFoundException If the binding doesn't exist
-     * @throws PersistenceException         If the deletion fails
+     * @throws PersistenceException     If the deletion fails
      */
     public function delete(string $bindingId): void;
 

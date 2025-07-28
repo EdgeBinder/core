@@ -36,7 +36,7 @@ interface EdgeBinderInterface
      * @return BindingInterface The created binding
      *
      * @throws InvalidMetadataException If metadata is invalid
-     * @throws PersistenceException         If the binding cannot be stored
+     * @throws PersistenceException     If the binding cannot be stored
      */
     public function bind(
         object $from,
@@ -51,7 +51,7 @@ interface EdgeBinderInterface
      * @param string $bindingId The binding identifier
      *
      * @throws BindingNotFoundException If the binding doesn't exist
-     * @throws PersistenceException         If the binding cannot be deleted
+     * @throws PersistenceException     If the binding cannot be deleted
      */
     public function unbind(string $bindingId): void;
 
@@ -144,7 +144,7 @@ interface EdgeBinderInterface
      *
      * @throws BindingNotFoundException If the binding doesn't exist
      * @throws InvalidMetadataException If metadata is invalid
-     * @throws PersistenceException         If the update fails
+     * @throws PersistenceException     If the update fails
      */
     public function updateMetadata(string $bindingId, array $metadata): BindingInterface;
 
@@ -158,7 +158,7 @@ interface EdgeBinderInterface
      *
      * @throws BindingNotFoundException If the binding doesn't exist
      * @throws InvalidMetadataException If metadata is invalid
-     * @throws PersistenceException         If the update fails
+     * @throws PersistenceException     If the update fails
      */
     public function replaceMetadata(string $bindingId, array $metadata): BindingInterface;
 
@@ -170,7 +170,7 @@ interface EdgeBinderInterface
      * @return array<string, mixed> The binding's metadata
      *
      * @throws BindingNotFoundException If the binding doesn't exist
-     * @throws PersistenceException         If the query fails
+     * @throws PersistenceException     If the query fails
      */
     public function getMetadata(string $bindingId): array;
 
