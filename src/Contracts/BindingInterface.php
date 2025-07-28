@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Contracts;
 
-use DateTimeImmutable;
-
 /**
  * Represents a binding (relationship) between two entities.
  *
@@ -82,16 +80,16 @@ interface BindingInterface
     /**
      * Get when this binding was created.
      *
-     * @return DateTimeImmutable Creation timestamp
+     * @return \DateTimeImmutable Creation timestamp
      */
-    public function getCreatedAt(): DateTimeImmutable;
+    public function getCreatedAt(): \DateTimeImmutable;
 
     /**
      * Get when this binding was last updated.
      *
-     * @return DateTimeImmutable Last update timestamp
+     * @return \DateTimeImmutable Last update timestamp
      */
-    public function getUpdatedAt(): DateTimeImmutable;
+    public function getUpdatedAt(): \DateTimeImmutable;
 
     /**
      * Create a new binding with updated metadata.
@@ -100,6 +98,7 @@ interface BindingInterface
      * the same core relationship but updated metadata and timestamp.
      *
      * @param array<string, mixed> $metadata New metadata to merge/replace
+     *
      * @return static New binding instance with updated metadata
      */
     public function withMetadata(array $metadata): static;
@@ -108,9 +107,10 @@ interface BindingInterface
      * Check if this binding connects the specified entities.
      *
      * @param string $fromType Source entity type
-     * @param string $fromId Source entity ID
-     * @param string $toType Target entity type
-     * @param string $toId Target entity ID
+     * @param string $fromId   Source entity ID
+     * @param string $toType   Target entity type
+     * @param string $toId     Target entity ID
+     *
      * @return bool True if this binding connects the specified entities
      */
     public function connects(string $fromType, string $fromId, string $toType, string $toId): bool;
@@ -119,7 +119,8 @@ interface BindingInterface
      * Check if this binding involves the specified entity.
      *
      * @param string $entityType Entity type to check
-     * @param string $entityId Entity ID to check
+     * @param string $entityId   Entity ID to check
+     *
      * @return bool True if this binding involves the specified entity (as source or target)
      */
     public function involves(string $entityType, string $entityId): bool;

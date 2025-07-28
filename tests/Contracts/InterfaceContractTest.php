@@ -10,7 +10,6 @@ use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Contracts\StorageAdapterInterface;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
 
 /**
  * Test that verifies interface contracts and method signatures.
@@ -22,7 +21,7 @@ class InterfaceContractTest extends TestCase
 {
     public function testEntityInterfaceContract(): void
     {
-        $reflection = new ReflectionClass(EntityInterface::class);
+        $reflection = new \ReflectionClass(EntityInterface::class);
 
         $this->assertTrue($reflection->isInterface());
         $this->assertTrue($reflection->hasMethod('getId'));
@@ -39,7 +38,7 @@ class InterfaceContractTest extends TestCase
 
     public function testBindingInterfaceContract(): void
     {
-        $reflection = new ReflectionClass(BindingInterface::class);
+        $reflection = new \ReflectionClass(BindingInterface::class);
 
         $this->assertTrue($reflection->isInterface());
 
@@ -80,7 +79,7 @@ class InterfaceContractTest extends TestCase
 
     public function testStorageAdapterInterfaceContract(): void
     {
-        $reflection = new ReflectionClass(StorageAdapterInterface::class);
+        $reflection = new \ReflectionClass(StorageAdapterInterface::class);
 
         $this->assertTrue($reflection->isInterface());
 
@@ -115,14 +114,14 @@ class InterfaceContractTest extends TestCase
 
     public function testQueryBuilderInterfaceContract(): void
     {
-        $reflection = new ReflectionClass(QueryBuilderInterface::class);
+        $reflection = new \ReflectionClass(QueryBuilderInterface::class);
 
         $this->assertTrue($reflection->isInterface());
 
         // Test fluent interface methods
         $fluentMethods = [
             'from', 'to', 'type', 'where', 'whereIn', 'whereBetween',
-            'whereExists', 'whereNull', 'orWhere', 'orderBy', 'limit', 'offset'
+            'whereExists', 'whereNull', 'orWhere', 'orderBy', 'limit', 'offset',
         ];
 
         foreach ($fluentMethods as $methodName) {
@@ -149,7 +148,7 @@ class InterfaceContractTest extends TestCase
 
     public function testEdgeBinderInterfaceContract(): void
     {
-        $reflection = new ReflectionClass(EdgeBinderInterface::class);
+        $reflection = new \ReflectionClass(EdgeBinderInterface::class);
 
         $this->assertTrue($reflection->isInterface());
 
