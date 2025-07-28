@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Tests\Query;
 
-use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Contracts\StorageAdapterInterface;
