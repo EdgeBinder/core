@@ -21,15 +21,15 @@ readonly class Binding implements BindingInterface
     /**
      * Create a new binding instance.
      *
-     * @param string                   $id        Unique binding identifier
-     * @param string                   $fromType  Source entity type
-     * @param string                   $fromId    Source entity identifier
-     * @param string                   $toType    Target entity type
-     * @param string                   $toId      Target entity identifier
-     * @param string                   $type      Binding type/relationship name
-     * @param array<string, mixed>     $metadata  Binding metadata
-     * @param \DateTimeImmutable       $createdAt Creation timestamp
-     * @param \DateTimeImmutable       $updatedAt Last update timestamp
+     * @param string               $id        Unique binding identifier
+     * @param string               $fromType  Source entity type
+     * @param string               $fromId    Source entity identifier
+     * @param string               $toType    Target entity type
+     * @param string               $toId      Target entity identifier
+     * @param string               $type      Binding type/relationship name
+     * @param array<string, mixed> $metadata  Binding metadata
+     * @param \DateTimeImmutable   $createdAt Creation timestamp
+     * @param \DateTimeImmutable   $updatedAt Last update timestamp
      */
     public function __construct(
         private string $id,
@@ -196,7 +196,7 @@ readonly class Binding implements BindingInterface
      * Creates a new binding with from/to entities swapped.
      * Useful for bidirectional relationships.
      *
-     * @param string|null              $reverseType Optional different type for reverse binding
+     * @param string|null               $reverseType Optional different type for reverse binding
      * @param array<string, mixed>|null $metadata    Optional different metadata for reverse binding
      *
      * @return static New binding with reversed direction
@@ -275,6 +275,6 @@ readonly class Binding implements BindingInterface
      */
     private static function generateId(): string
     {
-        return 'binding_' . bin2hex(random_bytes(16));
+        return 'binding_'.bin2hex(random_bytes(16));
     }
 }
