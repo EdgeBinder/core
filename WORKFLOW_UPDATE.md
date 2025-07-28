@@ -2,6 +2,10 @@
 
 This PR adds PHPStan to the project but cannot automatically update the GitHub workflow due to OAuth scope limitations.
 
+## ⚠️ IMPORTANT: PHPStan Missing from CI
+
+The current lint workflow only runs PHP CS Fixer but **does not include PHPStan**. This means static analysis is not being performed on PRs, which could allow type safety issues to slip through.
+
 ## Manual Update Required
 
 Please manually update `.github/workflows/lint.yaml` to add the PHPStan job:
@@ -83,8 +87,18 @@ jobs:
 ## After Update
 
 Once the workflow is updated, all PRs will automatically run:
-1. PHP CS Fixer (code style)
-2. PHPStan (static analysis)  
-3. PHPUnit (tests)
+1. **PHP CS Fixer** (code style) ✅ Currently running
+2. **PHPStan** (static analysis) ❌ **MISSING - needs to be added**
+3. **PHPUnit** (tests) ✅ Currently running
 
 This ensures code quality and type safety across the entire codebase.
+
+## Why This Matters
+
+Without PHPStan in CI:
+- Type safety issues can be merged
+- Interface contract violations may go unnoticed
+- Code quality standards are not enforced
+- Potential runtime errors from type mismatches
+
+**Please add PHPStan to the workflow as soon as possible to maintain code quality standards.**
