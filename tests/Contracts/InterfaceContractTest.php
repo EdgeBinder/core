@@ -28,11 +28,15 @@ class InterfaceContractTest extends TestCase
         $this->assertTrue($reflection->hasMethod('getType'));
 
         $getIdMethod = $reflection->getMethod('getId');
-        $this->assertEquals('string', $getIdMethod->getReturnType()?->getName());
+        $returnType = $getIdMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('string', $returnType->getName());
         $this->assertCount(0, $getIdMethod->getParameters());
 
         $getTypeMethod = $reflection->getMethod('getType');
-        $this->assertEquals('string', $getTypeMethod->getReturnType()?->getName());
+        $returnType = $getTypeMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('string', $returnType->getName());
         $this->assertCount(0, $getTypeMethod->getParameters());
     }
 
@@ -69,12 +73,16 @@ class InterfaceContractTest extends TestCase
         $this->assertTrue($reflection->hasMethod('connects'));
         $connectsMethod = $reflection->getMethod('connects');
         $this->assertCount(4, $connectsMethod->getParameters());
-        $this->assertEquals('bool', $connectsMethod->getReturnType()?->getName());
+        $returnType = $connectsMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('bool', $returnType->getName());
 
         $this->assertTrue($reflection->hasMethod('involves'));
         $involvesMethod = $reflection->getMethod('involves');
         $this->assertCount(2, $involvesMethod->getParameters());
-        $this->assertEquals('bool', $involvesMethod->getReturnType()?->getName());
+        $returnType = $involvesMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('bool', $returnType->getName());
     }
 
     public function testStorageAdapterInterfaceContract(): void
@@ -137,13 +145,19 @@ class InterfaceContractTest extends TestCase
 
         // Verify return types for execution methods
         $countMethod = $reflection->getMethod('count');
-        $this->assertEquals('int', $countMethod->getReturnType()?->getName());
+        $returnType = $countMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('int', $returnType->getName());
 
         $existsMethod = $reflection->getMethod('exists');
-        $this->assertEquals('bool', $existsMethod->getReturnType()?->getName());
+        $returnType = $existsMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('bool', $returnType->getName());
 
         $getCriteriaMethod = $reflection->getMethod('getCriteria');
-        $this->assertEquals('array', $getCriteriaMethod->getReturnType()?->getName());
+        $returnType = $getCriteriaMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('array', $returnType->getName());
     }
 
     public function testEdgeBinderInterfaceContract(): void
@@ -181,7 +195,9 @@ class InterfaceContractTest extends TestCase
         $this->assertCount(0, $queryMethod->getParameters());
 
         $areBoundMethod = $reflection->getMethod('areBound');
-        $this->assertEquals('bool', $areBoundMethod->getReturnType()?->getName());
+        $returnType = $areBoundMethod->getReturnType();
+        $this->assertInstanceOf(\ReflectionNamedType::class, $returnType);
+        $this->assertEquals('bool', $returnType->getName());
     }
 
     public function testInterfaceNamespaces(): void
