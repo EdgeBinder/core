@@ -23,6 +23,14 @@ class BindingNotFoundException extends EdgeBinderException
     }
 
     /**
+     * Create exception for a specific binding ID.
+     */
+    public static function withId(string $bindingId, ?\Throwable $previous = null): self
+    {
+        return new self($bindingId, $previous);
+    }
+
+    /**
      * Create exception for a binding that was expected between specific entities.
      */
     public static function betweenEntities(

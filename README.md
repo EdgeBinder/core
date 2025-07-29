@@ -1,82 +1,61 @@
-# EdgeBinder Weaviate Adapter
+# EdgeBinder Core
 
-[![Tests](https://github.com/edgebinder/weaviate-adapter/actions/workflows/tests.yml/badge.svg)](https://github.com/edgebinder/weaviate-adapter/actions/workflows/tests.yml)
-[![Lint](https://github.com/edgebinder/weaviate-adapter/actions/workflows/lint.yml/badge.svg)](https://github.com/edgebinder/weaviate-adapter/actions/workflows/lint.yml)
+[![Tests](https://github.com/edgebinder/core/actions/workflows/test.yaml/badge.svg)](https://github.com/edgebinder/core/actions/workflows/test.yaml)
+[![Lint](https://github.com/edgebinder/core/actions/workflows/lint.yaml/badge.svg)](https://github.com/edgebinder/core/actions/workflows/lint.yaml)
+[![codecov](https://codecov.io/gh/edgebinder/core/graph/badge.svg)](https://codecov.io/gh/edgebinder/core)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.3-blue.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-A Weaviate adapter for EdgeBinder that provides vector database capabilities for relationship management with semantic search and AI-powered relationship discovery.
+Lightweight, storage-agnostic relationship management for clean domain architectures. EdgeBinder provides a simple, elegant way to manage entity relationships without the complexity of full ORMs or the limitations of basic pivot tables.
 
-The Weaviate adapter leverages Weaviate's vector database capabilities to store and query entity relationships with rich metadata and semantic similarity features. This adapter is particularly powerful for AI/ML applications where relationships can be discovered through vector similarity.
-
-## 🎯 Implementation Strategy: Phased Approach
-
-### Phase 1: Basic Adapter (Current Implementation)
-**Status: Ready to Implement**
-- Uses current Zestic Weaviate PHP client capabilities
-- Implements core `PersistenceAdapterInterface` methods
-- Provides basic relationship storage and retrieval
-- Supports rich metadata without vector features
-
-### Phase 2: Vector Enhancement (Future)
-**Status: Requires Client Enhancement**
-- Contribute vector query support to Zestic client
-- Add semantic similarity search capabilities
-- Implement advanced GraphQL query features
-- Enable AI/ML relationship discovery
+EdgeBinder follows Domain-Driven Design principles and provides a clean abstraction layer over various storage backends through pluggable adapters. Whether you need simple SQL storage, document databases, or advanced vector databases, EdgeBinder adapts to your needs.
 
 ## Features
 
-- **Vector Database**: Leverage Weaviate's vector capabilities for semantic search
-- **Rich Metadata**: Store complex relationship data with vector representations
-- **Multi-Tenancy**: Full support for tenant-isolated relationship data
-- **Schema Management**: Automatic Weaviate schema creation and management
+- **Storage Agnostic**: Use any storage backend through pluggable adapters
+- **Rich Metadata**: Store complex relationship data with full metadata support
 - **Type Safe**: Full PHP 8.3+ type safety with comprehensive PHPStan analysis
-- **Performance Focused**: Optimized for relationship queries and vector operations
+- **Domain-Driven Design**: Clean abstraction that doesn't pollute your domain entities
+- **Query Builder**: Fluent, expressive query interface for relationship discovery
+- **Performance Focused**: Optimized for relationship queries and bulk operations
 
 ## Requirements
 
 - PHP 8.3 or higher
 - Composer
-- Docker and Docker Compose (for integration tests)
-- Weaviate instance (local or cloud)
 
 ## Installation
 
 ```bash
-composer require edgebinder/weaviate-adapter
+composer require edgebinder/core
 ```
 
 ## Quick Start
 
 ```php
 use EdgeBinder\EdgeBinder;
-use EdgeBinder\Adapter\Weaviate\WeaviateAdapter;
-use Weaviate\WeaviateClient;
+use EdgeBinder\Adapter\InMemory\InMemoryAdapter;
 
-// Create Weaviate client
-$client = WeaviateClient::connectToLocal();
-
-// Create binder with Weaviate adapter
-$adapter = new WeaviateAdapter($client);
+// Create binder with in-memory adapter (for testing/development)
+$adapter = new InMemoryAdapter();
 $binder = new EdgeBinder($adapter);
 
 // Bind entities with rich metadata
 $binder->bind(
-    from: $workspace,
-    to: $codeRepository,
+    from: $user,
+    to: $project,
     type: 'has_access',
     metadata: [
         'access_level' => 'write',
-        'granted_by' => $userId,
+        'granted_by' => $adminUserId,
         'granted_at' => new DateTimeImmutable(),
-        'semantic_context' => 'development workspace access',
+        'expires_at' => new DateTimeImmutable('+1 year'),
     ]
 );
 
 // Query relationships
-$repositories = $binder->query()
-    ->from($workspace)
+$projects = $binder->query()
+    ->from($user)
     ->type('has_access')
     ->where('access_level', 'write')
     ->get();
@@ -87,38 +66,22 @@ $repositories = $binder->query()
 ### 1. Clone and Install Dependencies
 
 ```bash
-git clone https://github.com/edgebinder/weaviate-adapter.git
-cd weaviate-adapter
+git clone https://github.com/edgebinder/core.git
+cd core
 composer install
 ```
 
-### 2. Start Weaviate for Testing
+### 2. Run Tests
 
 ```bash
-# Start Weaviate container
-composer docker-start
-
-# Or manually with docker compose
-docker compose up -d weaviate
-```
-
-### 3. Run Tests
-
-```bash
-# Run all tests (starts/stops Weaviate automatically)
-composer test-docker
-
-# Run only unit tests (no Weaviate required)
-composer test-unit
-
-# Run only integration tests (requires running Weaviate)
-composer test-integration
+# Run all tests
+composer test
 
 # Run tests with coverage
 composer test-coverage
 ```
 
-### 4. Code Quality
+### 3. Code Quality
 
 ```bash
 # Run static analysis
@@ -130,8 +93,11 @@ composer cs-check
 # Fix coding standards
 composer cs-fix
 
-# Run all linting
-composer lint
+# Check composer.json normalization
+composer composer-normalize
+
+# Fix composer.json normalization
+composer composer-normalize-fix
 
 # Security audit
 composer security-audit
@@ -141,69 +107,60 @@ composer security-audit
 
 ```
 src/
-├── WeaviateAdapter.php              # Main adapter implementation
-├── Schema/
-│   ├── SchemaManager.php           # Manages Weaviate schema
-│   └── BindingSchema.php           # Binding class schema definition
+├── EdgeBinder.php                 # Main EdgeBinder class
+├── Binding.php                    # Binding entity representation
+├── Contracts/
+│   └── PersistenceAdapterInterface.php  # Adapter interface
 ├── Query/
-│   ├── WeaviateQueryBuilder.php    # Weaviate-specific query builder
-│   └── VectorQueryBuilder.php     # Vector similarity queries (Phase 2)
-├── Mapping/
-│   ├── BindingMapper.php          # Maps EdgeBinder objects to Weaviate
-│   └── MetadataMapper.php         # Handles metadata serialization
-├── Vector/
-│   ├── VectorGenerator.php        # Generates vectors from metadata (Phase 2)
-│   └── SimilarityCalculator.php   # Calculates relationship similarities (Phase 2)
+│   └── BindingQueryBuilder.php    # Query builder for relationships
+├── Adapter/
+│   └── InMemory/
+│       └── InMemoryAdapter.php    # Built-in in-memory adapter
 └── Exception/
-    ├── WeaviateException.php      # Weaviate-specific exceptions
-    └── SchemaException.php        # Schema-related exceptions
+    ├── BindingNotFoundException.php
+    ├── EntityExtractionException.php
+    ├── InvalidMetadataException.php
+    └── PersistenceException.php
 
 tests/
-├── Unit/                          # Unit tests (no external dependencies)
-└── Integration/                   # Integration tests (requires Weaviate)
+├── BindingTest.php                # Binding entity tests
+├── EdgeBinderTest.php             # Main class tests
+├── Query/
+│   └── BindingQueryBuilderTest.php
+├── Contracts/
+│   └── InterfaceContractTest.php
+└── Exception/
+    └── ExceptionTest.php
 ```
 
-## Docker Commands
 
-```bash
-# Start Weaviate
-composer docker-start
-
-# Stop Weaviate
-composer docker-stop
-
-# Reset Weaviate data
-composer docker-reset
-
-# Run tests with Docker
-composer test-docker
-```
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Write tests for your changes
-4. Ensure all tests pass: `composer test-docker`
-5. Ensure code quality: `composer lint`
+4. Ensure all tests pass: `composer test`
+5. Ensure code quality: `composer phpstan && composer cs-check && composer composer-normalize && composer security-audit`
 6. Submit a pull request
 
 ## Testing Philosophy
 
 This project follows Test-Driven Development (TDD):
 - Tests drive the implementation
-- High test coverage is maintained
-- Both unit and integration tests are included
-- Integration tests use real Weaviate instances
+- High test coverage is maintained (97%+ line coverage)
+- Comprehensive unit tests for all components
+- Clean, maintainable test code
 
 ## Related Projects
 
-- [EdgeBinder Core](https://github.com/edgebinder/core) - The main EdgeBinder library
-- [Zestic Weaviate PHP Client](https://github.com/zestic/weaviate-php-client) - The underlying Weaviate client
+- [EdgeBinder PDO Adapter](https://github.com/edgebinder/pdo-adapter) - SQL database adapter
+- [EdgeBinder MongoDB Adapter](https://github.com/edgebinder/mongodb-adapter) - MongoDB adapter
+- [EdgeBinder Weaviate Adapter](https://github.com/edgebinder/weaviate-adapter) - Vector database adapter
 
 ## Support
 
-For issues and questions, please use the [GitHub issue tracker](https://github.com/edgebinder/weaviate-adapter/issues).
+For issues and questions, please use the [GitHub issue tracker](https://github.com/edgebinder/core/issues).
 
 ## License
 

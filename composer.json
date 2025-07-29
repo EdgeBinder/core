@@ -1,8 +1,8 @@
 {
     "name": "edgebinder/core",
     "description": "Lightweight, storage-agnostic relationship management for clean domain architectures",
-    "type": "library",
     "license": "Apache-2.0",
+    "type": "library",
     "keywords": [
         "relationships",
         "graph",
@@ -27,11 +27,15 @@
         "php": "^8.3"
     },
     "require-dev": {
+        "ergebnis/composer-normalize": "^2.42",
         "friendsofphp/php-cs-fixer": "^3.0",
         "phpstan/phpstan": "^1.10",
         "phpstan/phpstan-phpunit": "^1.4",
-        "phpunit/phpunit": "^11.0"
+        "phpunit/phpunit": "^11.0",
+        "roave/security-advisories": "dev-master"
     },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "EdgeBinder\\": "src/"
@@ -42,18 +46,21 @@
             "EdgeBinder\\Tests\\": "tests/"
         }
     },
-    "scripts": {
-        "test": "phpunit",
-        "cs-fix": "php-cs-fixer fix",
-        "cs-check": "php-cs-fixer fix --dry-run --diff",
-        "phpstan": "phpstan analyse"
-    },
     "config": {
-        "sort-packages": true,
         "allow-plugins": {
+            "ergebnis/composer-normalize": true,
             "php-http/discovery": true
-        }
+        },
+        "sort-packages": true
     },
-    "minimum-stability": "stable",
-    "prefer-stable": true
+    "scripts": {
+        "composer-normalize": "composer normalize --dry-run --diff",
+        "composer-normalize-fix": "composer normalize",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "cs-fix": "php-cs-fixer fix",
+        "phpstan": "phpstan analyse",
+        "security-audit": "composer audit",
+        "test": "phpunit",
+        "test-coverage": "XDEBUG_MODE=coverage phpunit --coverage-clover=coverage.xml --coverage-html=coverage-html"
+    }
 }

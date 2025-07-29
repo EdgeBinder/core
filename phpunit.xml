@@ -23,6 +23,7 @@
     <coverage>
         <report>
             <html outputDirectory="coverage-html"/>
+            <clover outputFile="coverage.xml"/>
             <text outputFile="php://stdout"/>
         </report>
     </coverage>

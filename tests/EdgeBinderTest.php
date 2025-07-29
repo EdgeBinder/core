@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Tests;
 
-use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EdgeBinderInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\EdgeBinder;
 use EdgeBinder\Exception\BindingNotFoundException;
-use EdgeBinder\Exception\PersistenceException;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class EdgeBinderTest extends TestCase
 {
-    private PersistenceAdapterInterface $persistenceAdapter;
+    private PersistenceAdapterInterface&MockObject $persistenceAdapter;
     private EdgeBinder $edgeBinder;
     private object $fromEntity;
     private object $toEntity;
@@ -39,25 +38,11 @@ class EdgeBinderTest extends TestCase
         $metadata = ['access_level' => 'admin'];
         $normalizedMetadata = ['access_level' => 'admin', 'normalized' => true];
 
-        $this->persistenceAdapter->expects($this->once())
-            ->method('extractEntityType')
-            ->with($this->fromEntity)
-            ->willReturn('User');
+        $this->persistenceAdapter->method('extractEntityType')
+            ->willReturnOnConsecutiveCalls('User', 'Project');
 
-        $this->persistenceAdapter->expects($this->once())
-            ->method('extractEntityId')
-            ->with($this->fromEntity)
-            ->willReturn('user-123');
-
-        $this->persistenceAdapter->expects($this->once())
-            ->method('extractEntityType')
-            ->with($this->toEntity)
-            ->willReturn('Project');
-
-        $this->persistenceAdapter->expects($this->once())
-            ->method('extractEntityId')
-            ->with($this->toEntity)
-            ->willReturn('project-456');
+        $this->persistenceAdapter->method('extractEntityId')
+            ->willReturnOnConsecutiveCalls('user-123', 'project-456');
 
         $this->persistenceAdapter->expects($this->once())
             ->method('validateAndNormalizeMetadata')
@@ -67,11 +52,11 @@ class EdgeBinderTest extends TestCase
         $this->persistenceAdapter->expects($this->once())
             ->method('store')
             ->with($this->callback(function (BindingInterface $binding) use ($normalizedMetadata) {
-                return $binding->getFromType() === 'User'
-                    && $binding->getFromId() === 'user-123'
-                    && $binding->getToType() === 'Project'
-                    && $binding->getToId() === 'project-456'
-                    && $binding->getType() === 'has_access'
+                return 'User' === $binding->getFromType()
+                    && 'user-123' === $binding->getFromId()
+                    && 'Project' === $binding->getToType()
+                    && 'project-456' === $binding->getToId()
+                    && 'has_access' === $binding->getType()
                     && $binding->getMetadata() === $normalizedMetadata;
             }));
 
@@ -131,7 +116,7 @@ class EdgeBinderTest extends TestCase
 
         $this->persistenceAdapter->expects($this->exactly(2))
             ->method('delete')
-            ->withConsecutive(['binding-1'], ['binding-2']);
+            ->with($this->logicalOr('binding-1', 'binding-2'));
 
         $result = $this->edgeBinder->unbindEntities($this->fromEntity, $this->toEntity, 'has_access');
 
@@ -406,7 +391,10 @@ class EdgeBinderTest extends TestCase
         // Mock the persistence adapter calls for both bindings
         $this->persistenceAdapter->method('extractEntityType')->willReturn('Entity');
         $this->persistenceAdapter->method('extractEntityId')->willReturnOnConsecutiveCalls(
-            'entity-1', 'entity-2', 'entity-2', 'entity-3'
+            'entity-1',
+            'entity-2',
+            'entity-2',
+            'entity-3'
         );
         $this->persistenceAdapter->method('validateAndNormalizeMetadata')->willReturnArgument(0);
         $this->persistenceAdapter->expects($this->exactly(2))->method('store');
@@ -458,57 +446,56 @@ class EdgeBinderTest extends TestCase
 
     public function testCountBindingsFor(): void
     {
-        $queryBuilder = $this->createMock(QueryBuilderInterface::class);
-        $queryBuilder->expects($this->once())
-            ->method('from')
+        $this->persistenceAdapter->expects($this->once())
+            ->method('extractEntityType')
             ->with($this->fromEntity)
-            ->willReturnSelf();
-        $queryBuilder->expects($this->once())
-            ->method('type')
-            ->with('has_access')
-            ->willReturnSelf();
-        $queryBuilder->expects($this->once())
+            ->willReturn('User');
+
+        $this->persistenceAdapter->expects($this->once())
+            ->method('extractEntityId')
+            ->with($this->fromEntity)
+            ->willReturn('user-123');
+
+        $this->persistenceAdapter->expects($this->once())
             ->method('count')
+            ->with($this->callback(function (QueryBuilderInterface $query) {
+                $criteria = $query->getCriteria();
+
+                return 'User' === $criteria['from_type']
+                    && 'user-123' === $criteria['from_id']
+                    && 'has_access' === $criteria['type'];
+            }))
             ->willReturn(42);
 
-        // We need to mock the query builder creation
-        $edgeBinder = $this->getMockBuilder(EdgeBinder::class)
-            ->setConstructorArgs([$this->persistenceAdapter])
-            ->onlyMethods(['query'])
-            ->getMock();
-
-        $edgeBinder->expects($this->once())
-            ->method('query')
-            ->willReturn($queryBuilder);
-
-        $result = $edgeBinder->countBindingsFor($this->fromEntity, 'has_access');
+        $result = $this->edgeBinder->countBindingsFor($this->fromEntity, 'has_access');
 
         $this->assertEquals(42, $result);
     }
 
     public function testCountBindingsForWithoutType(): void
     {
-        $queryBuilder = $this->createMock(QueryBuilderInterface::class);
-        $queryBuilder->expects($this->once())
-            ->method('from')
+        $this->persistenceAdapter->expects($this->once())
+            ->method('extractEntityType')
             ->with($this->fromEntity)
-            ->willReturnSelf();
-        $queryBuilder->expects($this->never())
-            ->method('type');
-        $queryBuilder->expects($this->once())
+            ->willReturn('User');
+
+        $this->persistenceAdapter->expects($this->once())
+            ->method('extractEntityId')
+            ->with($this->fromEntity)
+            ->willReturn('user-123');
+
+        $this->persistenceAdapter->expects($this->once())
             ->method('count')
+            ->with($this->callback(function (QueryBuilderInterface $query) {
+                $criteria = $query->getCriteria();
+
+                return 'User' === $criteria['from_type']
+                    && 'user-123' === $criteria['from_id']
+                    && !isset($criteria['type']);
+            }))
             ->willReturn(15);
 
-        $edgeBinder = $this->getMockBuilder(EdgeBinder::class)
-            ->setConstructorArgs([$this->persistenceAdapter])
-            ->onlyMethods(['query'])
-            ->getMock();
-
-        $edgeBinder->expects($this->once())
-            ->method('query')
-            ->willReturn($queryBuilder);
-
-        $result = $edgeBinder->countBindingsFor($this->fromEntity);
+        $result = $this->edgeBinder->countBindingsFor($this->fromEntity);
 
         $this->assertEquals(15, $result);
     }

@@ -37,12 +37,15 @@ jobs:
       run: composer install --prefer-dist --no-progress
     
     - name: Run test suite
-      run: composer run-script test
+      run: composer run-script test -- --coverage-clover=coverage.xml
+      env:
+        XDEBUG_MODE: coverage
     
     - name: Upload coverage reports to Codecov
       if: matrix.php-version == '8.3'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
         name: codecov-umbrella
+        token: ${{ secrets.CODECOV_TOKEN }}

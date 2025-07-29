@@ -93,7 +93,7 @@ final class EdgeBinder implements EdgeBinderInterface
         $deletedCount = 0;
         foreach ($bindings as $binding) {
             $this->persistenceAdapter->delete($binding->getId());
-            $deletedCount++;
+            ++$deletedCount;
         }
 
         return $deletedCount;
@@ -152,7 +152,7 @@ final class EdgeBinder implements EdgeBinderInterface
     {
         // Find the existing binding
         $binding = $this->findBinding($bindingId);
-        if ($binding === null) {
+        if (null === $binding) {
             throw BindingNotFoundException::withId($bindingId);
         }
 
@@ -167,7 +167,7 @@ final class EdgeBinder implements EdgeBinderInterface
 
         // Return the updated binding
         $updatedBinding = $this->findBinding($bindingId);
-        if ($updatedBinding === null) {
+        if (null === $updatedBinding) {
             throw new PersistenceException('update', 'Failed to retrieve updated binding');
         }
 
@@ -178,7 +178,7 @@ final class EdgeBinder implements EdgeBinderInterface
     {
         // Find the existing binding
         $binding = $this->findBinding($bindingId);
-        if ($binding === null) {
+        if (null === $binding) {
             throw BindingNotFoundException::withId($bindingId);
         }
 
@@ -190,7 +190,7 @@ final class EdgeBinder implements EdgeBinderInterface
 
         // Return the updated binding
         $updatedBinding = $this->findBinding($bindingId);
-        if ($updatedBinding === null) {
+        if (null === $updatedBinding) {
             throw new PersistenceException('update', 'Failed to retrieve updated binding');
         }
 
@@ -200,7 +200,7 @@ final class EdgeBinder implements EdgeBinderInterface
     public function getMetadata(string $bindingId): array
     {
         $binding = $this->findBinding($bindingId);
-        if ($binding === null) {
+        if (null === $binding) {
             throw BindingNotFoundException::withId($bindingId);
         }
 
@@ -272,7 +272,7 @@ final class EdgeBinder implements EdgeBinderInterface
     {
         $query = $this->query()->from($entity);
 
-        if ($type !== null) {
+        if (null !== $type) {
             $query = $query->type($type);
         }
 
