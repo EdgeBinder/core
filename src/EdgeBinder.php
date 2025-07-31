@@ -11,7 +11,10 @@ use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
+use EdgeBinder\Exception\AdapterException;
 use EdgeBinder\Query\BindingQueryBuilder;
+use EdgeBinder\Registry\AdapterRegistry;
+use Psr\Container\ContainerInterface;
 
 /**
  * Main EdgeBinder service implementation.
@@ -37,6 +40,92 @@ final class EdgeBinder implements EdgeBinderInterface
     public function __construct(
         private readonly PersistenceAdapterInterface $persistenceAdapter,
     ) {
+    }
+
+    /**
+     * Create EdgeBinder instance from configuration using registered adapters.
+     *
+     * This factory method enables framework-agnostic adapter creation through
+     * the adapter registry system. It supports third-party adapters that have
+     * been registered via AdapterRegistry::register().
+     *
+     * Configuration format:
+     * ```php
+     * $config = [
+     *     'adapter' => 'weaviate',  // Required: adapter type
+     *     'weaviate_client' => 'weaviate.client.rag',  // Client service name
+     *     'collection_name' => 'RAGBindings',  // Adapter-specific config
+     *     'schema' => ['auto_create' => true],  // More adapter-specific config
+     * ];
+     * ```
+     *
+     * Framework usage examples:
+     * ```php
+     * // Laminas/Mezzio
+     * $edgeBinder = EdgeBinder::fromConfiguration($config, $container);
+     *
+     * // Symfony
+     * $edgeBinder = EdgeBinder::fromConfiguration($config, $this->container);
+     *
+     * // Laravel
+     * $edgeBinder = EdgeBinder::fromConfiguration($config, app());
+     * ```
+     *
+     * @param array<string, mixed>  $config       Instance configuration containing adapter type and settings
+     * @param ContainerInterface    $container    PSR-11 container for dependency injection
+     * @param array<string, mixed>  $globalConfig Optional global EdgeBinder configuration
+     *
+     * @return self Configured EdgeBinder instance
+     *
+     * @throws \InvalidArgumentException If required configuration is missing
+     * @throws AdapterException         If adapter type is not registered or creation fails
+     */
+    public static function fromConfiguration(
+        array $config,
+        ContainerInterface $container,
+        array $globalConfig = []
+    ): self {
+        // Validate required configuration
+        if (!isset($config['adapter'])) {
+            throw new \InvalidArgumentException(
+                "Configuration must contain 'adapter' key specifying the adapter type. " .
+                "Available types: " . implode(', ', AdapterRegistry::getRegisteredTypes())
+            );
+        }
+
+        $adapterType = $config['adapter'];
+        if (!is_string($adapterType) || empty($adapterType)) {
+            throw new \InvalidArgumentException(
+                "Adapter type must be a non-empty string, got: " . gettype($adapterType)
+            );
+        }
+
+        // Build adapter configuration structure expected by AdapterFactoryInterface
+        $adapterConfig = [
+            'instance' => $config,
+            'global' => $globalConfig,
+            'container' => $container,
+        ];
+
+        // Create adapter through registry
+        $adapter = AdapterRegistry::create($adapterType, $adapterConfig);
+
+        return new self($adapter);
+    }
+
+    /**
+     * Create EdgeBinder instance from an adapter (backward compatibility).
+     *
+     * This factory method provides a consistent factory pattern while maintaining
+     * backward compatibility with direct adapter injection.
+     *
+     * @param PersistenceAdapterInterface $adapter The persistence adapter to use
+     *
+     * @return self EdgeBinder instance with the provided adapter
+     */
+    public static function fromAdapter(PersistenceAdapterInterface $adapter): self
+    {
+        return new self($adapter);
     }
 
     public function bind(
