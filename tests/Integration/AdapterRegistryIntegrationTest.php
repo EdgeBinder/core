@@ -210,7 +210,7 @@ final class AdapterRegistryIntegrationTest extends TestCase
         // Test missing adapter key
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage("Configuration must contain 'adapter' key");
-        $this->expectExceptionMessage("Available types: redis");
+        $this->expectExceptionMessage('Available types: redis');
 
         EdgeBinder::fromConfiguration([], $container);
     }

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Tests\Integration;
 
-use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
-use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\EdgeBinder;
 use EdgeBinder\Exception\AdapterException;
 use EdgeBinder\Registry\AdapterFactoryInterface;
@@ -114,7 +112,7 @@ final class EdgeBinderFactoryTest extends TestCase
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Adapter type must be a non-empty string");
+        $this->expectExceptionMessage('Adapter type must be a non-empty string');
 
         EdgeBinder::fromConfiguration($config, $container);
     }
@@ -129,7 +127,7 @@ final class EdgeBinderFactoryTest extends TestCase
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage("Adapter type must be a non-empty string");
+        $this->expectExceptionMessage('Adapter type must be a non-empty string');
 
         EdgeBinder::fromConfiguration($config, $container);
     }
@@ -235,6 +233,7 @@ final class EdgeBinderFactoryTest extends TestCase
                 // Verify global config is passed
                 $this->assertArrayHasKey('global', $config);
                 $this->assertEquals('reflection', $config['global']['entity_extraction_strategy']);
+
                 return true;
             }))
             ->willReturn($adapter);

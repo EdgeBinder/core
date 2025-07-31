@@ -26,7 +26,7 @@ final class MockAdapterFactory implements AdapterFactoryInterface
     public function createAdapter(array $config): PersistenceAdapterInterface
     {
         // Return pre-configured adapter if provided, otherwise create a new mock
-        if ($this->adapter !== null) {
+        if (null !== $this->adapter) {
             return $this->adapter;
         }
 
@@ -120,11 +120,12 @@ final class MockAdapter implements PersistenceAdapterInterface
     {
         $result = [];
         foreach ($this->bindings as $binding) {
-            if (($binding->getFromType() === $entityType && $binding->getFromId() === $entityId) ||
-                ($binding->getToType() === $entityType && $binding->getToId() === $entityId)) {
+            if (($binding->getFromType() === $entityType && $binding->getFromId() === $entityId)
+                || ($binding->getToType() === $entityType && $binding->getToId() === $entityId)) {
                 $result[] = $binding;
             }
         }
+
         return $result;
     }
 
@@ -137,14 +138,15 @@ final class MockAdapter implements PersistenceAdapterInterface
     ): array {
         $result = [];
         foreach ($this->bindings as $binding) {
-            if ($binding->getFromType() === $fromType &&
-                $binding->getFromId() === $fromId &&
-                $binding->getToType() === $toType &&
-                $binding->getToId() === $toId &&
-                ($bindingType === null || $binding->getType() === $bindingType)) {
+            if ($binding->getFromType() === $fromType
+                && $binding->getFromId() === $fromId
+                && $binding->getToType() === $toType
+                && $binding->getToId() === $toId
+                && (null === $bindingType || $binding->getType() === $bindingType)) {
                 $result[] = $binding;
             }
         }
+
         return $result;
     }
 
@@ -152,12 +154,13 @@ final class MockAdapter implements PersistenceAdapterInterface
     {
         $deletedCount = 0;
         foreach ($this->bindings as $id => $binding) {
-            if (($binding->getFromType() === $entityType && $binding->getFromId() === $entityId) ||
-                ($binding->getToType() === $entityType && $binding->getToId() === $entityId)) {
+            if (($binding->getFromType() === $entityType && $binding->getFromId() === $entityId)
+                || ($binding->getToType() === $entityType && $binding->getToId() === $entityId)) {
                 unset($this->bindings[$id]);
-                $deletedCount++;
+                ++$deletedCount;
             }
         }
+
         return $deletedCount;
     }
 

@@ -8,10 +8,10 @@ use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EdgeBinderInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Exception\AdapterException;
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
-use EdgeBinder\Exception\AdapterException;
 use EdgeBinder\Query\BindingQueryBuilder;
 use EdgeBinder\Registry\AdapterRegistry;
 use Psr\Container\ContainerInterface;
@@ -71,14 +71,14 @@ final class EdgeBinder implements EdgeBinderInterface
      * $edgeBinder = EdgeBinder::fromConfiguration($config, app());
      * ```
      *
-     * @param array<string, mixed>  $config       Instance configuration containing adapter type and settings
-     * @param ContainerInterface    $container    PSR-11 container for dependency injection
-     * @param array<string, mixed>  $globalConfig Optional global EdgeBinder configuration
+     * @param array<string, mixed> $config       Instance configuration containing adapter type and settings
+     * @param ContainerInterface   $container    PSR-11 container for dependency injection
+     * @param array<string, mixed> $globalConfig Optional global EdgeBinder configuration
      *
      * @return self Configured EdgeBinder instance
      *
      * @throws \InvalidArgumentException If required configuration is missing
-     * @throws AdapterException         If adapter type is not registered or creation fails
+     * @throws AdapterException          If adapter type is not registered or creation fails
      */
     public static function fromConfiguration(
         array $config,
@@ -87,17 +87,12 @@ final class EdgeBinder implements EdgeBinderInterface
     ): self {
         // Validate required configuration
         if (!isset($config['adapter'])) {
-            throw new \InvalidArgumentException(
-                "Configuration must contain 'adapter' key specifying the adapter type. " .
-                "Available types: " . implode(', ', AdapterRegistry::getRegisteredTypes())
-            );
+            throw new \InvalidArgumentException("Configuration must contain 'adapter' key specifying the adapter type. ".'Available types: '.implode(', ', AdapterRegistry::getRegisteredTypes()));
         }
 
         $adapterType = $config['adapter'];
         if (!is_string($adapterType) || empty($adapterType)) {
-            throw new \InvalidArgumentException(
-                "Adapter type must be a non-empty string, got: " . gettype($adapterType)
-            );
+            throw new \InvalidArgumentException('Adapter type must be a non-empty string, got: '.gettype($adapterType));
         }
 
         // Build adapter configuration structure expected by AdapterFactoryInterface
