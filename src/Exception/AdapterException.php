@@ -44,7 +44,7 @@ class AdapterException extends EdgeBinderException
 
         return new self($message);
     }
-    
+
     /**
      * Create exception for when adapter creation fails.
      *

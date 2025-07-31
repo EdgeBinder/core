@@ -71,7 +71,7 @@ final class AdapterRegistry
 
         self::$factories[$type] = $factory;
     }
-    
+
     /**
      * Create adapter instance.
      *
@@ -99,7 +99,7 @@ final class AdapterRegistry
             throw AdapterException::creationFailed($type, $e->getMessage(), $e);
         }
     }
-    
+
     /**
      * Check if adapter type is registered.
      *
@@ -121,7 +121,7 @@ final class AdapterRegistry
     {
         return array_keys(self::$factories);
     }
-    
+
     /**
      * Unregister an adapter type.
      *
