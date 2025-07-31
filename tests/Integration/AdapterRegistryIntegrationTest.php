@@ -125,6 +125,7 @@ final class AdapterRegistryIntegrationTest extends TestCase
     {
         // Create a factory that validates the configuration structure
         $factory = new class implements \EdgeBinder\Registry\AdapterFactoryInterface {
+            /** @var array<string, mixed> */
             public array $receivedConfig = [];
 
             public function createAdapter(array $config): \EdgeBinder\Contracts\PersistenceAdapterInterface

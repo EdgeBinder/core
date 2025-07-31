@@ -47,9 +47,13 @@ final class MockAdapterFactory implements AdapterFactoryInterface
  */
 final class MockAdapter implements PersistenceAdapterInterface
 {
+    /** @var array<string, BindingInterface> */
     private array $bindings = [];
+
+    /** @var array<string, mixed> */
     private array $config;
 
+    /** @param array<string, mixed> $config */
     public function __construct(array $config)
     {
         $this->config = $config;
@@ -165,6 +169,7 @@ final class MockAdapter implements PersistenceAdapterInterface
             $updatedBinding = new class($binding, $metadata) implements BindingInterface {
                 public function __construct(
                     private readonly BindingInterface $original,
+                    /** @var array<string, mixed> */
                     private readonly array $newMetadata
                 ) {
                 }
@@ -214,6 +219,22 @@ final class MockAdapter implements PersistenceAdapterInterface
                     return new \DateTimeImmutable();
                 }
 
+                public function withMetadata(array $metadata): static
+                {
+                    return new self($this->original, $metadata);
+                }
+
+                public function connects(string $fromType, string $fromId, string $toType, string $toId): bool
+                {
+                    return $this->original->connects($fromType, $fromId, $toType, $toId);
+                }
+
+                public function involves(string $entityType, string $entityId): bool
+                {
+                    return $this->original->involves($entityType, $entityId);
+                }
+
+                /** @return array<string, mixed> */
                 public function toArray(): array
                 {
                     return [
@@ -239,6 +260,8 @@ final class MockAdapter implements PersistenceAdapterInterface
      *
      * This method is useful for testing to verify that configuration
      * was passed correctly from the factory.
+     *
+     * @return array<string, mixed>
      */
     public function getConfig(): array
     {
