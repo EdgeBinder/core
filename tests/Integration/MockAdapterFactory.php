@@ -76,6 +76,12 @@ final class MockAdapter implements PersistenceAdapterInterface
         return array_values($this->bindings);
     }
 
+    public function count(QueryBuilderInterface $query): int
+    {
+        // Simple implementation for testing - just return count of all bindings
+        return count($this->bindings);
+    }
+
     public function extractEntityId(object $entity): string
     {
         // Simple implementation for testing
