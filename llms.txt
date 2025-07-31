@@ -140,6 +140,133 @@ class AdapterException extends EdgeBinderException
 - Configuration validation and normalization support
 - Testing utilities for clean test environments
 
+### Phase 2 Implementation Status: ✅ COMPLETED
+
+**EdgeBinder Integration Implemented:**
+- ✅ Factory methods added to EdgeBinder class for configuration-based creation
+- ✅ Registry-based adapter discovery and creation
+- ✅ Backward compatibility maintained with existing constructor
+- ✅ Configuration validation with helpful error messages
+- ✅ Integration tests with mock third-party adapters
+
+**New EdgeBinder Factory Methods:**
+```php
+// Create EdgeBinder from configuration using registered adapters
+EdgeBinder::fromConfiguration(array $config, ContainerInterface $container, array $globalConfig = []): EdgeBinder
+
+// Create EdgeBinder from adapter (backward compatibility)
+EdgeBinder::fromAdapter(PersistenceAdapterInterface $adapter): EdgeBinder
+```
+
+**Configuration Format:**
+```php
+$config = [
+    'adapter' => 'weaviate',  // Required: adapter type
+    'weaviate_client' => 'weaviate.client.rag',  // Client service name
+    'collection_name' => 'RAGBindings',  // Adapter-specific config
+    'schema' => ['auto_create' => true],  // More adapter-specific config
+];
+
+$edgeBinder = EdgeBinder::fromConfiguration($config, $container, $globalConfig);
+```
+
+**Integration Test Coverage:**
+- ✅ `tests/Integration/EdgeBinderFactoryTest.php` - Tests factory methods and configuration validation
+- ✅ `tests/Integration/AdapterRegistryIntegrationTest.php` - Tests complete workflow from registration to usage
+- ✅ `tests/Integration/MockAdapterFactory.php` - Mock adapter factory for testing
+
+**Key Features Delivered:**
+- Framework-agnostic EdgeBinder creation from configuration
+- Automatic adapter discovery through registry
+- Configuration structure transformation for AdapterFactoryInterface
+- Comprehensive error handling with context-aware messages
+- Full backward compatibility with existing EdgeBinder constructor
+- Mock adapters and factories for comprehensive testing
+
+## Using EdgeBinder with Registered Adapters
+
+### Framework Integration Examples
+
+#### Laminas/Mezzio
+```php
+// In Module.php or application bootstrap
+use EdgeBinder\Registry\AdapterRegistry;
+use MyVendor\WeaviateAdapter\WeaviateAdapterFactory;
+
+// Register adapter factory
+AdapterRegistry::register(new WeaviateAdapterFactory());
+
+// In your service factory
+public function __invoke(ContainerInterface $container): EdgeBinder
+{
+    $config = $container->get('config')['edgebinder']['rag'];
+    return EdgeBinder::fromConfiguration($config, $container);
+}
+```
+
+#### Symfony
+```php
+// In bundle boot method or compiler pass
+use EdgeBinder\Registry\AdapterRegistry;
+
+foreach ($container->findTaggedServiceIds('edgebinder.adapter_factory') as $id => $tags) {
+    $factory = $container->get($id);
+    AdapterRegistry::register($factory);
+}
+
+// In your service
+public function createEdgeBinder(ContainerInterface $container): EdgeBinder
+{
+    $config = $container->getParameter('edgebinder.rag');
+    return EdgeBinder::fromConfiguration($config, $container);
+}
+```
+
+#### Laravel
+```php
+// In service provider boot method
+use EdgeBinder\Registry\AdapterRegistry;
+
+public function boot()
+{
+    AdapterRegistry::register(new WeaviateAdapterFactory());
+}
+
+// In your service
+public function createEdgeBinder(): EdgeBinder
+{
+    $config = config('edgebinder.rag');
+    return EdgeBinder::fromConfiguration($config, app());
+}
+```
+
+#### Generic PHP
+```php
+// Anywhere in application bootstrap
+use EdgeBinder\Registry\AdapterRegistry;
+use EdgeBinder\EdgeBinder;
+
+// Register adapters
+AdapterRegistry::register(new WeaviateAdapterFactory());
+AdapterRegistry::register(new JanusAdapterFactory());
+
+// Create EdgeBinder instances
+$ragConfig = [
+    'adapter' => 'weaviate',
+    'weaviate_client' => 'weaviate.client.rag',
+    'collection_name' => 'RAGBindings',
+];
+
+$socialConfig = [
+    'adapter' => 'janus',
+    'janus_client' => 'janus.client.social',
+    'graph_name' => 'SocialNetwork',
+];
+
+$ragBinder = EdgeBinder::fromConfiguration($ragConfig, $container);
+$socialBinder = EdgeBinder::fromConfiguration($socialConfig, $container);
+```
+
 ## Creating New Adapters
 
 ### Step 1: Implement PersistenceAdapterInterface
