@@ -8,10 +8,10 @@ use EdgeBinder\Contracts\PersistenceAdapterInterface;
 
 /**
  * Interface for third-party adapter factories.
- * 
+ *
  * This interface provides a framework-agnostic way for third-party
  * developers to create custom adapters that work across all PHP frameworks.
- * 
+ *
  * Example implementation:
  * ```php
  * class JanusAdapterFactory implements AdapterFactoryInterface
@@ -40,7 +40,7 @@ use EdgeBinder\Contracts\PersistenceAdapterInterface;
  *     }
  * }
  * ```
- * 
+ *
  * Registration across frameworks:
  * ```php
  * // Works identically in Laminas, Symfony, Laravel, Slim, etc.
@@ -78,29 +78,29 @@ interface AdapterFactoryInterface
      * ```
      *
      * @param array<string, mixed> $config Configuration array containing:
-     *                                    - 'instance': instance-specific configuration
-     *                                    - 'global': global EdgeBinder configuration
-     *                                    - 'container': PSR-11 container for dependency injection
+     *                                     - 'instance': instance-specific configuration
+     *                                     - 'global': global EdgeBinder configuration
+     *                                     - 'container': PSR-11 container for dependency injection
      *
      * @return PersistenceAdapterInterface The configured adapter instance
      *
      * @throws \InvalidArgumentException If configuration is invalid or missing required keys
-     * @throws \RuntimeException If adapter cannot be created (e.g., connection failure)
+     * @throws \RuntimeException         If adapter cannot be created (e.g., connection failure)
      */
     public function createAdapter(array $config): PersistenceAdapterInterface;
-    
+
     /**
      * Get the adapter type this factory handles.
-     * 
+     *
      * This should be a unique string identifier for the adapter type
      * (e.g., 'janus', 'neo4j', 'redis', 'mongodb', 'weaviate').
-     * 
+     *
      * The adapter type is used for:
      * - Registry lookup and registration
      * - Configuration mapping
      * - Error reporting and debugging
      * - Framework integration
-     * 
+     *
      * @return string The adapter type identifier (lowercase, alphanumeric with underscores)
      */
     public function getAdapterType(): string;
