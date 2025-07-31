@@ -56,7 +56,7 @@ interface AdapterFactoryInterface
      * - 'instance': Instance-specific configuration including adapter type and connection details
      * - 'global': Global EdgeBinder configuration for context
      * - 'container': PSR-11 container for dependency injection
-     * 
+     *
      * Example configuration structure:
      * ```php
      * [
@@ -77,13 +77,13 @@ interface AdapterFactoryInterface
      * ]
      * ```
      *
-     * @param array $config Configuration array containing:
-     *                     - 'instance': instance-specific configuration
-     *                     - 'global': global EdgeBinder configuration  
-     *                     - 'container': PSR-11 container for dependency injection
-     * 
+     * @param array<string, mixed> $config Configuration array containing:
+     *                                    - 'instance': instance-specific configuration
+     *                                    - 'global': global EdgeBinder configuration
+     *                                    - 'container': PSR-11 container for dependency injection
+     *
      * @return PersistenceAdapterInterface The configured adapter instance
-     * 
+     *
      * @throws \InvalidArgumentException If configuration is invalid or missing required keys
      * @throws \RuntimeException If adapter cannot be created (e.g., connection failure)
      */

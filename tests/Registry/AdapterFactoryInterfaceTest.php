@@ -144,6 +144,7 @@ class AdapterFactoryInterfaceTest extends TestCase
                 private string $adapterType
             ) {}
 
+            /** @param array<string, mixed> $config */
             public function createAdapter(array $config): PersistenceAdapterInterface
             {
                 if ($this->throwInvalidArgument) {

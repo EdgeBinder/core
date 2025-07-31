@@ -137,6 +137,9 @@ class AdapterExceptionTest extends TestCase
         $previousException = new \RuntimeException('Original error', 123);
         $exceptionWithPrevious = AdapterException::creationFailed('test', 'reason', $previousException);
         $this->assertEquals(0, $exceptionWithPrevious->getCode());
-        $this->assertEquals(123, $exceptionWithPrevious->getPrevious()->getCode());
+
+        $previous = $exceptionWithPrevious->getPrevious();
+        $this->assertNotNull($previous);
+        $this->assertEquals(123, $previous->getCode());
     }
 }

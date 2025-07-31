@@ -74,12 +74,12 @@ final class AdapterRegistry
     
     /**
      * Create adapter instance.
-     * 
-     * @param string $type   The adapter type to create
-     * @param array  $config Configuration for the adapter
-     * 
+     *
+     * @param string               $type   The adapter type to create
+     * @param array<string, mixed> $config Configuration for the adapter
+     *
      * @return PersistenceAdapterInterface The created adapter instance
-     * 
+     *
      * @throws AdapterException If adapter type is not registered or creation fails
      */
     public static function create(string $type, array $config): PersistenceAdapterInterface
@@ -87,14 +87,14 @@ final class AdapterRegistry
         if (!isset(self::$factories[$type])) {
             throw AdapterException::factoryNotFound($type, array_keys(self::$factories));
         }
-        
+
         try {
             return self::$factories[$type]->createAdapter($config);
-        } catch (AdapterException $e) {
-            // Re-throw adapter exceptions as-is
-            throw $e;
         } catch (\Throwable $e) {
-            // Wrap other exceptions in AdapterException
+            // Wrap all exceptions in AdapterException for consistent error handling
+            if ($e instanceof AdapterException) {
+                throw $e;
+            }
             throw AdapterException::creationFailed($type, $e->getMessage(), $e);
         }
     }
