@@ -1,0 +1,550 @@
+# EdgeBinder Project - LLM Context
+
+## Project Overview
+
+EdgeBinder is a lightweight, storage-agnostic relationship management library for PHP 8.3+ that follows Domain-Driven Design principles. It provides a clean abstraction layer for managing entity relationships with rich metadata support across various storage backends through pluggable adapters.
+
+### Core Value Proposition
+"Bind entities with rich, metadata-driven relationships using storage-agnostic flexibility"
+
+### Key Features
+- **Storage Agnostic**: Use any storage backend through pluggable adapters
+- **Rich Metadata**: Store complex relationship data with full metadata support
+- **Type Safe**: Full PHP 8.3+ type safety with comprehensive PHPStan level 8 analysis
+- **Domain-Driven Design**: Clean abstraction that doesn't pollute domain entities
+- **Framework Agnostic**: Works with Laminas, Symfony, Laravel, Slim, and any PSR-11 framework
+- **Extensible**: Plugin architecture for third-party adapters
+
+## Repository Structure
+
+### Core Repository (edgebinder/core)
+- **Main EdgeBinder class**: `src/EdgeBinder.php` - Primary API for relationship management
+- **Contracts**: `src/Contracts/` - Core interfaces (EdgeBinderInterface, PersistenceAdapterInterface, etc.)
+- **Binding Entity**: `src/Binding.php` - Immutable binding representation
+- **Query Builder**: `src/Query/BindingQueryBuilder.php` - Fluent query interface
+- **Registry System**: `src/Registry/` - Framework-agnostic adapter extensibility
+- **Exceptions**: `src/Exception/` - Comprehensive error handling
+
+### Adapter Repositories
+- **edgebinder/weaviate-adapter**: Vector database adapter for Weaviate
+- **Future adapters**: Neo4j, Redis, MongoDB, JanusGraph, etc.
+
+### Framework Components
+- **edgebinder/laminas-component**: Laminas/Mezzio integration component
+- **Future components**: Symfony bundle, Laravel package, etc.
+
+## Core Architecture
+
+### Main Classes and Interfaces
+
+#### EdgeBinder (src/EdgeBinder.php)
+Main service class implementing EdgeBinderInterface. Provides:
+- `bind(object $from, object $to, string $type, array $metadata = []): BindingInterface`
+- `unbind(string $bindingId): void`
+- `query(): QueryBuilderInterface`
+- `findBinding(string $bindingId): ?BindingInterface`
+
+#### PersistenceAdapterInterface (src/Contracts/PersistenceAdapterInterface.php)
+Core interface that all adapters must implement:
+- `store(BindingInterface $binding): void`
+- `find(string $bindingId): ?BindingInterface`
+- `delete(string $bindingId): void`
+- `executeQuery(QueryBuilderInterface $query): array`
+- `extractEntityId(object $entity): string`
+- `extractEntityType(object $entity): string`
+- `validateAndNormalizeMetadata(array $metadata): array`
+
+#### Binding (src/Binding.php)
+Immutable value object representing a relationship:
+- Contains: id, fromType, fromId, toType, toId, type, metadata, timestamps
+- Factory method: `Binding::create()` for new instances
+- Serialization: `toArray()` and `fromArray()` methods
+
+### Framework-Agnostic Extensible Adapter System
+
+#### AdapterFactoryInterface (src/Registry/AdapterFactoryInterface.php)
+Interface for third-party adapter factories:
+```php
+interface AdapterFactoryInterface
+{
+    public function createAdapter(array $config): PersistenceAdapterInterface;
+    public function getAdapterType(): string;
+}
+```
+
+#### AdapterRegistry (src/Registry/AdapterRegistry.php)
+Static registry for managing adapter factories:
+```php
+class AdapterRegistry
+{
+    public static function register(AdapterFactoryInterface $factory): void;
+    public static function create(string $type, array $config): PersistenceAdapterInterface;
+    public static function hasAdapter(string $type): bool;
+    public static function getRegisteredTypes(): array;
+}
+```
+
+## Creating New Adapters
+
+### Step 1: Implement PersistenceAdapterInterface
+
+Create your adapter class implementing `EdgeBinder\Contracts\PersistenceAdapterInterface`:
+
+```php
+<?php
+namespace MyVendor\MyAdapter;
+
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Contracts\BindingInterface;
+use EdgeBinder\Contracts\QueryBuilderInterface;
+
+class MyCustomAdapter implements PersistenceAdapterInterface
+{
+    private $client;
+    private array $config;
+
+    public function __construct($client, array $config = [])
+    {
+        $this->client = $client;
+        $this->config = $config;
+    }
+
+    public function store(BindingInterface $binding): void
+    {
+        // Implement storage logic using your backend
+        // Convert binding to your storage format
+        // Handle errors with PersistenceException
+    }
+
+    public function find(string $bindingId): ?BindingInterface
+    {
+        // Implement retrieval logic
+        // Return null if not found
+        // Convert from storage format to Binding object
+    }
+
+    public function delete(string $bindingId): void
+    {
+        // Implement deletion logic
+        // Throw PersistenceException on failure
+    }
+
+    public function executeQuery(QueryBuilderInterface $query): array
+    {
+        // Implement query execution
+        // Return array of BindingInterface objects
+    }
+
+    public function extractEntityId(object $entity): string
+    {
+        // Try EntityInterface first, then getId() method, then id property
+        // Throw EntityExtractionException if cannot extract
+    }
+
+    public function extractEntityType(object $entity): string
+    {
+        // Try EntityInterface first, then getType() method, then class name
+    }
+
+    public function validateAndNormalizeMetadata(array $metadata): array
+    {
+        // Validate metadata for your storage requirements
+        // Throw InvalidMetadataException if invalid
+        // Return normalized metadata
+    }
+
+    // Implement other required methods...
+}
+```
+
+### Step 2: Create Adapter Factory
+
+Create a factory implementing `EdgeBinder\Registry\AdapterFactoryInterface`:
+
+```php
+<?php
+namespace MyVendor\MyAdapter;
+
+use EdgeBinder\Registry\AdapterFactoryInterface;
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
+
+class MyCustomAdapterFactory implements AdapterFactoryInterface
+{
+    public function createAdapter(array $config): PersistenceAdapterInterface
+    {
+        $container = $config['container'];
+        $instanceConfig = $config['instance'];
+        $globalConfig = $config['global'];
+        
+        // Get configuration from flatter structure
+        $client = $container->get($instanceConfig['mycustom_client'] ?? 'mycustom.client.default');
+        
+        // Build adapter configuration from flatter structure
+        $adapterConfig = [
+            'host' => $instanceConfig['host'] ?? 'localhost',
+            'port' => $instanceConfig['port'] ?? 1234,
+            // Extract other config directly from instance config
+        ];
+
+        return new MyCustomAdapter($client, $adapterConfig);
+    }
+    
+    public function getAdapterType(): string
+    {
+        return 'mycustom'; // Unique identifier for your adapter
+    }
+}
+```
+
+### Step 3: Register Adapter (Framework Examples)
+
+#### Laminas/Mezzio
+```php
+// In Module.php or application bootstrap
+\EdgeBinder\Registry\AdapterRegistry::register(new MyCustomAdapterFactory());
+```
+
+#### Symfony
+```php
+// In bundle boot method or compiler pass
+\EdgeBinder\Registry\AdapterRegistry::register(new MyCustomAdapterFactory());
+```
+
+#### Laravel
+```php
+// In service provider boot method
+\EdgeBinder\Registry\AdapterRegistry::register(new MyCustomAdapterFactory());
+```
+
+#### Generic PHP
+```php
+// Anywhere in application bootstrap
+\EdgeBinder\Registry\AdapterRegistry::register(new MyCustomAdapterFactory());
+```
+
+### Step 4: Configuration
+
+Create configuration that works across all frameworks:
+
+```php
+return [
+    'edgebinder' => [
+        'myinstance' => [
+            'adapter' => 'mycustom',
+            'mycustom_client' => 'mycustom.client.default',
+            'host' => 'localhost',
+            'port' => 1234,
+            // adapter-specific config directly in instance
+        ],
+    ],
+];
+```
+
+## Development Patterns
+
+### Error Handling
+- Use specific exceptions from `EdgeBinder\Exception\` namespace
+- `PersistenceException` for storage operations
+- `EntityExtractionException` for entity ID/type extraction
+- `InvalidMetadataException` for metadata validation
+- `BindingNotFoundException` for missing bindings
+
+### Entity Extraction Strategy
+1. Check if entity implements `EdgeBinder\Contracts\EntityInterface`
+2. Try `getId()` and `getType()` methods
+3. Fall back to reflection on `id` property and class name
+4. Throw `EntityExtractionException` if extraction fails
+
+### Metadata Validation
+- Validate data types (no resources, limited objects)
+- Check size limits for your storage backend
+- Normalize data for optimal storage
+- Support `DateTimeInterface` objects
+
+### Testing
+- Create unit tests for all adapter methods
+- Mock external dependencies (clients, connections)
+- Test error conditions and edge cases
+- Create integration tests with real storage backends
+
+## Configuration Patterns
+
+### Standard Configuration Structure (Flatter Approach)
+```php
+[
+    'instance' => [
+        'adapter' => 'adapter_type',
+        'adapter_type_client' => 'service_name',
+        // adapter-specific config directly here
+        'host' => 'localhost',
+        'port' => 1234,
+    ],
+    'global' => $globalEdgeBinderConfig, // Full global config for context
+    'container' => $psrContainer, // PSR-11 container
+]
+```
+
+### Multiple Instances (Flatter Configuration)
+Support multiple EdgeBinder instances with different adapters:
+```php
+'edgebinder' => [
+    'rag' => [
+        'adapter' => 'weaviate',
+        'weaviate_client' => 'weaviate.client.rag',
+        'collection_name' => 'RAGBindings',
+        'schema' => ['auto_create' => true, 'vectorizer' => 'text2vec-openai'],
+    ],
+    'social' => [
+        'adapter' => 'janus',
+        'janus_client' => 'janus.client.social',
+        'graph_name' => 'SocialNetwork',
+        'consistency_level' => 'eventual',
+    ],
+    'cache' => [
+        'adapter' => 'redis',
+        'redis_client' => 'redis.client.cache',
+        'ttl' => 3600,
+        'prefix' => 'edgebinder:',
+    ],
+]
+```
+
+## Key Files to Understand
+
+### Core Files
+- `src/EdgeBinder.php` - Main service implementation
+- `src/Contracts/PersistenceAdapterInterface.php` - Adapter contract
+- `src/Binding.php` - Relationship entity
+- `src/Registry/AdapterRegistry.php` - Extensibility system
+
+### Example Adapter
+- `../weaviate-adapter/src/WeaviateAdapter.php` - Reference implementation
+- Shows proper error handling, configuration, and integration patterns
+
+### Documentation
+- `EXTENSIBLE_ADAPTER_SYSTEM.md` - Complete implementation guide
+- `docs/ARCHITECTURE_DIAGRAM.md` - System architecture overview
+- `README.md` - Getting started and basic usage
+
+## Development Guidelines
+
+### Code Quality
+- PHP 8.3+ with strict types
+- PHPStan level 8 compliance
+- PSR-12 coding standards
+- 95%+ test coverage
+- Comprehensive PHPDoc
+
+### Naming Conventions
+- Adapter classes: `{Name}Adapter` (e.g., `WeaviateAdapter`)
+- Factory classes: `{Name}AdapterFactory` (e.g., `WeaviateAdapterFactory`)
+- Adapter types: lowercase (e.g., 'weaviate', 'janus', 'redis')
+- Service names: `{adapter}.client.{connection}` (e.g., 'weaviate.client.rag')
+
+## Common Implementation Patterns
+
+### Adapter Constructor Pattern
+```php
+public function __construct($client, array $config = [], ?BindingMapper $mapper = null)
+{
+    $this->client = $client;
+    $this->config = array_merge($this->getDefaultConfig(), $config);
+    $this->mapper = $mapper ?? new DefaultBindingMapper();
+}
+```
+
+### Configuration Validation Pattern
+```php
+private function validateConfiguration(array $config): void
+{
+    $required = ['client', 'collection_name'];
+    foreach ($required as $key) {
+        if (!isset($config[$key])) {
+            throw new \InvalidArgumentException("Required config key '{$key}' missing");
+        }
+    }
+}
+```
+
+### Error Handling Pattern
+```php
+try {
+    $result = $this->client->operation($data);
+    if (!$result) {
+        throw PersistenceException::operationFailed('store', 'Client returned false');
+    }
+} catch (\Exception $e) {
+    if ($e instanceof PersistenceException) {
+        throw $e;
+    }
+    throw PersistenceException::serverError('store', $e->getMessage(), $e);
+}
+```
+
+### Entity Extraction Pattern
+```php
+public function extractEntityId(object $entity): string
+{
+    if ($entity instanceof EntityInterface) {
+        return $entity->getId();
+    }
+
+    if (method_exists($entity, 'getId')) {
+        $id = $entity->getId();
+        if (is_string($id) && !empty($id)) {
+            return $id;
+        }
+    }
+
+    if (property_exists($entity, 'id')) {
+        $id = $entity->id;
+        if (is_string($id) && !empty($id)) {
+            return $id;
+        }
+    }
+
+    throw new EntityExtractionException('Cannot extract entity ID', $entity);
+}
+```
+
+## Testing Patterns
+
+### Mock Adapter Factory for Testing
+```php
+class MockAdapterFactory implements AdapterFactoryInterface
+{
+    private PersistenceAdapterInterface $adapter;
+
+    public function __construct(PersistenceAdapterInterface $adapter)
+    {
+        $this->adapter = $adapter;
+    }
+
+    public function createAdapter(array $config): PersistenceAdapterInterface
+    {
+        return $this->adapter;
+    }
+
+    public function getAdapterType(): string
+    {
+        return 'mock';
+    }
+}
+```
+
+### Integration Test Pattern
+```php
+public function testAdapterRegistrationAndUsage(): void
+{
+    // Register adapter
+    AdapterRegistry::register(new MyCustomAdapterFactory());
+
+    // Verify registration
+    $this->assertTrue(AdapterRegistry::hasAdapter('mycustom'));
+
+    // Create adapter through registry
+    $config = [
+        'instance' => [
+            'adapter' => 'mycustom',
+            'mycustom_client' => 'test.client',
+            'host' => 'localhost',
+            'port' => 1234,
+        ],
+        'global' => $globalConfig,
+        'container' => $this->container,
+    ];
+
+    $adapter = AdapterRegistry::create('mycustom', $config);
+    $this->assertInstanceOf(PersistenceAdapterInterface::class, $adapter);
+}
+```
+
+## Framework Integration Patterns
+
+### Laminas ConfigProvider Pattern
+```php
+class ConfigProvider
+{
+    public function __invoke(): array
+    {
+        return [
+            'dependencies' => [
+                'factories' => [
+                    MyCustomAdapterFactory::class => function() {
+                        return new MyCustomAdapterFactory();
+                    },
+                ],
+            ],
+        ];
+    }
+}
+
+// In Module.php
+public function onBootstrap($e)
+{
+    $container = $e->getApplication()->getServiceManager();
+    $factory = $container->get(MyCustomAdapterFactory::class);
+    AdapterRegistry::register($factory);
+}
+```
+
+### Symfony Service Configuration Pattern
+```yaml
+# services.yaml
+services:
+    MyVendor\MyAdapter\MyCustomAdapterFactory:
+        tags: ['edgebinder.adapter_factory']
+```
+
+```php
+// Compiler pass
+foreach ($container->findTaggedServiceIds('edgebinder.adapter_factory') as $id => $tags) {
+    $factory = $container->get($id);
+    AdapterRegistry::register($factory);
+}
+```
+
+### Laravel Service Provider Pattern
+```php
+class MyAdapterServiceProvider extends ServiceProvider
+{
+    public function boot()
+    {
+        AdapterRegistry::register(new MyCustomAdapterFactory());
+    }
+
+    public function register()
+    {
+        $this->app->singleton('edgebinder.adapter.mycustom', function() {
+            return new MyCustomAdapterFactory();
+        });
+    }
+}
+```
+
+## Troubleshooting Guide
+
+### Common Issues
+
+1. **Adapter Not Found**: Ensure `AdapterRegistry::register()` is called before EdgeBinder instantiation
+2. **Configuration Errors**: Verify config structure matches expected format
+3. **Container Service Missing**: Ensure client services are registered in container
+4. **Entity Extraction Fails**: Implement EntityInterface or ensure getId()/getType() methods exist
+5. **Metadata Validation**: Check size limits and data types for your storage backend
+
+### Debug Helpers
+```php
+// Check registered adapters
+$types = AdapterRegistry::getRegisteredTypes();
+var_dump($types);
+
+// Validate configuration structure
+$required = ['instance', 'global', 'container'];
+foreach ($required as $key) {
+    if (!isset($config[$key])) {
+        throw new \InvalidArgumentException("Missing config key: {$key}");
+    }
+}
+```
+
+This comprehensive context should help you understand the EdgeBinder architecture and provide complete guidance for creating new adapters that work seamlessly across all PHP frameworks.
