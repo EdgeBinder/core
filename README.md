@@ -18,6 +18,8 @@ EdgeBinder follows Domain-Driven Design principles and provides a clean abstract
 - **Domain-Driven Design**: Clean abstraction that doesn't pollute your domain entities
 - **Query Builder**: Fluent, expressive query interface for relationship discovery
 - **Performance Focused**: Optimized for relationship queries and bulk operations
+- **Framework Agnostic**: Works seamlessly with Laminas, Symfony, Laravel, Slim, and any PSR-11 framework
+- **Extensible**: Third-party adapters work across all frameworks without modifications
 
 ## Requirements
 
@@ -31,6 +33,8 @@ composer require edgebinder/core
 ```
 
 ## Quick Start
+
+### Basic Usage
 
 ```php
 use EdgeBinder\EdgeBinder;
@@ -59,6 +63,30 @@ $projects = $binder->query()
     ->type('has_access')
     ->where('access_level', 'write')
     ->get();
+```
+
+### Using Third-Party Adapters
+
+```php
+use EdgeBinder\EdgeBinder;
+use EdgeBinder\Registry\AdapterRegistry;
+
+// Register third-party adapters (typically in application bootstrap)
+AdapterRegistry::register(new \MyVendor\RedisAdapter\RedisAdapterFactory());
+AdapterRegistry::register(new \MyVendor\Neo4jAdapter\Neo4jAdapterFactory());
+
+// Create EdgeBinder with configuration-based adapter discovery
+$config = [
+    'adapter' => 'redis',
+    'redis_client' => 'redis.client.cache',
+    'ttl' => 3600,
+    'prefix' => 'edgebinder:',
+];
+
+$binder = EdgeBinder::fromConfiguration($config, $container);
+
+// Use exactly the same API regardless of adapter
+$binder->bind($user, $project, 'has_access', ['level' => 'admin']);
 ```
 
 ## Development Setup
@@ -107,30 +135,43 @@ composer security-audit
 
 ```
 src/
-├── EdgeBinder.php                 # Main EdgeBinder class
+├── EdgeBinder.php                 # Main EdgeBinder class with factory methods
 ├── Binding.php                    # Binding entity representation
 ├── Contracts/
-│   └── PersistenceAdapterInterface.php  # Adapter interface
+│   ├── PersistenceAdapterInterface.php  # Adapter interface
+│   ├── EdgeBinderInterface.php    # Main service interface
+│   └── EntityInterface.php       # Optional entity interface
 ├── Query/
 │   └── BindingQueryBuilder.php    # Query builder for relationships
-├── Adapter/
+├── Registry/                      # Extensible adapter system
+│   ├── AdapterFactoryInterface.php # Factory interface for third-party adapters
+│   └── AdapterRegistry.php       # Static registry for adapter discovery
+├── Storage/
 │   └── InMemory/
 │       └── InMemoryAdapter.php    # Built-in in-memory adapter
 └── Exception/
+    ├── AdapterException.php       # Adapter-related exceptions
     ├── BindingNotFoundException.php
     ├── EntityExtractionException.php
     ├── InvalidMetadataException.php
     └── PersistenceException.php
 
+docs/                              # Comprehensive documentation
+├── EXTENSIBLE_ADAPTERS.md         # Third-party adapter development guide
+├── FRAMEWORK_INTEGRATION.md       # Framework-specific integration examples
+└── MIGRATION_GUIDE.md            # Migration guide for existing adapters
+
+examples/                          # Reference implementations
+└── RedisAdapter/                  # Complete Redis adapter example
+    ├── src/
+    │   ├── RedisAdapter.php
+    │   └── RedisAdapterFactory.php
+    └── tests/
+
 tests/
-├── BindingTest.php                # Binding entity tests
-├── EdgeBinderTest.php             # Main class tests
-├── Query/
-│   └── BindingQueryBuilderTest.php
-├── Contracts/
-│   └── InterfaceContractTest.php
-└── Exception/
-    └── ExceptionTest.php
+├── Integration/                   # Integration tests for adapter system
+├── Registry/                      # Registry system tests
+└── ... (unit tests for all components)
 ```
 
 
@@ -151,6 +192,56 @@ This project follows Test-Driven Development (TDD):
 - High test coverage is maintained (97%+ line coverage)
 - Comprehensive unit tests for all components
 - Clean, maintainable test code
+
+## Extensible Adapter System
+
+EdgeBinder features a powerful extensible adapter system that allows third-party developers to create custom adapters that work seamlessly across all PHP frameworks.
+
+### Creating Third-Party Adapters
+
+```php
+// 1. Implement the adapter
+class MyCustomAdapter implements PersistenceAdapterInterface { /* ... */ }
+
+// 2. Create a factory
+class MyCustomAdapterFactory implements AdapterFactoryInterface
+{
+    public function createAdapter(array $config): PersistenceAdapterInterface
+    {
+        $client = $config['container']->get($config['instance']['my_client']);
+        return new MyCustomAdapter($client, $config['instance']);
+    }
+
+    public function getAdapterType(): string { return 'mycustom'; }
+}
+
+// 3. Register in any framework
+AdapterRegistry::register(new MyCustomAdapterFactory());
+
+// 4. Use with consistent configuration
+$edgeBinder = EdgeBinder::fromConfiguration([
+    'adapter' => 'mycustom',
+    'my_client' => 'my.service.client',
+    'custom_option' => 'value',
+], $container);
+```
+
+### Framework Integration
+
+The same adapter works identically across all frameworks:
+
+- **Laminas/Mezzio**: Register in `Module.php` or `ConfigProvider`
+- **Symfony**: Register in bundle boot or compiler pass
+- **Laravel**: Register in service provider boot method
+- **Slim**: Register in application bootstrap
+- **Generic PHP**: Register anywhere in application setup
+
+### Documentation
+
+- **[Extensible Adapters Guide](docs/EXTENSIBLE_ADAPTERS.md)** - Complete development guide
+- **[Framework Integration](docs/FRAMEWORK_INTEGRATION.md)** - Framework-specific examples
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Converting existing adapters
+- **[Redis Adapter Example](examples/RedisAdapter/)** - Complete reference implementation
 
 ## Related Projects
 
