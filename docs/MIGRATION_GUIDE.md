@@ -538,7 +538,7 @@ If you encounter issues during migration:
 1. Check the [Extensible Adapters Guide](EXTENSIBLE_ADAPTERS.md) for implementation details
 2. Review [Framework Integration Guide](FRAMEWORK_INTEGRATION.md) for framework-specific patterns
 3. Examine the [Redis Adapter Example](../examples/RedisAdapter/) for a complete reference
-4. Open an issue on the [GitHub repository](https://github.com/EdgeBinder/EdgeBinder/issues) with migration questions
+4. Open an issue on the [GitHub repository](https://github.com/EdgeBinder/edgebinder/issues) with migration questions
 
 ## Next Steps
 

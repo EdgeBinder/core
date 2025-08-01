@@ -15,13 +15,13 @@
     "authors": [
         {
             "name": "EdgeBinder Contributors",
-            "homepage": "https://github.com/EdgeBinder/EdgeBinder/contributors"
+            "homepage": "https://github.com/EdgeBinder/edgebinder/contributors"
         }
     ],
-    "homepage": "https://github.com/EdgeBinder/EdgeBinder",
+    "homepage": "https://github.com/EdgeBinder/edgebinder",
     "support": {
-        "issues": "https://github.com/EdgeBinder/EdgeBinder/issues",
-        "source": "https://github.com/EdgeBinder/EdgeBinder"
+        "issues": "https://github.com/EdgeBinder/edgebinder/issues",
+        "source": "https://github.com/EdgeBinder/edgebinder"
     },
     "require": {
         "php": "^8.3"

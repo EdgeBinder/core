@@ -1,8 +1,8 @@
 # EdgeBinder Core
 
-[![Tests](https://github.com/EdgeBinder/EdgeBinder/actions/workflows/test.yaml/badge.svg)](https://github.com/EdgeBinder/EdgeBinder/actions/workflows/test.yaml)
-[![Lint](https://github.com/EdgeBinder/EdgeBinder/actions/workflows/lint.yaml/badge.svg)](https://github.com/EdgeBinder/EdgeBinder/actions/workflows/lint.yaml)
-[![codecov](https://codecov.io/gh/EdgeBinder/EdgeBinder/graph/badge.svg)](https://codecov.io/gh/EdgeBinder/EdgeBinder)
+[![Tests](https://github.com/EdgeBinder/edgebinder/actions/workflows/test.yaml/badge.svg)](https://github.com/EdgeBinder/edgebinder/actions/workflows/test.yaml)
+[![Lint](https://github.com/EdgeBinder/edgebinder/actions/workflows/lint.yaml/badge.svg)](https://github.com/EdgeBinder/edgebinder/actions/workflows/lint.yaml)
+[![codecov](https://codecov.io/gh/EdgeBinder/edgebinder/graph/badge.svg)](https://codecov.io/gh/EdgeBinder/edgebinder)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.3-blue.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
@@ -94,8 +94,8 @@ $binder->bind($user, $project, 'has_access', ['level' => 'admin']);
 ### 1. Clone and Install Dependencies
 
 ```bash
-git clone https://github.com/EdgeBinder/EdgeBinder.git
-cd EdgeBinder
+git clone https://github.com/EdgeBinder/edgebinder.git
+cd edgebinder
 composer install
 ```
 
@@ -251,7 +251,7 @@ The same adapter works identically across all frameworks:
 
 ## Support
 
-For issues and questions, please use the [GitHub issue tracker](https://github.com/EdgeBinder/EdgeBinder/issues).
+For issues and questions, please use the [GitHub issue tracker](https://github.com/EdgeBinder/edgebinder/issues).
 
 ## License
 
