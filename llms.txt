@@ -541,7 +541,9 @@ Support multiple EdgeBinder instances with different adapters:
 - Shows proper error handling, configuration, and integration patterns
 
 ### Documentation
-- `EXTENSIBLE_ADAPTER_SYSTEM.md` - Complete implementation guide
+- `docs/EXTENSIBLE_ADAPTERS.md` - Complete developer guide for creating third-party adapters
+- `docs/FRAMEWORK_INTEGRATION.md` - Framework-specific integration examples
+- `docs/MIGRATION_GUIDE.md` - Migration guide for existing custom adapters
 - `docs/ARCHITECTURE_DIAGRAM.md` - System architecture overview
 - `README.md` - Getting started and basic usage
 
