@@ -7,7 +7,7 @@ This guide provides comprehensive instructions for creating third-party adapters
 EdgeBinder's extensible adapter system allows you to create custom persistence adapters that:
 
 - **Work across all PHP frameworks** (Laminas, Symfony, Laravel, Slim, etc.)
-- **Require no modifications** to EdgeBinder Core
+- **Require no modifications** to EdgeBinder
 - **Use a single package** that works everywhere
 - **Access framework services** through PSR-11 containers
 - **Follow consistent patterns** for configuration and integration

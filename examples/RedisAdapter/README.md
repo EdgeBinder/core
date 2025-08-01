@@ -275,4 +275,4 @@ This is a reference implementation. For a real Redis adapter package:
 
 ## License
 
-This example is provided under the same license as EdgeBinder Core (Apache 2.0).
+This example is provided under the same license as EdgeBinder (Apache 2.0).

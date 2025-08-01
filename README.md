@@ -1,4 +1,4 @@
-# EdgeBinder Core
+# EdgeBinder
 
 [![Tests](https://github.com/EdgeBinder/edgebinder/actions/workflows/test.yaml/badge.svg)](https://github.com/EdgeBinder/edgebinder/actions/workflows/test.yaml)
 [![Lint](https://github.com/EdgeBinder/edgebinder/actions/workflows/lint.yaml/badge.svg)](https://github.com/EdgeBinder/edgebinder/actions/workflows/lint.yaml)

@@ -131,7 +131,7 @@ $relations->updateMetadata($relationshipId, [
 
 ### Core Library (`edgebinder/edgebinder`)
 ```
-edgebinder-core/
+edgebinder/
 ├── src/
 │   ├── EdgeBinder.php
 │   ├── Contracts/

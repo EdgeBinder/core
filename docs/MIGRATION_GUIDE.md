@@ -1,6 +1,6 @@
 # Migration Guide: Converting to Extensible Adapters
 
-This guide helps you migrate existing custom EdgeBinder adapters to the new extensible adapter system introduced in EdgeBinder Core v2.0.
+This guide helps you migrate existing custom EdgeBinder adapters to the new extensible adapter system introduced in EdgeBinder v2.0.
 
 ## Overview
 
