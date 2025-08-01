@@ -1,5 +1,5 @@
 {
-    "name": "edgebinder/core",
+    "name": "edgebinder/edgebinder",
     "description": "Lightweight, storage-agnostic relationship management for clean domain architectures",
     "license": "Apache-2.0",
     "type": "library",
@@ -15,13 +15,13 @@
     "authors": [
         {
             "name": "EdgeBinder Contributors",
-            "homepage": "https://github.com/edgebinder/core/contributors"
+            "homepage": "https://github.com/EdgeBinder/EdgeBinder/contributors"
         }
     ],
-    "homepage": "https://github.com/edgebinder/core",
+    "homepage": "https://github.com/EdgeBinder/EdgeBinder",
     "support": {
-        "issues": "https://github.com/edgebinder/core/issues",
-        "source": "https://github.com/edgebinder/core"
+        "issues": "https://github.com/EdgeBinder/EdgeBinder/issues",
+        "source": "https://github.com/EdgeBinder/EdgeBinder"
     },
     "require": {
         "php": "^8.3"

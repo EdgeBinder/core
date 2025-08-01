@@ -17,7 +17,7 @@ EdgeBinder is a lightweight, storage-agnostic relationship management library fo
 
 ## Repository Structure
 
-### Core Repository (edgebinder/core)
+### Core Repository (edgebinder/edgebinder)
 - **Main EdgeBinder class**: `src/EdgeBinder.php` - Primary API for relationship management
 - **Contracts**: `src/Contracts/` - Core interfaces (EdgeBinderInterface, PersistenceAdapterInterface, etc.)
 - **Binding Entity**: `src/Binding.php` - Immutable binding representation

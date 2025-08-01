@@ -53,7 +53,7 @@ $binder->updateMetadata($bindingId, [
 
 #### 2. Storage Adapters (Separate Packages)
 
-**Core Package** (`edgebinder/core`):
+**Core Package** (`edgebinder/edgebinder`):
 - **InMemoryAdapter** - Built-in for testing and development
 
 **Official Adapter Packages**:
@@ -129,7 +129,7 @@ $relations->updateMetadata($relationshipId, [
 
 ## Library Structure
 
-### Core Library (`edgebinder/core`)
+### Core Library (`edgebinder/edgebinder`)
 ```
 edgebinder-core/
 ├── src/
@@ -388,7 +388,7 @@ $path = $relations->findPath($startNode, $endNode)
 - [ ] Create `InMemoryAdapter` for testing
 - [ ] Basic query builder (`BindingQueryBuilder`)
 - [ ] Comprehensive test suite for core
-- [ ] Publish `edgebinder/core` package
+- [ ] Publish `edgebinder/edgebinder` package
 
 ### Phase 2: Essential Adapters (4-6 weeks)
 - [ ] `edgebinder/pdo-adapter` - SQL database support
@@ -433,7 +433,7 @@ $path = $relations->findPath($startNode, $endNode)
 ## Package Ecosystem
 
 ### Core Package
-- **`edgebinder/core`** - Main EdgeBinder library with interfaces and InMemoryAdapter
+- **`edgebinder/edgebinder`** - Main EdgeBinder library with interfaces and InMemoryAdapter
 
 ### Official Adapter Packages
 - **`edgebinder/pdo-adapter`** - SQL database support
@@ -447,16 +447,16 @@ $path = $relations->findPath($startNode, $endNode)
 ### Installation Examples
 ```bash
 # Core library only (with InMemoryAdapter)
-composer require edgebinder/core
+composer require edgebinder/edgebinder
 
 # With SQL support
-composer require edgebinder/core edgebinder/pdo-adapter
+composer require edgebinder/edgebinder edgebinder/pdo-adapter
 
 # With vector database support
-composer require edgebinder/core edgebinder/weaviate-adapter
+composer require edgebinder/edgebinder edgebinder/weaviate-adapter
 
 # With graph database support
-composer require edgebinder/core edgebinder/janusgraph-adapter
+composer require edgebinder/edgebinder edgebinder/janusgraph-adapter
 ```
 
 ## Next Steps

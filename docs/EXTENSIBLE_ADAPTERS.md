@@ -433,6 +433,6 @@ foreach ($required as $key) {
 ## Support
 
 For questions and issues:
-- Check the [GitHub issue tracker](https://github.com/edgebinder/core/issues)
+- Check the [GitHub issue tracker](https://github.com/EdgeBinder/EdgeBinder/issues)
 - Review existing adapter implementations for patterns
 - Join the EdgeBinder community discussions
