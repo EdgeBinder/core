@@ -159,7 +159,7 @@ final class InMemoryAdapterTest extends TestCase
         $entity = new class {};
 
         $type = $this->adapter->extractEntityType($entity);
-        $this->assertStringContains('class@anonymous', $type);
+        $this->assertStringContainsString('class@anonymous', $type);
     }
 
     public function testExtractEntityTypeIgnoresEmptyStringFromGetType(): void
@@ -169,7 +169,7 @@ final class InMemoryAdapterTest extends TestCase
         };
 
         $type = $this->adapter->extractEntityType($entity);
-        $this->assertStringContains('class@anonymous', $type);
+        $this->assertStringContainsString('class@anonymous', $type);
     }
 
     // ========================================

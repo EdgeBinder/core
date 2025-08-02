@@ -122,7 +122,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
      */
     private function validateMetadataRecursive(array $data, int $depth): array
     {
-        if ($depth > 10) {
+        if ($depth >= 10) {
             throw new InvalidMetadataException('Metadata nesting too deep (max 10 levels)');
         }
 
@@ -172,7 +172,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         } catch (InvalidMetadataException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            throw new PersistenceException('Failed to store binding: ' . $e->getMessage(), 0, $e);
+            throw new PersistenceException('store', 'Failed to store binding: ' . $e->getMessage(), $e);
         }
     }
 
@@ -281,7 +281,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
 
             return array_values($results);
         } catch (\Throwable $e) {
-            throw new PersistenceException('Query execution failed: ' . $e->getMessage(), 0, $e);
+            throw new PersistenceException('query', 'Query execution failed: ' . $e->getMessage(), $e);
         }
     }
 
@@ -292,7 +292,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
             $results = $this->filterBindings($criteria);
             return count($results);
         } catch (\Throwable $e) {
-            throw new PersistenceException('Query count failed: ' . $e->getMessage(), 0, $e);
+            throw new PersistenceException('count', 'Query count failed: ' . $e->getMessage(), $e);
         }
     }
 
@@ -314,7 +314,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         } catch (InvalidMetadataException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            throw new PersistenceException('Failed to update metadata: ' . $e->getMessage(), 0, $e);
+            throw new PersistenceException('update', 'Failed to update metadata: ' . $e->getMessage(), $e);
         }
     }
 
@@ -494,7 +494,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                 'exists' => array_key_exists($field, $metadata),
                 'null' => !array_key_exists($field, $metadata) || $fieldValue === null,
                 'not_null' => array_key_exists($field, $metadata) && $fieldValue !== null,
-                default => throw new PersistenceException("Unsupported operator: {$operator}"),
+                default => throw new PersistenceException('query', "Unsupported operator: {$operator}"),
             };
         });
     }
