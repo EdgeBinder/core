@@ -1020,6 +1020,258 @@ final class InMemoryAdapterTest extends TestCase
         $this->assertEmpty($results);
     }
 
+    // ========================================
+    // Additional Coverage Tests
+    // ========================================
+
+    public function testExecuteQueryWithFromEntityFilter(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access');
+        $binding2 = Binding::create('User', 'user-2', 'Project', 'project-1', 'has_access');
+        $binding3 = Binding::create('Admin', 'admin-1', 'Project', 'project-1', 'manages');
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        $query = $this->createMockQueryBuilder([
+            'from_type' => 'User',
+            'from_id' => 'user-1',
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(1, $results);
+        $this->assertContains($binding1, $results);
+    }
+
+    public function testExecuteQueryWithFromEntityAndToEntityFilter(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access');
+        $binding2 = Binding::create('User', 'user-1', 'Project', 'project-2', 'has_access');
+        $binding3 = Binding::create('User', 'user-2', 'Project', 'project-1', 'has_access');
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        $query = $this->createMockQueryBuilder([
+            'from_type' => 'User',
+            'from_id' => 'user-1',
+            'to_type' => 'Project',
+            'to_id' => 'project-1',
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(1, $results);
+        $this->assertContains($binding1, $results);
+    }
+
+    public function testExecuteQueryWithOnlyFromTypeFilter(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access');
+        $binding2 = Binding::create('User', 'user-2', 'Project', 'project-1', 'has_access');
+        $binding3 = Binding::create('Admin', 'admin-1', 'Project', 'project-1', 'manages');
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        // Note: from_type alone doesn't filter - need from_type AND from_id together
+        // This test actually returns all bindings since from_type without from_id is ignored
+        $query = $this->createMockQueryBuilder([
+            'from_type' => 'User',
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(3, $results); // All bindings returned
+        $this->assertContains($binding1, $results);
+        $this->assertContains($binding2, $results);
+        $this->assertContains($binding3, $results);
+    }
+
+    public function testExecuteQueryWithOnlyToTypeFilter(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access');
+        $binding2 = Binding::create('User', 'user-1', 'Task', 'task-1', 'assigned_to');
+        $binding3 = Binding::create('User', 'user-2', 'Project', 'project-2', 'has_access');
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        // Note: to_type alone doesn't filter - need to_type AND to_id together
+        // This test actually returns all bindings since to_type without to_id is ignored
+        $query = $this->createMockQueryBuilder([
+            'to_type' => 'Project',
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(3, $results); // All bindings returned
+        $this->assertContains($binding1, $results);
+        $this->assertContains($binding2, $results);
+        $this->assertContains($binding3, $results);
+    }
+
+    public function testGetOrderingValueForAllBindingFields(): void
+    {
+        $binding = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access', ['priority' => 5]);
+        $this->adapter->store($binding);
+
+        // Test ordering by different fields to cover getOrderingValue method
+        $fields = ['id', 'fromType', 'fromId', 'toType', 'toId', 'type', 'createdAt', 'updatedAt'];
+
+        foreach ($fields as $field) {
+            $query = $this->createMockQueryBuilder([
+                'order_by' => [
+                    'field' => $field,
+                    'direction' => 'asc',
+                ],
+            ]);
+
+            $results = $this->adapter->executeQuery($query);
+            $this->assertCount(1, $results);
+            $this->assertSame($binding, $results[0]);
+        }
+    }
+
+    public function testGetOrderingValueForMetadataField(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access', ['priority' => 1]);
+        $binding2 = Binding::create('User', 'user-2', 'Project', 'project-2', 'has_access', ['priority' => 2]);
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+
+        $query = $this->createMockQueryBuilder([
+            'order_by' => [
+                'field' => 'metadata.priority',
+                'direction' => 'desc',
+            ],
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(2, $results);
+        // Check by priority value instead of object identity
+        $this->assertEquals(2, $results[0]->getMetadata()['priority']); // priority 2 first
+        $this->assertEquals(1, $results[1]->getMetadata()['priority']); // priority 1 second
+    }
+
+    public function testExecuteQueryWithComplexFiltering(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access', ['score' => 85]);
+        $binding2 = Binding::create('User', 'user-2', 'Project', 'project-2', 'has_access', ['score' => 95]);
+        $binding3 = Binding::create('Admin', 'admin-1', 'Project', 'project-3', 'manages', ['score' => 75]);
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        // Test filtering by binding type
+        $query = $this->createMockQueryBuilder([
+            'type' => 'has_access',
+        ]);
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(2, $results);
+        $this->assertContains($binding1, $results);
+        $this->assertContains($binding2, $results);
+    }
+
+    public function testValidateMetadataWithComplexNestedStructure(): void
+    {
+        $metadata = [
+            'user' => [
+                'profile' => [
+                    'settings' => [
+                        'notifications' => [
+                            'email' => true,
+                            'sms' => false,
+                        ],
+                    ],
+                ],
+            ],
+            'timestamps' => [
+                'created' => new \DateTime('2023-01-01'),
+                'updated' => new \DateTimeImmutable('2023-01-02'),
+            ],
+        ];
+
+        $result = $this->adapter->validateAndNormalizeMetadata($metadata);
+
+        $this->assertTrue($result['user']['profile']['settings']['notifications']['email']);
+        $this->assertFalse($result['user']['profile']['settings']['notifications']['sms']);
+        $this->assertIsString($result['timestamps']['created']);
+        $this->assertIsString($result['timestamps']['updated']);
+    }
+
+    public function testRemoveFromIndexesWithMultipleBindings(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access');
+        $binding2 = Binding::create('User', 'user-1', 'Project', 'project-2', 'has_access');
+        $binding3 = Binding::create('User', 'user-2', 'Project', 'project-1', 'has_access');
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        // Delete one binding and verify indexes are properly updated
+        $this->adapter->delete($binding1->getId());
+
+        // user-1 should still have binding2
+        $userBindings = $this->adapter->findByEntity('User', 'user-1');
+        $this->assertCount(1, $userBindings);
+        $this->assertContains($binding2, $userBindings);
+
+        // project-1 should still have binding3
+        $projectBindings = $this->adapter->findByEntity('Project', 'project-1');
+        $this->assertCount(1, $projectBindings);
+        $this->assertContains($binding3, $projectBindings);
+    }
+
+    public function testStoreBindingUpdatesTypeIndex(): void
+    {
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access');
+        $binding2 = Binding::create('User', 'user-2', 'Project', 'project-2', 'has_access');
+        $binding3 = Binding::create('User', 'user-3', 'Project', 'project-3', 'owns');
+
+        $this->adapter->store($binding1);
+        $this->adapter->store($binding2);
+        $this->adapter->store($binding3);
+
+        // Test that type filtering works (which relies on type index)
+        $query = $this->createMockQueryBuilder([
+            'type' => 'has_access',
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertCount(2, $results);
+        $this->assertContains($binding1, $results);
+        $this->assertContains($binding2, $results);
+    }
+
+    public function testExecuteQueryWithEmptyResults(): void
+    {
+        // Test query that returns no results
+        $query = $this->createMockQueryBuilder([
+            'from_type' => 'NonExistent',
+            'from_id' => 'non-existent',
+        ]);
+
+        $results = $this->adapter->executeQuery($query);
+        $this->assertEmpty($results);
+    }
+
+    public function testCountQueryWithEmptyResults(): void
+    {
+        // Test count query that returns zero
+        $query = $this->createMockQueryBuilder([
+            'from_type' => 'NonExistent',
+            'from_id' => 'non-existent',
+        ]);
+
+        $count = $this->adapter->count($query);
+        $this->assertSame(0, $count);
+    }
+
     /**
      * Create a mock QueryBuilderInterface for testing.
      *
