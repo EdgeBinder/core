@@ -49,10 +49,10 @@ composer test-coverage
 ### By Test Type
 ```bash
 # Unit tests only (fast)
-vendor/bin/phpunit --testsuite="Unit Tests"
+vendor/bin/phpunit tests/Unit
 
 # Integration tests only
-vendor/bin/phpunit --testsuite="Integration Tests"
+vendor/bin/phpunit tests/Integration
 ```
 
 ### By Directory
