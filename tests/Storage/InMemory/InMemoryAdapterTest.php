@@ -136,7 +136,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityIdIgnoresEmptyStringFromGetId(): void
     {
         $entity = new class {
-            public function getId(): string { return ''; }
+            public function getId(): string
+            {
+                return '';
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -146,7 +149,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityIdIgnoresNullFromGetId(): void
     {
         $entity = new class {
-            public function getId(): ?string { return null; }
+            public function getId(): ?string
+            {
+                return null;
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -156,8 +162,15 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityTypeFromEntityInterface(): void
     {
         $entity = new class implements EntityInterface {
-            public function getId(): string { return 'test-id'; }
-            public function getType(): string { return 'CustomType'; }
+            public function getId(): string
+            {
+                return 'test-id';
+            }
+
+            public function getType(): string
+            {
+                return 'CustomType';
+            }
         };
 
         $type = $this->adapter->extractEntityType($entity);
@@ -167,7 +180,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityTypeFromGetTypeMethod(): void
     {
         $entity = new class {
-            public function getType(): string { return 'MethodType'; }
+            public function getType(): string
+            {
+                return 'MethodType';
+            }
         };
 
         $type = $this->adapter->extractEntityType($entity);
@@ -185,7 +201,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityTypeIgnoresEmptyStringFromGetType(): void
     {
         $entity = new class {
-            public function getType(): string { return ''; }
+            public function getType(): string
+            {
+                return '';
+            }
         };
 
         $type = $this->adapter->extractEntityType($entity);
@@ -626,8 +645,8 @@ final class InMemoryAdapterTest extends TestCase
         // Test greater than
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'score', 'operator' => '>', 'value' => 80]
-            ]
+                ['field' => 'score', 'operator' => '>', 'value' => 80],
+            ],
         ]);
         $results = $this->adapter->executeQuery($query);
         $this->assertCount(2, $results);
@@ -635,8 +654,8 @@ final class InMemoryAdapterTest extends TestCase
         // Test less than or equal
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'score', 'operator' => '<=', 'value' => 85]
-            ]
+                ['field' => 'score', 'operator' => '<=', 'value' => 85],
+            ],
         ]);
         $results = $this->adapter->executeQuery($query);
         $this->assertCount(2, $results);
@@ -644,8 +663,8 @@ final class InMemoryAdapterTest extends TestCase
         // Test not equal
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => '!=', 'value' => 'read']
-            ]
+                ['field' => 'level', 'operator' => '!=', 'value' => 'read'],
+            ],
         ]);
         $results = $this->adapter->executeQuery($query);
         $this->assertCount(2, $results);
@@ -663,8 +682,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => 'in', 'value' => ['read', 'write']]
-            ]
+                ['field' => 'level', 'operator' => 'in', 'value' => ['read', 'write']],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -685,8 +704,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => 'not_in', 'value' => ['read', 'write']]
-            ]
+                ['field' => 'level', 'operator' => 'not_in', 'value' => ['read', 'write']],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -706,8 +725,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'score', 'operator' => 'between', 'value' => [80, 90]]
-            ]
+                ['field' => 'score', 'operator' => 'between', 'value' => [80, 90]],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -725,8 +744,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => 'exists']
-            ]
+                ['field' => 'level', 'operator' => 'exists'],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -746,8 +765,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => 'null']
-            ]
+                ['field' => 'level', 'operator' => 'null'],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -768,8 +787,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => 'not_null']
-            ]
+                ['field' => 'level', 'operator' => 'not_null'],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -784,8 +803,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => 'unsupported', 'value' => 'test']
-            ]
+                ['field' => 'level', 'operator' => 'unsupported', 'value' => 'test'],
+            ],
         ]);
 
         $this->expectException(PersistenceException::class);
@@ -806,13 +825,13 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => '=', 'value' => 'read']
+                ['field' => 'level', 'operator' => '=', 'value' => 'read'],
             ],
             'orWhere' => [
                 [
-                    ['field' => 'level', 'operator' => '=', 'value' => 'admin']
-                ]
-            ]
+                    ['field' => 'level', 'operator' => '=', 'value' => 'admin'],
+                ],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -835,7 +854,7 @@ final class InMemoryAdapterTest extends TestCase
 
         // Test ordering by fromId ascending
         $query = $this->createMockQueryBuilder([
-            'orderBy' => ['field' => 'fromId', 'direction' => 'asc']
+            'orderBy' => ['field' => 'fromId', 'direction' => 'asc'],
         ]);
         $results = $this->adapter->executeQuery($query);
         $this->assertSame($binding2, $results[0]); // user-1 comes first
@@ -843,7 +862,7 @@ final class InMemoryAdapterTest extends TestCase
 
         // Test ordering by fromId descending
         $query = $this->createMockQueryBuilder([
-            'orderBy' => ['field' => 'fromId', 'direction' => 'desc']
+            'orderBy' => ['field' => 'fromId', 'direction' => 'desc'],
         ]);
         $results = $this->adapter->executeQuery($query);
         $this->assertSame($binding1, $results[0]); // user-2 comes first
@@ -861,7 +880,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding3);
 
         $query = $this->createMockQueryBuilder([
-            'orderBy' => ['field' => 'priority', 'direction' => 'asc']
+            'orderBy' => ['field' => 'priority', 'direction' => 'asc'],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -880,7 +899,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'orderBy' => ['field' => 'createdAt', 'direction' => 'desc']
+            'orderBy' => ['field' => 'createdAt', 'direction' => 'desc'],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -897,7 +916,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'orderBy' => ['field' => 'priority', 'direction' => 'asc']
+            'orderBy' => ['field' => 'priority', 'direction' => 'asc'],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -1009,6 +1028,7 @@ final class InMemoryAdapterTest extends TestCase
     {
         $mock = $this->createMock(QueryBuilderInterface::class);
         $mock->method('getCriteria')->willReturn($criteria);
+
         return $mock;
     }
 }
