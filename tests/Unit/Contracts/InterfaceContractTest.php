@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Contracts;
+namespace EdgeBinder\Tests\Unit\Contracts;
 
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EdgeBinderInterface;

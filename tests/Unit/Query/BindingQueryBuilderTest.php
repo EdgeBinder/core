@@ -2,14 +2,39 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Query;
+namespace EdgeBinder\Tests\Unit\Query;
 
+use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
+use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 use EdgeBinder\Query\BindingQueryBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+
+/**
+ * Test entity for query builder tests.
+ */
+class QueryTestEntity implements EntityInterface
+{
+    public function __construct(
+        private readonly string $id,
+        private readonly string $type
+    ) {
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+}
 
 class BindingQueryBuilderTest extends TestCase
 {
@@ -21,6 +46,29 @@ class BindingQueryBuilderTest extends TestCase
     {
         $this->storage = $this->createMock(PersistenceAdapterInterface::class);
         $this->queryBuilder = new BindingQueryBuilder($this->storage);
+    }
+
+    /**
+     * Create a real storage setup with test data for execution tests.
+     *
+     * @return array{InMemoryAdapter, BindingQueryBuilder, BindingInterface[]}
+     */
+    private function createRealStorageSetup(): array
+    {
+        $realStorage = new InMemoryAdapter();
+
+        // Create some test bindings
+        $binding1 = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access', ['level' => 'read']);
+        $binding2 = Binding::create('User', 'user-1', 'Project', 'project-2', 'has_access', ['level' => 'write']);
+        $binding3 = Binding::create('User', 'user-2', 'Project', 'project-1', 'owns', ['created_at' => '2023-01-01']);
+
+        $realStorage->store($binding1);
+        $realStorage->store($binding2);
+        $realStorage->store($binding3);
+
+        $realQueryBuilder = new BindingQueryBuilder($realStorage);
+
+        return [$realStorage, $realQueryBuilder, [$binding1, $binding2, $binding3]];
     }
 
     public function testImplementsQueryBuilderInterface(): void
@@ -399,74 +447,65 @@ class BindingQueryBuilderTest extends TestCase
 
     public function testGet(): void
     {
-        $expectedBindings = [
-            $this->createMock(BindingInterface::class),
-            $this->createMock(BindingInterface::class),
-        ];
+        [$realStorage, $realQueryBuilder, $bindings] = $this->createRealStorageSetup();
 
-        $this->storage->expects($this->once())
-            ->method('executeQuery')
-            ->with($this->queryBuilder)
-            ->willReturn($expectedBindings);
+        // Query for user-1 bindings
+        $result = $realQueryBuilder->from('User', 'user-1')->get();
 
-        $result = $this->queryBuilder->get();
-
-        $this->assertSame($expectedBindings, $result);
+        $this->assertCount(2, $result);
+        $this->assertContains($bindings[0], $result); // binding1
+        $this->assertContains($bindings[1], $result); // binding2
     }
 
     public function testFirst(): void
     {
-        $binding = $this->createMock(BindingInterface::class);
-        $this->storage->expects($this->once())
-            ->method('executeQuery')
-            ->willReturn([$binding]);
+        [$realStorage, $realQueryBuilder, $bindings] = $this->createRealStorageSetup();
 
-        $result = $this->queryBuilder->first();
+        // Query for user-1 bindings and get first
+        $result = $realQueryBuilder->from('User', 'user-1')->first();
 
-        $this->assertSame($binding, $result);
+        $this->assertNotNull($result);
+        $this->assertInstanceOf(BindingInterface::class, $result);
+        $this->assertEquals('User', $result->getFromType());
+        $this->assertEquals('user-1', $result->getFromId());
     }
 
     public function testFirstReturnsNullWhenNoResults(): void
     {
-        $this->storage->expects($this->once())
-            ->method('executeQuery')
-            ->willReturn([]);
+        [$realStorage, $realQueryBuilder, $bindings] = $this->createRealStorageSetup();
 
-        $result = $this->queryBuilder->first();
+        // Query for non-existent user
+        $result = $realQueryBuilder->from('User', 'nonexistent')->first();
 
         $this->assertNull($result);
     }
 
     public function testCount(): void
     {
-        $this->storage->expects($this->once())
-            ->method('count')
-            ->with($this->queryBuilder)
-            ->willReturn(42);
+        [$realStorage, $realQueryBuilder, $bindings] = $this->createRealStorageSetup();
 
-        $result = $this->queryBuilder->count();
+        // Count all bindings for user-1
+        $result = $realQueryBuilder->from('User', 'user-1')->count();
 
-        $this->assertEquals(42, $result);
+        $this->assertEquals(2, $result);
     }
 
     public function testExistsReturnsTrueWhenCountGreaterThanZero(): void
     {
-        $this->storage->expects($this->once())
-            ->method('count')
-            ->willReturn(5);
+        [$realStorage, $realQueryBuilder, $bindings] = $this->createRealStorageSetup();
 
-        $result = $this->queryBuilder->exists();
+        // Check if user-1 has any bindings
+        $result = $realQueryBuilder->from('User', 'user-1')->exists();
 
         $this->assertTrue($result);
     }
 
     public function testExistsReturnsFalseWhenCountIsZero(): void
     {
-        $this->storage->expects($this->once())
-            ->method('count')
-            ->willReturn(0);
+        [$realStorage, $realQueryBuilder, $bindings] = $this->createRealStorageSetup();
 
-        $result = $this->queryBuilder->exists();
+        // Check if non-existent user has any bindings
+        $result = $realQueryBuilder->from('User', 'nonexistent')->exists();
 
         $this->assertFalse($result);
     }

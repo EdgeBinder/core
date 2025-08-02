@@ -38,11 +38,18 @@ composer require edgebinder/edgebinder
 
 ```php
 use EdgeBinder\EdgeBinder;
-use EdgeBinder\Adapter\InMemory\InMemoryAdapter;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 
-// Create binder with in-memory adapter (for testing/development)
+// Option 1: Direct adapter usage (for testing/development)
 $adapter = new InMemoryAdapter();
 $binder = new EdgeBinder($adapter);
+
+// Option 2: Configuration-based approach (recommended)
+use EdgeBinder\Registry\AdapterRegistry;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapterFactory;
+
+AdapterRegistry::register(new InMemoryAdapterFactory());
+$binder = EdgeBinder::fromConfiguration(['adapter' => 'inmemory'], $container);
 
 // Bind entities with rich metadata
 $binder->bind(
@@ -104,6 +111,12 @@ composer install
 ```bash
 # Run all tests
 composer test
+
+# Run only unit tests
+vendor/bin/phpunit --testsuite="Unit Tests"
+
+# Run only integration tests
+vendor/bin/phpunit --testsuite="Integration Tests"
 
 # Run tests with coverage
 composer test-coverage
@@ -169,9 +182,14 @@ examples/                          # Reference implementations
     └── tests/
 
 tests/
-├── Integration/                   # Integration tests for adapter system
-├── Registry/                      # Registry system tests
-└── ... (unit tests for all components)
+├── Unit/                          # Unit tests (196 tests)
+│   ├── Contracts/                 # Interface contract tests
+│   ├── Exception/                 # Exception hierarchy tests
+│   ├── Persistence/InMemory/      # InMemory adapter tests
+│   ├── Query/                     # Query builder tests
+│   └── Registry/                  # Registry system tests
+└── Integration/                   # Integration tests (14 tests)
+    └── ... (end-to-end workflow tests)
 ```
 
 
@@ -187,11 +205,21 @@ tests/
 
 ## Testing Philosophy
 
-This project follows Test-Driven Development (TDD):
-- Tests drive the implementation
-- High test coverage is maintained (97%+ line coverage)
-- Comprehensive unit tests for all components
-- Clean, maintainable test code
+This project follows Test-Driven Development (TDD) with a clear separation of test types:
+
+### Unit Tests (`tests/Unit/`)
+- **196 tests** focusing on individual component behavior
+- Fast, isolated tests with mocked dependencies
+- Test individual methods, edge cases, and error conditions
+- Organized by source code structure
+
+### Integration Tests (`tests/Integration/`)
+- **14 tests** focusing on cross-component workflows
+- Test real interactions between components
+- End-to-end scenarios with actual dependencies
+- Framework integration and adapter lifecycle testing
+
+**Total Coverage**: 210 tests with 97%+ line coverage
 
 ## Extensible Adapter System
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Registry;
+namespace EdgeBinder\Tests\Unit\Registry;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Registry\AdapterFactoryInterface;

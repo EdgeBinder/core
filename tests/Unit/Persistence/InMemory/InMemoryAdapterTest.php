@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Storage\InMemory;
+namespace EdgeBinder\Tests\Unit\Persistence\InMemory;
 
 use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
@@ -11,7 +11,7 @@ use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
-use EdgeBinder\Storage\InMemory\InMemoryAdapter;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -515,7 +515,8 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'from' => ['type' => 'User', 'id' => 'user-1'],
+            'from_type' => 'User',
+            'from_id' => 'user-1',
         ]);
 
         $results = $this->adapter->executeQuery($query);

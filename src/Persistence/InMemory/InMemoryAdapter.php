@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Storage\InMemory;
+namespace EdgeBinder\Persistence\InMemory;
 
 use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
@@ -412,9 +412,9 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         $results = array_values($this->bindings);
 
         // Filter by from entity
-        if (isset($criteria['from'])) {
-            $fromType = $criteria['from']['type'];
-            $fromId = $criteria['from']['id'];
+        if (isset($criteria['from_type']) && isset($criteria['from_id'])) {
+            $fromType = $criteria['from_type'];
+            $fromId = $criteria['from_id'];
             $results = array_filter(
                 $results,
                 fn (BindingInterface $binding) => $binding->getFromType() === $fromType && $binding->getFromId() === $fromId
@@ -422,9 +422,9 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         }
 
         // Filter by to entity
-        if (isset($criteria['to'])) {
-            $toType = $criteria['to']['type'];
-            $toId = $criteria['to']['id'];
+        if (isset($criteria['to_type']) && isset($criteria['to_id'])) {
+            $toType = $criteria['to_type'];
+            $toId = $criteria['to_id'];
             $results = array_filter(
                 $results,
                 fn (BindingInterface $binding) => $binding->getToType() === $toType && $binding->getToId() === $toId

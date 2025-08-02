@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Exception;
+namespace EdgeBinder\Tests\Unit\Exception;
 
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\EdgeBinderException;

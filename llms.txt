@@ -23,7 +23,11 @@ EdgeBinder is a lightweight, storage-agnostic relationship management library fo
 - **Binding Entity**: `src/Binding.php` - Immutable binding representation
 - **Query Builder**: `src/Query/BindingQueryBuilder.php` - Fluent query interface
 - **Registry System**: `src/Registry/` - Framework-agnostic adapter extensibility
+- **InMemory Adapter**: `src/Persistence/InMemory/` - Built-in adapter for testing and development
 - **Exceptions**: `src/Exception/` - Comprehensive error handling
+
+### Built-in Adapters
+- **InMemoryAdapter**: Built-in in-memory adapter for testing and development (`src/Persistence/InMemory/`)
 
 ### Adapter Repositories
 - **edgebinder/weaviate-adapter**: Vector database adapter for Weaviate
@@ -59,6 +63,43 @@ Immutable value object representing a relationship:
 - Contains: id, fromType, fromId, toType, toId, type, metadata, timestamps
 - Factory method: `Binding::create()` for new instances
 - Serialization: `toArray()` and `fromArray()` methods
+
+### Built-in InMemory Adapter
+
+#### InMemoryAdapter (src/Persistence/InMemory/InMemoryAdapter.php)
+Production-ready in-memory persistence adapter:
+- **Full PersistenceAdapterInterface implementation** with all 12 required methods
+- **Efficient indexing** - Entity index and type index for fast lookups
+- **Advanced query support** - All operators, ordering, pagination, OR conditions
+- **Comprehensive metadata validation** - Type checking, nesting limits, DateTime normalization
+- **Robust entity extraction** - EntityInterface, methods, properties, fallback strategies
+- **Memory management** - Proper cleanup and index maintenance
+- **Error handling** - Consistent exception hierarchy with helpful messages
+
+**Use Cases:**
+- Unit testing and integration testing
+- Development environments and prototyping
+- Small applications with minimal persistence needs
+- Reference implementation for other adapters
+
+#### InMemoryAdapterFactory (src/Persistence/InMemory/InMemoryAdapterFactory.php)
+Factory for creating InMemory adapter instances:
+- **Implements AdapterFactoryInterface** for consistent extensible adapter pattern
+- **Adapter type**: `'inmemory'`
+- **No configuration required** - Ignores all config parameters
+- **Framework integration** - Works with EdgeBinder::fromConfiguration()
+
+**Usage:**
+```php
+use EdgeBinder\Registry\AdapterRegistry;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapterFactory;
+
+// Register factory
+AdapterRegistry::register(new InMemoryAdapterFactory());
+
+// Create EdgeBinder
+$edgeBinder = EdgeBinder::fromConfiguration(['adapter' => 'inmemory'], $container);
+```
 
 ### Framework-Agnostic Extensible Adapter System
 
@@ -273,12 +314,18 @@ public function createEdgeBinder(): EdgeBinder
 // Anywhere in application bootstrap
 use EdgeBinder\Registry\AdapterRegistry;
 use EdgeBinder\EdgeBinder;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapterFactory;
 
 // Register adapters
+AdapterRegistry::register(new InMemoryAdapterFactory());
 AdapterRegistry::register(new WeaviateAdapterFactory());
 AdapterRegistry::register(new JanusAdapterFactory());
 
 // Create EdgeBinder instances
+$testConfig = [
+    'adapter' => 'inmemory', // For testing/development
+];
+
 $ragConfig = [
     'adapter' => 'weaviate',
     'weaviate_client' => 'weaviate.client.rag',
@@ -291,6 +338,7 @@ $socialConfig = [
     'graph_name' => 'SocialNetwork',
 ];
 
+$testBinder = EdgeBinder::fromConfiguration($testConfig, $container);
 $ragBinder = EdgeBinder::fromConfiguration($ragConfig, $container);
 $socialBinder = EdgeBinder::fromConfiguration($socialConfig, $container);
 ```
@@ -507,6 +555,9 @@ return [
 Support multiple EdgeBinder instances with different adapters:
 ```php
 'edgebinder' => [
+    'test' => [
+        'adapter' => 'inmemory', // For testing/development
+    ],
     'rag' => [
         'adapter' => 'weaviate',
         'weaviate_client' => 'weaviate.client.rag',
@@ -536,8 +587,13 @@ Support multiple EdgeBinder instances with different adapters:
 - `src/Binding.php` - Relationship entity
 - `src/Registry/AdapterRegistry.php` - Extensibility system
 
-### Example Adapter
-- `../weaviate-adapter/src/WeaviateAdapter.php` - Reference implementation
+### Built-in Adapter
+- `src/Persistence/InMemory/InMemoryAdapter.php` - Built-in reference implementation
+- `src/Persistence/InMemory/InMemoryAdapterFactory.php` - Factory for extensible adapter system
+- Shows complete PersistenceAdapterInterface implementation with comprehensive test coverage
+
+### Example Third-Party Adapter
+- `../weaviate-adapter/src/WeaviateAdapter.php` - Third-party adapter reference
 - Shows proper error handling, configuration, and integration patterns
 
 ### Documentation
@@ -557,9 +613,9 @@ Support multiple EdgeBinder instances with different adapters:
 - Comprehensive PHPDoc
 
 ### Naming Conventions
-- Adapter classes: `{Name}Adapter` (e.g., `WeaviateAdapter`)
-- Factory classes: `{Name}AdapterFactory` (e.g., `WeaviateAdapterFactory`)
-- Adapter types: lowercase (e.g., 'weaviate', 'janus', 'redis')
+- Adapter classes: `{Name}Adapter` (e.g., `InMemoryAdapter`, `WeaviateAdapter`)
+- Factory classes: `{Name}AdapterFactory` (e.g., `InMemoryAdapterFactory`, `WeaviateAdapterFactory`)
+- Adapter types: lowercase (e.g., 'inmemory', 'weaviate', 'janus', 'redis')
 - Service names: `{adapter}.client.{connection}` (e.g., 'weaviate.client.rag')
 
 ## Common Implementation Patterns

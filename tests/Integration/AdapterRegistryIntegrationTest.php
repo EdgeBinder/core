@@ -137,7 +137,7 @@ final class AdapterRegistryIntegrationTest extends TestCase
                     throw new \InvalidArgumentException('Invalid configuration structure');
                 }
 
-                return new MockAdapter($config);
+                return new \EdgeBinder\Persistence\InMemory\InMemoryAdapter();
             }
 
             public function getAdapterType(): string
