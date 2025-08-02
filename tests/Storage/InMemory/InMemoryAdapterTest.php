@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Tests\Storage\InMemory;
 
-use EdgeBinder\Storage\InMemory\InMemoryAdapter;
+use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
-use EdgeBinder\Exception\PersistenceException;
-use EdgeBinder\Exception\EntityExtractionException;
-use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\BindingNotFoundException;
-use EdgeBinder\Binding;
+use EdgeBinder\Exception\InvalidMetadataException;
+use EdgeBinder\Exception\PersistenceException;
+use EdgeBinder\Storage\InMemory\InMemoryAdapter;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,8 +36,15 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityIdFromEntityInterface(): void
     {
         $entity = new class implements EntityInterface {
-            public function getId(): string { return 'entity-123'; }
-            public function getType(): string { return 'TestEntity'; }
+            public function getId(): string
+            {
+                return 'entity-123';
+            }
+
+            public function getType(): string
+            {
+                return 'TestEntity';
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -48,7 +54,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityIdFromGetIdMethod(): void
     {
         $entity = new class {
-            public function getId(): string { return 'method-456'; }
+            public function getId(): string
+            {
+                return 'method-456';
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -58,7 +67,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityIdFromGetIdMethodWithIntId(): void
     {
         $entity = new class {
-            public function getId(): int { return 789; }
+            public function getId(): int
+            {
+                return 789;
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -68,7 +80,10 @@ final class InMemoryAdapterTest extends TestCase
     public function testExtractEntityIdFromGetIdMethodWithFloatId(): void
     {
         $entity = new class {
-            public function getId(): float { return 123.45; }
+            public function getId(): float
+            {
+                return 123.45;
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -259,7 +274,7 @@ final class InMemoryAdapterTest extends TestCase
         // Create deeply nested array (11 levels deep)
         $metadata = [];
         $current = &$metadata;
-        for ($i = 0; $i < 11; $i++) {
+        for ($i = 0; $i < 11; ++$i) {
             $current['level'] = [];
             $current = &$current['level'];
         }
@@ -276,7 +291,7 @@ final class InMemoryAdapterTest extends TestCase
         // Create 10 levels deep (should be allowed)
         $metadata = [];
         $current = &$metadata;
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $current['level'] = [];
             $current = &$current['level'];
         }
@@ -481,7 +496,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'from' => ['type' => 'User', 'id' => 'user-1']
+            'from' => ['type' => 'User', 'id' => 'user-1'],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -498,7 +513,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'type' => 'owns'
+            'type' => 'owns',
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -515,7 +530,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'to' => ['type' => 'Project', 'id' => 'project-1']
+            'to' => ['type' => 'Project', 'id' => 'project-1'],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -534,8 +549,8 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'where' => [
-                ['field' => 'level', 'operator' => '=', 'value' => 'write']
-            ]
+                ['field' => 'level', 'operator' => '=', 'value' => 'write'],
+            ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -552,7 +567,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding2);
 
         $query = $this->createMockQueryBuilder([
-            'orderBy' => ['field' => 'fromId', 'direction' => 'desc']
+            'orderBy' => ['field' => 'fromId', 'direction' => 'desc'],
         ]);
 
         $results = $this->adapter->executeQuery($query);
@@ -573,7 +588,7 @@ final class InMemoryAdapterTest extends TestCase
 
         $query = $this->createMockQueryBuilder([
             'offset' => 1,
-            'limit' => 1
+            'limit' => 1,
         ]);
 
         $results = $this->adapter->executeQuery($query);

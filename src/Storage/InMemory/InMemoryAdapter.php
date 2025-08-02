@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace EdgeBinder\Storage\InMemory;
 
-use EdgeBinder\Contracts\PersistenceAdapterInterface;
-use EdgeBinder\Contracts\BindingInterface;
-use EdgeBinder\Contracts\QueryBuilderInterface;
-use EdgeBinder\Contracts\EntityInterface;
-use EdgeBinder\Exception\PersistenceException;
-use EdgeBinder\Exception\EntityExtractionException;
-use EdgeBinder\Exception\InvalidMetadataException;
-use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Binding;
+use EdgeBinder\Contracts\BindingInterface;
+use EdgeBinder\Contracts\EntityInterface;
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Exception\BindingNotFoundException;
+use EdgeBinder\Exception\InvalidMetadataException;
+use EdgeBinder\Exception\PersistenceException;
 
 /**
  * In-memory persistence adapter for EdgeBinder.
@@ -70,7 +69,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                 $property = $reflection->getProperty('id');
                 $property->setAccessible(true);
                 $id = $property->getValue($entity);
-                
+
                 if (is_string($id) && !empty($id)) {
                     return $id;
                 }
@@ -142,7 +141,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                     // Convert DateTime objects to ISO 8601 strings
                     $normalized[$key] = $value->format(\DateTimeInterface::ATOM);
                 } else {
-                    throw new InvalidMetadataException('Metadata can only contain DateTime objects, not ' . get_class($value));
+                    throw new InvalidMetadataException('Metadata can only contain DateTime objects, not '.get_class($value));
                 }
             } elseif (is_array($value)) {
                 $normalized[$key] = $this->validateMetadataRecursive($value, $depth + 1);
@@ -159,20 +158,19 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
     {
         try {
             $id = $binding->getId();
-            
+
             // Validate metadata
             $this->validateAndNormalizeMetadata($binding->getMetadata());
-            
+
             // Store binding
             $this->bindings[$id] = $binding;
-            
+
             // Update indexes
             $this->updateIndexes($binding);
-            
         } catch (InvalidMetadataException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            throw new PersistenceException('store', 'Failed to store binding: ' . $e->getMessage(), $e);
+            throw new PersistenceException('store', 'Failed to store binding: '.$e->getMessage(), $e);
         }
     }
 
@@ -182,7 +180,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
     private function updateIndexes(BindingInterface $binding): void
     {
         $id = $binding->getId();
-        
+
         // Update entity index for from entity
         $fromKey = $binding->getFromType();
         $fromId = $binding->getFromId();
@@ -195,7 +193,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (!in_array($id, $this->entityIndex[$fromKey][$fromId], true)) {
             $this->entityIndex[$fromKey][$fromId][] = $id;
         }
-        
+
         // Update entity index for to entity
         $toKey = $binding->getToType();
         $toId = $binding->getToId();
@@ -208,7 +206,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (!in_array($id, $this->entityIndex[$toKey][$toId], true)) {
             $this->entityIndex[$toKey][$toId][] = $id;
         }
-        
+
         // Update type index
         $type = $binding->getType();
         if (!isset($this->typeIndex[$type])) {
@@ -227,14 +225,14 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
     public function findByEntity(string $entityType, string $entityId): array
     {
         $bindingIds = $this->entityIndex[$entityType][$entityId] ?? [];
-        
+
         $bindings = [];
         foreach ($bindingIds as $id) {
             if (isset($this->bindings[$id])) {
                 $bindings[] = $this->bindings[$id];
             }
         }
-        
+
         return $bindings;
     }
 
@@ -252,7 +250,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                 && $binding->getFromId() === $fromId
                 && $binding->getToType() === $toType
                 && $binding->getToId() === $toId
-                && ($bindingType === null || $binding->getType() === $bindingType)
+                && (null === $bindingType || $binding->getType() === $bindingType)
             ) {
                 $results[] = $binding;
             }
@@ -281,7 +279,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
 
             return array_values($results);
         } catch (\Throwable $e) {
-            throw new PersistenceException('query', 'Query execution failed: ' . $e->getMessage(), $e);
+            throw new PersistenceException('query', 'Query execution failed: '.$e->getMessage(), $e);
         }
     }
 
@@ -290,9 +288,10 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         try {
             $criteria = $query->getCriteria();
             $results = $this->filterBindings($criteria);
+
             return count($results);
         } catch (\Throwable $e) {
-            throw new PersistenceException('count', 'Query count failed: ' . $e->getMessage(), $e);
+            throw new PersistenceException('count', 'Query count failed: '.$e->getMessage(), $e);
         }
     }
 
@@ -310,11 +309,10 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
             $binding = $this->bindings[$bindingId];
             $updatedBinding = $binding->withMetadata($normalizedMetadata);
             $this->bindings[$bindingId] = $updatedBinding;
-
         } catch (InvalidMetadataException $e) {
             throw $e;
         } catch (\Throwable $e) {
-            throw new PersistenceException('update', 'Failed to update metadata: ' . $e->getMessage(), $e);
+            throw new PersistenceException('update', 'Failed to update metadata: '.$e->getMessage(), $e);
         }
     }
 
@@ -341,7 +339,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         foreach ($bindingsToDelete as $binding) {
             try {
                 $this->delete($binding->getId());
-                $deletedCount++;
+                ++$deletedCount;
             } catch (BindingNotFoundException $e) {
                 // Binding was already deleted, continue
             }
@@ -363,7 +361,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (isset($this->entityIndex[$fromType][$fromId])) {
             $this->entityIndex[$fromType][$fromId] = array_filter(
                 $this->entityIndex[$fromType][$fromId],
-                fn($bindingId) => $bindingId !== $id
+                fn ($bindingId) => $bindingId !== $id
             );
             if (empty($this->entityIndex[$fromType][$fromId])) {
                 unset($this->entityIndex[$fromType][$fromId]);
@@ -379,7 +377,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (isset($this->entityIndex[$toType][$toId])) {
             $this->entityIndex[$toType][$toId] = array_filter(
                 $this->entityIndex[$toType][$toId],
-                fn($bindingId) => $bindingId !== $id
+                fn ($bindingId) => $bindingId !== $id
             );
             if (empty($this->entityIndex[$toType][$toId])) {
                 unset($this->entityIndex[$toType][$toId]);
@@ -394,7 +392,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (isset($this->typeIndex[$type])) {
             $this->typeIndex[$type] = array_filter(
                 $this->typeIndex[$type],
-                fn($bindingId) => $bindingId !== $id
+                fn ($bindingId) => $bindingId !== $id
             );
             if (empty($this->typeIndex[$type])) {
                 unset($this->typeIndex[$type]);
@@ -417,8 +415,9 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (isset($criteria['from'])) {
             $fromType = $criteria['from']['type'];
             $fromId = $criteria['from']['id'];
-            $results = array_filter($results, fn(BindingInterface $binding) =>
-                $binding->getFromType() === $fromType && $binding->getFromId() === $fromId
+            $results = array_filter(
+                $results,
+                fn (BindingInterface $binding) => $binding->getFromType() === $fromType && $binding->getFromId() === $fromId
             );
         }
 
@@ -426,16 +425,18 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         if (isset($criteria['to'])) {
             $toType = $criteria['to']['type'];
             $toId = $criteria['to']['id'];
-            $results = array_filter($results, fn(BindingInterface $binding) =>
-                $binding->getToType() === $toType && $binding->getToId() === $toId
+            $results = array_filter(
+                $results,
+                fn (BindingInterface $binding) => $binding->getToType() === $toType && $binding->getToId() === $toId
             );
         }
 
         // Filter by binding type
         if (isset($criteria['type'])) {
             $type = $criteria['type'];
-            $results = array_filter($results, fn(BindingInterface $binding) =>
-                $binding->getType() === $type
+            $results = array_filter(
+                $results,
+                fn (BindingInterface $binding) => $binding->getType() === $type
             );
         }
 
@@ -489,11 +490,11 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                 '<=' => $fieldValue <= $value,
                 'in' => is_array($value) && in_array($fieldValue, $value, true),
                 'not_in' => is_array($value) && !in_array($fieldValue, $value, true),
-                'between' => is_array($value) && count($value) === 2 &&
-                           $fieldValue >= $value[0] && $fieldValue <= $value[1],
+                'between' => is_array($value) && 2 === count($value)
+                           && $fieldValue >= $value[0] && $fieldValue <= $value[1],
                 'exists' => array_key_exists($field, $metadata),
-                'null' => !array_key_exists($field, $metadata) || $fieldValue === null,
-                'not_null' => array_key_exists($field, $metadata) && $fieldValue !== null,
+                'null' => !array_key_exists($field, $metadata) || null === $fieldValue,
+                'not_null' => array_key_exists($field, $metadata) && null !== $fieldValue,
                 default => throw new PersistenceException('query', "Unsupported operator: {$operator}"),
             };
         });
@@ -518,7 +519,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
 
             $comparison = $valueA <=> $valueB;
 
-            return $direction === 'desc' ? -$comparison : $comparison;
+            return 'desc' === $direction ? -$comparison : $comparison;
         });
 
         return $bindings;
