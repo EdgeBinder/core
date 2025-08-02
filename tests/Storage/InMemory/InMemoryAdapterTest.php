@@ -99,6 +99,11 @@ final class InMemoryAdapterTest extends TestCase
     {
         $entity = new class {
             private string $id = 'private-123';
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
         };
 
         $id = $this->adapter->extractEntityId($entity);
@@ -212,6 +217,7 @@ final class InMemoryAdapterTest extends TestCase
     public function testValidateAndNormalizeMetadataThrowsOnResource(): void
     {
         $resource = fopen('php://memory', 'r');
+        $this->assertIsResource($resource);
         $metadata = ['resource' => $resource];
 
         $this->expectException(InvalidMetadataException::class);
@@ -220,7 +226,9 @@ final class InMemoryAdapterTest extends TestCase
         try {
             $this->adapter->validateAndNormalizeMetadata($metadata);
         } finally {
-            fclose($resource);
+            if (is_resource($resource)) {
+                fclose($resource);
+            }
         }
     }
 
@@ -237,6 +245,7 @@ final class InMemoryAdapterTest extends TestCase
 
     public function testValidateAndNormalizeMetadataThrowsOnNonStringKey(): void
     {
+        /** @var array<string, mixed> $metadata */
         $metadata = [123 => 'value'];
 
         $this->expectException(InvalidMetadataException::class);
@@ -300,6 +309,7 @@ final class InMemoryAdapterTest extends TestCase
     public function testStoreBindingWithInvalidMetadata(): void
     {
         $resource = fopen('php://memory', 'r');
+        $this->assertIsResource($resource);
         $binding = Binding::create('User', 'user-1', 'Project', 'project-1', 'has_access', ['resource' => $resource]);
 
         $this->expectException(InvalidMetadataException::class);
@@ -307,7 +317,9 @@ final class InMemoryAdapterTest extends TestCase
         try {
             $this->adapter->store($binding);
         } finally {
-            fclose($resource);
+            if (is_resource($resource)) {
+                fclose($resource);
+            }
         }
     }
 
@@ -339,6 +351,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->updateMetadata($binding->getId(), $newMetadata);
 
         $updated = $this->adapter->find($binding->getId());
+        $this->assertNotNull($updated);
         $this->assertSame($newMetadata, $updated->getMetadata());
     }
 
@@ -356,6 +369,7 @@ final class InMemoryAdapterTest extends TestCase
         $this->adapter->store($binding);
 
         $resource = fopen('php://memory', 'r');
+        $this->assertIsResource($resource);
         $invalidMetadata = ['resource' => $resource];
 
         $this->expectException(InvalidMetadataException::class);
@@ -363,7 +377,9 @@ final class InMemoryAdapterTest extends TestCase
         try {
             $this->adapter->updateMetadata($binding->getId(), $invalidMetadata);
         } finally {
-            fclose($resource);
+            if (is_resource($resource)) {
+                fclose($resource);
+            }
         }
     }
 
@@ -971,6 +987,8 @@ final class InMemoryAdapterTest extends TestCase
 
     /**
      * Create a mock QueryBuilderInterface for testing.
+     *
+     * @param array<string, mixed> $criteria
      */
     private function createMockQueryBuilder(array $criteria): QueryBuilderInterface
     {
