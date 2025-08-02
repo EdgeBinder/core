@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EdgeBinder\Tests\Unit\Registry;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -169,64 +170,7 @@ class AdapterFactoryInterfaceTest extends TestCase
 
             private function createMockAdapter(): PersistenceAdapterInterface
             {
-                return new class implements PersistenceAdapterInterface {
-                    public function extractEntityId(object $entity): string
-                    {
-                        return 'test-id';
-                    }
-
-                    public function extractEntityType(object $entity): string
-                    {
-                        return 'test-type';
-                    }
-
-                    public function validateAndNormalizeMetadata(array $metadata): array
-                    {
-                        return $metadata;
-                    }
-
-                    public function store(\EdgeBinder\Contracts\BindingInterface $binding): void
-                    {
-                    }
-
-                    public function find(string $bindingId): ?\EdgeBinder\Contracts\BindingInterface
-                    {
-                        return null;
-                    }
-
-                    public function findByEntity(string $entityType, string $entityId): array
-                    {
-                        return [];
-                    }
-
-                    public function findBetweenEntities(string $fromType, string $fromId, string $toType, string $toId, ?string $bindingType = null): array
-                    {
-                        return [];
-                    }
-
-                    public function executeQuery(\EdgeBinder\Contracts\QueryBuilderInterface $query): array
-                    {
-                        return [];
-                    }
-
-                    public function count(\EdgeBinder\Contracts\QueryBuilderInterface $query): int
-                    {
-                        return 0;
-                    }
-
-                    public function updateMetadata(string $bindingId, array $metadata): void
-                    {
-                    }
-
-                    public function delete(string $bindingId): void
-                    {
-                    }
-
-                    public function deleteByEntity(string $entityType, string $entityId): int
-                    {
-                        return 0;
-                    }
-                };
+                return new InMemoryAdapter();
             }
         };
     }

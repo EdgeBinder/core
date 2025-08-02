@@ -6,6 +6,7 @@ namespace EdgeBinder\Tests\Unit\Registry;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Exception\AdapterException;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 use EdgeBinder\Registry\AdapterRegistry;
 use PHPUnit\Framework\TestCase;
@@ -51,8 +52,8 @@ class AdapterRegistryTest extends TestCase
 
     public function testCreateAdapterSuccess(): void
     {
-        $mockAdapter = $this->createMock(PersistenceAdapterInterface::class);
-        $factory = $this->createMockFactory('test_adapter', $mockAdapter);
+        $inMemoryAdapter = new InMemoryAdapter();
+        $factory = $this->createMockFactory('test_adapter', $inMemoryAdapter);
 
         AdapterRegistry::register($factory);
 
@@ -64,7 +65,7 @@ class AdapterRegistryTest extends TestCase
 
         $result = AdapterRegistry::create('test_adapter', $config);
 
-        $this->assertSame($mockAdapter, $result);
+        $this->assertSame($inMemoryAdapter, $result);
     }
 
     public function testCreateUnregisteredAdapterThrowsException(): void

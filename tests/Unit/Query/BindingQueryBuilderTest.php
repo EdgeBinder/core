@@ -78,21 +78,18 @@ class BindingQueryBuilderTest extends TestCase
 
     public function testFromWithObject(): void
     {
+        // Use real InMemoryAdapter for this test since we're testing entity extraction
+        $realStorage = new InMemoryAdapter();
+        $realQueryBuilder = new BindingQueryBuilder($realStorage);
+
         $entity = new \stdClass();
-        $this->storage->expects($this->once())
-            ->method('extractEntityType')
-            ->with($entity)
-            ->willReturn('User');
-        $this->storage->expects($this->once())
-            ->method('extractEntityId')
-            ->with($entity)
-            ->willReturn('user-123');
+        $entity->id = 'user-123'; // InMemoryAdapter will extract this
 
-        $result = $this->queryBuilder->from($entity);
+        $result = $realQueryBuilder->from($entity);
 
-        $this->assertNotSame($this->queryBuilder, $result);
+        $this->assertNotSame($realQueryBuilder, $result);
         $this->assertEquals([
-            'from_type' => 'User',
+            'from_type' => 'stdClass',
             'from_id' => 'user-123',
         ], $result->getCriteria());
     }
@@ -117,20 +114,17 @@ class BindingQueryBuilderTest extends TestCase
 
     public function testToWithObject(): void
     {
-        $entity = new \stdClass();
-        $this->storage->expects($this->once())
-            ->method('extractEntityType')
-            ->with($entity)
-            ->willReturn('Project');
-        $this->storage->expects($this->once())
-            ->method('extractEntityId')
-            ->with($entity)
-            ->willReturn('project-456');
+        // Use real InMemoryAdapter for this test since we're testing entity extraction
+        $realStorage = new InMemoryAdapter();
+        $realQueryBuilder = new BindingQueryBuilder($realStorage);
 
-        $result = $this->queryBuilder->to($entity);
+        $entity = new \stdClass();
+        $entity->id = 'project-456'; // InMemoryAdapter will extract this
+
+        $result = $realQueryBuilder->to($entity);
 
         $this->assertEquals([
-            'to_type' => 'Project',
+            'to_type' => 'stdClass',
             'to_id' => 'project-456',
         ], $result->getCriteria());
     }
@@ -398,11 +392,14 @@ class BindingQueryBuilderTest extends TestCase
 
     public function testComplexQuery(): void
     {
-        $entity = new \stdClass();
-        $this->storage->method('extractEntityType')->willReturn('User');
-        $this->storage->method('extractEntityId')->willReturn('user-123');
+        // Use real InMemoryAdapter for this test since we're testing entity extraction
+        $realStorage = new InMemoryAdapter();
+        $realQueryBuilder = new BindingQueryBuilder($realStorage);
 
-        $result = $this->queryBuilder
+        $entity = new \stdClass();
+        $entity->id = 'user-123'; // InMemoryAdapter will extract this
+
+        $result = $realQueryBuilder
             ->from($entity)
             ->type('has_access')
             ->where('access_level', 'admin')
@@ -413,7 +410,7 @@ class BindingQueryBuilderTest extends TestCase
             ->offset(20);
 
         $expected = [
-            'from_type' => 'User',
+            'from_type' => 'stdClass',
             'from_id' => 'user-123',
             'type' => 'has_access',
             'where' => [

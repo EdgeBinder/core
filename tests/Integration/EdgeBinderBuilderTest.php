@@ -7,6 +7,7 @@ namespace EdgeBinder\Tests\Integration;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\EdgeBinder;
 use EdgeBinder\Exception\AdapterException;
+use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 use EdgeBinder\Registry\AdapterRegistry;
 use PHPUnit\Framework\TestCase;
@@ -31,9 +32,9 @@ final class EdgeBinderBuilderTest extends TestCase
 
     public function testFromConfigurationCreatesEdgeBinderWithRegisteredAdapter(): void
     {
-        // Register a mock adapter factory
-        $mockAdapter = $this->createMockAdapter();
-        $mockFactory = $this->createMockAdapterFactory('test', $mockAdapter);
+        // Register an InMemory adapter factory
+        $inMemoryAdapter = new InMemoryAdapter();
+        $mockFactory = $this->createMockAdapterFactory('test', $inMemoryAdapter);
         AdapterRegistry::register($mockFactory);
 
         // Create container mock
@@ -54,14 +55,14 @@ final class EdgeBinderBuilderTest extends TestCase
         $this->assertInstanceOf(EdgeBinder::class, $edgeBinder);
 
         // Verify the adapter was used by checking storage adapter
-        $this->assertSame($mockAdapter, $edgeBinder->getStorageAdapter());
+        $this->assertSame($inMemoryAdapter, $edgeBinder->getStorageAdapter());
     }
 
     public function testFromConfigurationWithGlobalConfig(): void
     {
-        // Register a mock adapter factory that expects global config
-        $mockAdapter = $this->createMockAdapter();
-        $mockFactory = $this->createMockAdapterFactoryWithGlobalConfig('test', $mockAdapter);
+        // Register an InMemory adapter factory that expects global config
+        $inMemoryAdapter = new InMemoryAdapter();
+        $mockFactory = $this->createMockAdapterFactoryWithGlobalConfig('test', $inMemoryAdapter);
         AdapterRegistry::register($mockFactory);
 
         // Create container mock
@@ -83,7 +84,7 @@ final class EdgeBinderBuilderTest extends TestCase
 
         // Verify it's an EdgeBinder instance
         $this->assertInstanceOf(EdgeBinder::class, $edgeBinder);
-        $this->assertSame($mockAdapter, $edgeBinder->getStorageAdapter());
+        $this->assertSame($inMemoryAdapter, $edgeBinder->getStorageAdapter());
     }
 
     public function testFromConfigurationThrowsExceptionForMissingAdapterKey(): void
@@ -149,29 +150,29 @@ final class EdgeBinderBuilderTest extends TestCase
 
     public function testFromAdapterCreatesEdgeBinderInstance(): void
     {
-        $mockAdapter = $this->createMockAdapter();
+        $inMemoryAdapter = new InMemoryAdapter();
 
-        $edgeBinder = EdgeBinder::fromAdapter($mockAdapter);
+        $edgeBinder = EdgeBinder::fromAdapter($inMemoryAdapter);
 
         $this->assertInstanceOf(EdgeBinder::class, $edgeBinder);
-        $this->assertSame($mockAdapter, $edgeBinder->getStorageAdapter());
+        $this->assertSame($inMemoryAdapter, $edgeBinder->getStorageAdapter());
     }
 
     public function testBackwardCompatibilityWithDirectConstructor(): void
     {
-        $mockAdapter = $this->createMockAdapter();
+        $inMemoryAdapter = new InMemoryAdapter();
 
         // Direct constructor should still work
-        $edgeBinder = new EdgeBinder($mockAdapter);
+        $edgeBinder = new EdgeBinder($inMemoryAdapter);
 
         $this->assertInstanceOf(EdgeBinder::class, $edgeBinder);
-        $this->assertSame($mockAdapter, $edgeBinder->getStorageAdapter());
+        $this->assertSame($inMemoryAdapter, $edgeBinder->getStorageAdapter());
     }
 
     public function testAdapterFactoryReceivesCorrectConfiguration(): void
     {
         $container = $this->createMock(ContainerInterface::class);
-        $mockAdapter = $this->createMockAdapter();
+        $inMemoryAdapter = new InMemoryAdapter();
 
         // Create a factory that verifies the configuration structure
         $mockFactory = $this->createMock(AdapterFactoryInterface::class);
@@ -194,7 +195,7 @@ final class EdgeBinderBuilderTest extends TestCase
 
                 return true;
             }))
-            ->willReturn($mockAdapter);
+            ->willReturn($inMemoryAdapter);
 
         AdapterRegistry::register($mockFactory);
 
@@ -207,11 +208,6 @@ final class EdgeBinderBuilderTest extends TestCase
         $globalConfig = ['some' => 'global_config'];
 
         EdgeBinder::fromConfiguration($config, $container, $globalConfig);
-    }
-
-    private function createMockAdapter(): PersistenceAdapterInterface
-    {
-        return $this->createMock(PersistenceAdapterInterface::class);
     }
 
     private function createMockAdapterFactory(string $type, PersistenceAdapterInterface $adapter): AdapterFactoryInterface
