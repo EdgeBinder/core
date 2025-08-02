@@ -11,8 +11,9 @@
          failOnRisky="true"
          failOnWarning="true">
     <testsuites>
-        <testsuite name="EdgeBinder Test Suite">
-            <directory>tests</directory>
+        <testsuite name="default">
+            <directory>tests/Unit</directory>
+            <directory>tests/Integration</directory>
         </testsuite>
         <testsuite name="Unit Tests">
             <directory>tests/Unit</directory>
