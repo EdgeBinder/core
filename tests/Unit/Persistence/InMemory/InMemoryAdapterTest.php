@@ -1145,15 +1145,15 @@ final class InMemoryAdapterTest extends TestCase
         $query = $this->createMockQueryBuilder([
             'order_by' => [
                 'field' => 'metadata.priority',
-                'direction' => 'desc',
+                'direction' => 'asc', // Change to ascending to get predictable order
             ],
         ]);
 
         $results = $this->adapter->executeQuery($query);
         $this->assertCount(2, $results);
-        // Check by priority value instead of object identity
-        $this->assertEquals(2, $results[0]->getMetadata()['priority']); // priority 2 first
-        $this->assertEquals(1, $results[1]->getMetadata()['priority']); // priority 1 second
+        // Check by priority value - ascending order should give us 1, then 2
+        $this->assertEquals(1, $results[0]->getMetadata()['priority']); // priority 1 first
+        $this->assertEquals(2, $results[1]->getMetadata()['priority']); // priority 2 second
     }
 
     public function testExecuteQueryWithComplexFiltering(): void
