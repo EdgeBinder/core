@@ -113,10 +113,10 @@ composer install
 composer test
 
 # Run only unit tests
-vendor/bin/phpunit --testsuite="Unit Tests"
+vendor/bin/phpunit --testsuite=unit
 
 # Run only integration tests
-vendor/bin/phpunit --testsuite="Integration Tests"
+vendor/bin/phpunit --testsuite=integration
 
 # Run tests with coverage
 composer test-coverage
