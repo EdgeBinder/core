@@ -2,14 +2,18 @@
 
 This guide provides specific examples for integrating EdgeBinder's extensible adapter system with popular PHP frameworks. Each framework has its own patterns for service registration and dependency injection, but EdgeBinder's adapter system works consistently across all of them.
 
+> **⚠️ Note**: This guide contains legacy manual registration examples. Modern EdgeBinder adapters (v0.2.0+) auto-register when their packages are loaded. For new implementations, simply install adapter packages and configure services - no manual registration is required.
+
 ## Overview
 
 The integration process follows the same pattern across all frameworks:
 
-1. **Register your adapter factory** during application bootstrap
+1. **Install adapter packages** with auto-registration enabled
 2. **Configure your services** (database clients, etc.) in the container
 3. **Create EdgeBinder instances** using `EdgeBinder::fromConfiguration()`
 4. **Use consistent configuration** that works across frameworks
+
+> **Note**: Modern EdgeBinder adapters auto-register when their packages are loaded. No manual registration is required.
 
 ## Laminas/Mezzio Integration
 
@@ -66,8 +70,8 @@ class Module
 {
     public function onBootstrap($e)
     {
-        // Register adapter factories during bootstrap
-        AdapterRegistry::register(new RedisAdapterFactory());
+        // Adapters auto-register when packages are loaded
+        // No manual registration needed
     }
     
     public function getConfig()
@@ -101,11 +105,7 @@ class ConfigProvider
         return [
             'factories' => [
                 'edgebinder.cache' => function($container) {
-                    // Register adapter if not already registered
-                    if (!AdapterRegistry::hasAdapter('redis')) {
-                        AdapterRegistry::register(new RedisAdapterFactory());
-                    }
-                    
+                    // Adapter auto-registers when package is loaded
                     $config = $container->get('config')['edgebinder']['cache'];
                     return \EdgeBinder\EdgeBinder::fromConfiguration($config, $container);
                 },

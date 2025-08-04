@@ -135,21 +135,41 @@ class RedisAdapterFactory implements AdapterFactoryInterface
 }
 ```
 
-### 3. Register Your Adapter
+### 3. Implement Auto-Registration
 
-Register the adapter factory in your application bootstrap:
+Create a bootstrap file for automatic registration when your package is loaded:
 
+**File: `src/bootstrap.php`**
 ```php
-// Works identically across all frameworks
+<?php
+// Auto-register the adapter when package is loaded
 use EdgeBinder\Registry\AdapterRegistry;
 use MyVendor\RedisAdapter\RedisAdapterFactory;
 
-AdapterRegistry::register(new RedisAdapterFactory());
+// Safe auto-registration pattern
+if (class_exists(AdapterRegistry::class) &&
+    class_exists(\EdgeBinder\EdgeBinder::class) &&
+    !AdapterRegistry::hasAdapter('redis')) {
+
+    AdapterRegistry::register(new RedisAdapterFactory());
+}
+```
+
+**Update your `composer.json`:**
+```json
+{
+    "autoload": {
+        "psr-4": {
+            "MyVendor\\RedisAdapter\\": "src/"
+        },
+        "files": ["src/bootstrap.php"]
+    }
+}
 ```
 
 ### 4. Configure and Use
 
-Create configuration that works across all frameworks:
+Create configuration that works across all frameworks (no registration needed):
 
 ```php
 $config = [
@@ -159,6 +179,7 @@ $config = [
     'prefix' => 'myapp:bindings:',
 ];
 
+// Adapter auto-registers when package is loaded
 $edgeBinder = EdgeBinder::fromConfiguration($config, $container);
 ```
 
@@ -349,7 +370,7 @@ public function testAdapterFactoryIntegration(): void
 
 ## Framework Integration Patterns
 
-See the [Framework Integration Guide](FRAMEWORK_INTEGRATION.md) for detailed examples of how to register your adapter in different PHP frameworks.
+See the [Framework Integration Guide](FRAMEWORK_INTEGRATION.md) for detailed examples of how to use your auto-registering adapter in different PHP frameworks.
 
 ## Common Patterns and Best Practices
 
@@ -403,7 +424,7 @@ public function executeQuery(QueryBuilderInterface $query): array
 
 ### Common Issues
 
-1. **Adapter Not Found**: Ensure `AdapterRegistry::register()` is called before EdgeBinder instantiation
+1. **Adapter Not Found**: Ensure your package's bootstrap.php is loaded via composer autoload files
 2. **Configuration Errors**: Verify config structure matches expected format
 3. **Container Service Missing**: Ensure client services are registered in container
 4. **Entity Extraction Fails**: Implement EntityInterface or ensure getId()/getType() methods exist
@@ -411,7 +432,7 @@ public function executeQuery(QueryBuilderInterface $query): array
 ### Debug Helpers
 
 ```php
-// Check registered adapters
+// Check if your adapter auto-registered
 $types = AdapterRegistry::getRegisteredTypes();
 var_dump($types);
 
