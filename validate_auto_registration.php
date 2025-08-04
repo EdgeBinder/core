@@ -72,12 +72,7 @@ if (strpos($edgeBinderContent, 'public const VERSION') !== false) {
     exit(1);
 }
 
-if (strpos($edgeBinderContent, 'public const AUTO_REGISTRATION_SUPPORTED') !== false) {
-    echo "   ✓ EdgeBinder AUTO_REGISTRATION_SUPPORTED constant added\n";
-} else {
-    echo "   ✗ EdgeBinder AUTO_REGISTRATION_SUPPORTED constant missing\n";
-    exit(1);
-}
+// Auto-registration is the only supported method, no flag needed
 
 // Check test updates
 $testContent = file_get_contents('tests/Unit/Registry/AdapterRegistryTest.php');

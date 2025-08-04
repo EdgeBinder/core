@@ -26,17 +26,7 @@ class EdgeBinderVersionTest extends TestCase
         $this->assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $version);
     }
 
-    public function testAutoRegistrationSupportedConstantExists(): void
-    {
-        $this->assertTrue(defined('EdgeBinder\EdgeBinder::AUTO_REGISTRATION_SUPPORTED'));
-        $this->assertIsBool(EdgeBinder::AUTO_REGISTRATION_SUPPORTED);
-    }
 
-    public function testAutoRegistrationSupportedIsTrue(): void
-    {
-        // Auto-registration should be supported in this version
-        $this->assertTrue(EdgeBinder::AUTO_REGISTRATION_SUPPORTED);
-    }
 
     public function testVersionCompatibilityCheck(): void
     {
@@ -50,13 +40,11 @@ class EdgeBinderVersionTest extends TestCase
         );
     }
 
-    public function testVersionConstantsAreAccessible(): void
+    public function testVersionConstantIsAccessible(): void
     {
-        // Ensure constants can be accessed statically
+        // Ensure version constant can be accessed statically
         $version = EdgeBinder::VERSION;
-        $autoRegSupported = EdgeBinder::AUTO_REGISTRATION_SUPPORTED;
 
         $this->assertIsString($version);
-        $this->assertIsBool($autoRegSupported);
     }
 }

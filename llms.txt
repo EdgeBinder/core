@@ -227,12 +227,11 @@ class AdapterException extends EdgeBinderException
 - ✅ Comprehensive tests for idempotent registration behavior
 - ✅ Updated documentation for auto-registration patterns
 
-#### EdgeBinder Version Constants (src/EdgeBinder.php)
+#### EdgeBinder Version Constant (src/EdgeBinder.php)
 ```php
 class EdgeBinder
 {
     public const VERSION = '0.2.0';
-    public const AUTO_REGISTRATION_SUPPORTED = true;
 }
 ```
 

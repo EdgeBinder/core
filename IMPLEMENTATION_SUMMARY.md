@@ -28,20 +28,15 @@ public static function register(AdapterFactoryInterface $factory): void
 }
 ```
 
-### 2. EdgeBinder Version Constants (`src/EdgeBinder.php`)
+### 2. EdgeBinder Version Constant (`src/EdgeBinder.php`)
 
-Added version constants for compatibility checks:
+Added version constant for compatibility checks:
 
 ```php
 /**
  * EdgeBinder version for compatibility checks.
  */
 public const VERSION = '0.2.0';
-
-/**
- * Indicates that auto-registration features are supported.
- */
-public const AUTO_REGISTRATION_SUPPORTED = true;
 ```
 
 ### 3. Comprehensive Test Coverage

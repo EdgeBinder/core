@@ -164,13 +164,11 @@ runTest('Auto-registration pattern works correctly', function() {
     assertNotSame($factory2, AdapterRegistry::getFactory('auto_adapter'));
 });
 
-// Test 4: Version constants exist
-runTest('EdgeBinder version constants exist', function() {
+// Test 4: Version constant exists
+runTest('EdgeBinder version constant exists', function() {
     assertTrue(defined('EdgeBinder\EdgeBinder::VERSION'));
-    assertTrue(defined('EdgeBinder\EdgeBinder::AUTO_REGISTRATION_SUPPORTED'));
-    
+
     assertEquals('0.2.0', EdgeBinder::VERSION);
-    assertTrue(EdgeBinder::AUTO_REGISTRATION_SUPPORTED);
 });
 
 // Test 5: Version format validation

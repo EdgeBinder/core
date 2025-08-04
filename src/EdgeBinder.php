@@ -38,11 +38,6 @@ final class EdgeBinder implements EdgeBinderInterface
     public const VERSION = '0.2.0';
 
     /**
-     * Indicates that auto-registration features are supported.
-     */
-    public const AUTO_REGISTRATION_SUPPORTED = true;
-
-    /**
      * Create a new EdgeBinder instance.
      *
      * @param PersistenceAdapterInterface $persistenceAdapter Storage adapter for persistence operations
