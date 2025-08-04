@@ -37,17 +37,26 @@ class AdapterRegistryTest extends TestCase
         $this->assertSame($factory, AdapterRegistry::getFactory('test_adapter'));
     }
 
-    public function testRegisterDuplicateAdapterThrowsException(): void
+    public function testRegisterIsIdempotent(): void
     {
         $factory1 = $this->createMockFactory('test_adapter');
         $factory2 = $this->createMockFactory('test_adapter');
 
+        // Register the first factory
         AdapterRegistry::register($factory1);
+        $this->assertTrue(AdapterRegistry::hasAdapter('test_adapter'));
+        $this->assertSame($factory1, AdapterRegistry::getFactory('test_adapter'));
 
-        $this->expectException(AdapterException::class);
-        $this->expectExceptionMessage("Adapter type 'test_adapter' is already registered");
-
+        // Register the second factory with the same type - should be ignored
         AdapterRegistry::register($factory2);
+
+        // Should still have the first factory, not the second
+        $this->assertTrue(AdapterRegistry::hasAdapter('test_adapter'));
+        $this->assertSame($factory1, AdapterRegistry::getFactory('test_adapter'));
+        $this->assertNotSame($factory2, AdapterRegistry::getFactory('test_adapter'));
+
+        // Should still only have one registered type
+        $this->assertCount(1, AdapterRegistry::getRegisteredTypes());
     }
 
     public function testCreateAdapterSuccess(): void
@@ -215,6 +224,46 @@ class AdapterRegistryTest extends TestCase
     public function testGetFactoryReturnsNullForUnregistered(): void
     {
         $this->assertNull(AdapterRegistry::getFactory('unknown_adapter'));
+    }
+
+    public function testRegisterMultipleTimesWithSameFactoryInstance(): void
+    {
+        $factory = $this->createMockFactory('test_adapter');
+
+        // Register the same factory instance multiple times
+        AdapterRegistry::register($factory);
+        AdapterRegistry::register($factory);
+        AdapterRegistry::register($factory);
+
+        // Should still work without errors
+        $this->assertTrue(AdapterRegistry::hasAdapter('test_adapter'));
+        $this->assertSame($factory, AdapterRegistry::getFactory('test_adapter'));
+        $this->assertCount(1, AdapterRegistry::getRegisteredTypes());
+    }
+
+    public function testAutoRegistrationScenario(): void
+    {
+        // Simulate auto-registration scenario where adapters check if already registered
+        $factory1 = $this->createMockFactory('auto_adapter');
+        $factory2 = $this->createMockFactory('auto_adapter');
+
+        // First auto-registration attempt
+        if (!AdapterRegistry::hasAdapter('auto_adapter')) {
+            AdapterRegistry::register($factory1);
+        }
+
+        $this->assertTrue(AdapterRegistry::hasAdapter('auto_adapter'));
+        $this->assertSame($factory1, AdapterRegistry::getFactory('auto_adapter'));
+
+        // Second auto-registration attempt (should be ignored)
+        if (!AdapterRegistry::hasAdapter('auto_adapter')) {
+            AdapterRegistry::register($factory2);
+        }
+
+        // Should still have the first factory
+        $this->assertTrue(AdapterRegistry::hasAdapter('auto_adapter'));
+        $this->assertSame($factory1, AdapterRegistry::getFactory('auto_adapter'));
+        $this->assertNotSame($factory2, AdapterRegistry::getFactory('auto_adapter'));
     }
 
     private function createMockFactory(string $type, ?PersistenceAdapterInterface $adapter = null): AdapterFactoryInterface

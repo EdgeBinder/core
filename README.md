@@ -74,6 +74,33 @@ $projects = $binder->query()
 
 ### Using Third-Party Adapters
 
+EdgeBinder supports both automatic and manual adapter registration:
+
+#### Automatic Registration (Recommended)
+
+Modern EdgeBinder adapters support automatic registration when their packages are loaded:
+
+```php
+use EdgeBinder\EdgeBinder;
+
+// No manual registration needed - adapters auto-register when packages are loaded
+$config = [
+    'adapter' => 'redis',
+    'redis_client' => 'redis.client.cache',
+    'ttl' => 3600,
+    'prefix' => 'edgebinder:',
+];
+
+$binder = EdgeBinder::fromConfiguration($config, $container);
+
+// Use exactly the same API regardless of adapter
+$binder->bind($user, $project, 'has_access', ['level' => 'admin']);
+```
+
+#### Manual Registration (Legacy/Custom Adapters)
+
+For legacy adapters or custom implementations:
+
 ```php
 use EdgeBinder\EdgeBinder;
 use EdgeBinder\Registry\AdapterRegistry;
@@ -91,10 +118,9 @@ $config = [
 ];
 
 $binder = EdgeBinder::fromConfiguration($config, $container);
-
-// Use exactly the same API regardless of adapter
-$binder->bind($user, $project, 'has_access', ['level' => 'admin']);
 ```
+
+> **Note**: Manual registration is idempotent - registering the same adapter type multiple times will not cause errors. The first registration takes precedence.
 
 ## Development Setup
 
