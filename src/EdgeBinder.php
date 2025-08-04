@@ -35,7 +35,7 @@ final class EdgeBinder implements EdgeBinderInterface
     /**
      * EdgeBinder version for compatibility checks.
      */
-    public const VERSION = '2.1.0';
+    public const VERSION = '0.2.0';
 
     /**
      * Indicates that auto-registration features are supported.

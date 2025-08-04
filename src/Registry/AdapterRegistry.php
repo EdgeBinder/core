@@ -59,7 +59,7 @@ final class AdapterRegistry
      *
      * This method is idempotent - registering the same adapter type multiple times
      * will not cause an error. Only the first registration will be effective.
-     * This enables safe auto-registration without conflicts with manual registration.
+     * This enables safe auto-registration patterns.
      *
      * @param AdapterFactoryInterface $factory The adapter factory to register
      */

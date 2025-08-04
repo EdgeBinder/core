@@ -139,7 +139,6 @@ class AdapterRegistry
 - **NEW**: Idempotent registration - duplicate registrations are safely ignored
 - **NEW**: Supports auto-registration patterns for adapter packages
 - Helpful error messages with available adapter types
-- Backward compatible with existing manual registration code
 - Testing methods for clean test isolation
 - Exception wrapping for consistent error handling
 
@@ -232,7 +231,7 @@ class AdapterException extends EdgeBinderException
 ```php
 class EdgeBinder
 {
-    public const VERSION = '2.1.0';
+    public const VERSION = '0.2.0';
     public const AUTO_REGISTRATION_SUPPORTED = true;
 }
 ```
@@ -240,7 +239,6 @@ class EdgeBinder
 **Auto-Registration Features:**
 - **Idempotent Registration**: `AdapterRegistry::register()` can be called multiple times safely
 - **Version Compatibility**: Adapters can check EdgeBinder version for compatibility
-- **Backward Compatible**: All existing manual registration code continues to work
 - **Auto-Registration Ready**: Foundation for adapter packages to self-register
 - Updated project documentation with extensibility information
 

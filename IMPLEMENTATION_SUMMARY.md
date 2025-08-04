@@ -36,7 +36,7 @@ Added version constants for compatibility checks:
 /**
  * EdgeBinder version for compatibility checks.
  */
-public const VERSION = '2.1.0';
+public const VERSION = '0.2.0';
 
 /**
  * Indicates that auto-registration features are supported.
@@ -85,12 +85,7 @@ public const AUTO_REGISTRATION_SUPPORTED = true;
 - Existing `clear()` method enables clean test environments
 - Comprehensive tests for all registration scenarios
 
-### 4. **Backward Compatibility**
-- All existing functionality continues to work unchanged
-- New behavior is additive only
-- No breaking changes to existing APIs
-
-### 5. **Version Compatibility**
+### 4. **Version Compatibility**
 - Adapters can check EdgeBinder version for compatibility
 - Clear indication of auto-registration support
 
@@ -101,7 +96,6 @@ public const AUTO_REGISTRATION_SUPPORTED = true;
 - All changes are purely additive
 - Existing `register()` method behavior is preserved for single registrations
 - No changes to existing public APIs
-- Fully backward compatible with all existing code
 
 ## ✅ Auto-Registration Readiness
 

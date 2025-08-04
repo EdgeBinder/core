@@ -169,7 +169,7 @@ runTest('EdgeBinder version constants exist', function() {
     assertTrue(defined('EdgeBinder\EdgeBinder::VERSION'));
     assertTrue(defined('EdgeBinder\EdgeBinder::AUTO_REGISTRATION_SUPPORTED'));
     
-    assertEquals('2.1.0', EdgeBinder::VERSION);
+    assertEquals('0.2.0', EdgeBinder::VERSION);
     assertTrue(EdgeBinder::AUTO_REGISTRATION_SUPPORTED);
 });
 
@@ -221,8 +221,8 @@ runTest('Clear functionality removes all adapters', function() {
     assertFalse(AdapterRegistry::hasAdapter('adapter2'));
 });
 
-// Test 8: Backward compatibility - existing functionality still works
-runTest('Backward compatibility maintained', function() {
+// Test 8: Existing functionality still works
+runTest('Existing functionality maintained', function() {
     AdapterRegistry::clear();
     
     $factory = new MockAdapterFactory('test');
@@ -255,7 +255,7 @@ if ($passedCount === $testCount) {
     echo "\nAuto-registration enhancement is working correctly!\n";
     echo "- Idempotent registration implemented\n";
     echo "- Version constants added\n";
-    echo "- Backward compatibility maintained\n";
+    echo "- Existing functionality maintained\n";
     echo "- Ready for adapter auto-registration patterns\n";
 } else {
     echo "✗ Some tests failed.\n";

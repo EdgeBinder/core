@@ -97,9 +97,9 @@ $binder = EdgeBinder::fromConfiguration($config, $container);
 $binder->bind($user, $project, 'has_access', ['level' => 'admin']);
 ```
 
-#### Manual Registration (Legacy/Custom Adapters)
+#### Manual Registration (Custom Adapters)
 
-For legacy adapters or custom implementations:
+For custom adapter implementations:
 
 ```php
 use EdgeBinder\EdgeBinder;
@@ -120,7 +120,7 @@ $config = [
 $binder = EdgeBinder::fromConfiguration($config, $container);
 ```
 
-> **Note**: Manual registration is idempotent - registering the same adapter type multiple times will not cause errors. The first registration takes precedence.
+> **Note**: Registration is idempotent - registering the same adapter type multiple times will not cause errors. The first registration takes precedence.
 
 ## Development Setup
 
