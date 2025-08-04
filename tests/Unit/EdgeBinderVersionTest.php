@@ -26,8 +26,6 @@ class EdgeBinderVersionTest extends TestCase
         $this->assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $version);
     }
 
-
-
     public function testVersionCompatibilityCheck(): void
     {
         // Test that version can be used for compatibility checks
