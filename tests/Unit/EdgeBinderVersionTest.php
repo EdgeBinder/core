@@ -43,7 +43,7 @@ class EdgeBinderVersionTest extends TestCase
         // Test that version can be used for compatibility checks
         $currentVersion = EdgeBinder::VERSION;
         $minRequiredVersion = '2.0.0';
-        
+
         $this->assertTrue(
             version_compare($currentVersion, $minRequiredVersion, '>='),
             "Current version {$currentVersion} should be >= {$minRequiredVersion}"
@@ -55,7 +55,7 @@ class EdgeBinderVersionTest extends TestCase
         // Ensure constants can be accessed statically
         $version = EdgeBinder::VERSION;
         $autoRegSupported = EdgeBinder::AUTO_REGISTRATION_SUPPORTED;
-        
+
         $this->assertIsString($version);
         $this->assertIsBool($autoRegSupported);
     }

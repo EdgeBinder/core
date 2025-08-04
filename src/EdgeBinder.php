@@ -41,6 +41,7 @@ final class EdgeBinder implements EdgeBinderInterface
      * Indicates that auto-registration features are supported.
      */
     public const AUTO_REGISTRATION_SUPPORTED = true;
+
     /**
      * Create a new EdgeBinder instance.
      *
