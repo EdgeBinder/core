@@ -55,7 +55,6 @@
     },
     "scripts": {
         "composer-normalize": "composer normalize --dry-run --diff",
-        "composer-normalize-fix": "composer normalize",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
         "phpstan": "phpstan analyse",
