@@ -255,10 +255,9 @@ class AdapterRegistryTest extends TestCase
         $this->assertTrue(AdapterRegistry::hasAdapter('auto_adapter'));
         $this->assertSame($factory1, AdapterRegistry::getFactory('auto_adapter'));
 
-        // Second auto-registration attempt (should be ignored)
-        if (!AdapterRegistry::hasAdapter('auto_adapter')) {
-            AdapterRegistry::register($factory2);
-        }
+        // Second auto-registration attempt - simulate the pattern but since we know
+        // the adapter is already registered, we test the idempotent behavior directly
+        AdapterRegistry::register($factory2); // This should be ignored due to idempotent behavior
 
         // Should still have the first factory
         $this->assertTrue(AdapterRegistry::hasAdapter('auto_adapter'));
