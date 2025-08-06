@@ -103,7 +103,7 @@ class EdgeBinderTestFactoryTest extends TestCase
         $edgeBinder = EdgeBinderTestFactory::createWithTestData($testData);
 
         $this->assertInstanceOf(InMemoryEdgeBinder::class, $edgeBinder);
-        /* @var InMemoryEdgeBinder $edgeBinder */
+        \assert($edgeBinder instanceof InMemoryEdgeBinder);
         $this->assertEquals(2, $edgeBinder->getBindingCount());
         $this->assertTrue($edgeBinder->areBound($entity1, $entity2, 'has_access'));
         $this->assertTrue($edgeBinder->areBound($entity2, $entity3, 'belongs_to'));
@@ -114,7 +114,7 @@ class EdgeBinderTestFactoryTest extends TestCase
         $edgeBinder = EdgeBinderTestFactory::createWithTestData([]);
 
         $this->assertInstanceOf(InMemoryEdgeBinder::class, $edgeBinder);
-        /* @var InMemoryEdgeBinder $edgeBinder */
+        \assert($edgeBinder instanceof InMemoryEdgeBinder);
         $this->assertEquals(0, $edgeBinder->getBindingCount());
         $this->assertFalse($edgeBinder->hasBindings());
     }
@@ -132,8 +132,8 @@ class EdgeBinderTestFactoryTest extends TestCase
 
         $edgeBinder1->bind($entity1, $entity2, 'test');
 
-        /* @var InMemoryEdgeBinder $edgeBinder1 */
-        /* @var InMemoryEdgeBinder $edgeBinder2 */
+        \assert($edgeBinder1 instanceof InMemoryEdgeBinder);
+        \assert($edgeBinder2 instanceof InMemoryEdgeBinder);
         $this->assertEquals(1, $edgeBinder1->getBindingCount());
         $this->assertEquals(0, $edgeBinder2->getBindingCount());
     }
