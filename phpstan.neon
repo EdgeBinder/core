@@ -7,3 +7,8 @@ parameters:
         - src
         - tests
     reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        # Allow new static() in BindingQueryBuilder for fluent interface pattern
+        # This is safe because the class has a well-defined constructor contract
+        - message: '#Unsafe usage of new static\(\)\.#'
+          path: src/Query/BindingQueryBuilder.php

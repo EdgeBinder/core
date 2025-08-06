@@ -30,7 +30,7 @@ use Psr\Container\ContainerInterface;
  * - Updating relationship metadata
  * - Providing a storage-agnostic API
  */
-final class EdgeBinder implements EdgeBinderInterface
+class EdgeBinder implements EdgeBinderInterface
 {
     /**
      * Create a new EdgeBinder instance.

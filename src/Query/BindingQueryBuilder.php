@@ -18,7 +18,7 @@ use EdgeBinder\Contracts\QueryBuilderInterface;
  * The builder collects query criteria and delegates execution to the storage adapter,
  * which translates the criteria into its native query format.
  */
-final readonly class BindingQueryBuilder implements QueryBuilderInterface
+readonly class BindingQueryBuilder implements QueryBuilderInterface
 {
     /**
      * Create a new query builder instance.
@@ -130,7 +130,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
 
     public function orWhere(callable $callback): static
     {
-        $subQuery = new self($this->storage, []);
+        $subQuery = new static($this->storage, []);
         $subQuery = $callback($subQuery);
 
         $orClause = [
@@ -210,7 +210,7 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
      */
     private function withCriteria(array $newCriteria): static
     {
-        return new self($this->storage, array_merge($this->criteria, $newCriteria));
+        return new static($this->storage, array_merge($this->criteria, $newCriteria));
     }
 
     /**
@@ -227,6 +227,6 @@ final readonly class BindingQueryBuilder implements QueryBuilderInterface
         $criteria[$key] ??= [];
         $criteria[$key][] = $value;
 
-        return new self($this->storage, $criteria);
+        return new static($this->storage, $criteria);
     }
 }
