@@ -74,15 +74,14 @@ $projects = $binder->query()
 
 ### Using Third-Party Adapters
 
+EdgeBinder supports both automatic and manual adapter registration:
+
+EdgeBinder adapters automatically register when their packages are loaded:
+
 ```php
 use EdgeBinder\EdgeBinder;
-use EdgeBinder\Registry\AdapterRegistry;
 
-// Register third-party adapters (typically in application bootstrap)
-AdapterRegistry::register(new \MyVendor\RedisAdapter\RedisAdapterFactory());
-AdapterRegistry::register(new \MyVendor\Neo4jAdapter\Neo4jAdapterFactory());
-
-// Create EdgeBinder with configuration-based adapter discovery
+// No registration needed - adapters auto-register when packages are loaded
 $config = [
     'adapter' => 'redis',
     'redis_client' => 'redis.client.cache',
@@ -95,6 +94,8 @@ $binder = EdgeBinder::fromConfiguration($config, $container);
 // Use exactly the same API regardless of adapter
 $binder->bind($user, $project, 'has_access', ['level' => 'admin']);
 ```
+
+> **Note**: For creating custom adapters, see the [Extensible Adapters Guide](docs/EXTENSIBLE_ADAPTERS.md) for implementation details.
 
 ## Development Setup
 

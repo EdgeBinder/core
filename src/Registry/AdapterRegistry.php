@@ -57,19 +57,20 @@ final class AdapterRegistry
     /**
      * Register an adapter factory.
      *
-     * @param AdapterFactoryInterface $factory The adapter factory to register
+     * This method is idempotent - registering the same adapter type multiple times
+     * will not cause an error. Only the first registration will be effective.
+     * This enables safe auto-registration patterns.
      *
-     * @throws AdapterException If adapter type is already registered
+     * @param AdapterFactoryInterface $factory The adapter factory to register
      */
     public static function register(AdapterFactoryInterface $factory): void
     {
         $type = $factory->getAdapterType();
 
-        if (isset(self::$factories[$type])) {
-            throw AdapterException::alreadyRegistered($type);
+        // Only register if not already present (idempotent behavior)
+        if (!self::hasAdapter($type)) {
+            self::$factories[$type] = $factory;
         }
-
-        self::$factories[$type] = $factory;
     }
 
     /**

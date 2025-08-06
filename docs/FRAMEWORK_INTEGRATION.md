@@ -6,7 +6,7 @@ This guide provides specific examples for integrating EdgeBinder's extensible ad
 
 The integration process follows the same pattern across all frameworks:
 
-1. **Register your adapter factory** during application bootstrap
+1. **Install adapter packages** - Adapters auto-register when packages are loaded
 2. **Configure your services** (database clients, etc.) in the container
 3. **Create EdgeBinder instances** using `EdgeBinder::fromConfiguration()`
 4. **Use consistent configuration** that works across frameworks
@@ -66,8 +66,8 @@ class Module
 {
     public function onBootstrap($e)
     {
-        // Register adapter factories during bootstrap
-        AdapterRegistry::register(new RedisAdapterFactory());
+        // Adapters auto-register when packages are loaded
+        // No manual registration needed
     }
     
     public function getConfig()
@@ -101,11 +101,7 @@ class ConfigProvider
         return [
             'factories' => [
                 'edgebinder.cache' => function($container) {
-                    // Register adapter if not already registered
-                    if (!AdapterRegistry::hasAdapter('redis')) {
-                        AdapterRegistry::register(new RedisAdapterFactory());
-                    }
-                    
+                    // Adapter auto-registers when package is loaded
                     $config = $container->get('config')['edgebinder']['cache'];
                     return \EdgeBinder\EdgeBinder::fromConfiguration($config, $container);
                 },
@@ -164,41 +160,16 @@ class EdgeBinderBundle extends Bundle
     public function boot()
     {
         parent::boot();
-        
-        // Register adapter factories
-        AdapterRegistry::register(new RedisAdapterFactory());
+
+        // Adapters auto-register when packages are loaded
+        // No manual registration needed
     }
 }
 ```
 
-### Compiler Pass for Auto-Registration
+### Package-Based Auto-Registration
 
-```php
-// src/EdgeBinderBundle/DependencyInjection/AdapterRegistryPass.php
-<?php
-namespace App\EdgeBinderBundle\DependencyInjection;
-
-use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
-use EdgeBinder\Registry\AdapterRegistry;
-
-class AdapterRegistryPass implements CompilerPassInterface
-{
-    public function process(ContainerBuilder $container)
-    {
-        $taggedServices = $container->findTaggedServiceIds('edgebinder.adapter_factory');
-        
-        foreach ($taggedServices as $id => $tags) {
-            $definition = $container->getDefinition($id);
-            $class = $definition->getClass();
-            
-            // Register the factory during compilation
-            $factory = new $class();
-            AdapterRegistry::register($factory);
-        }
-    }
-}
-```
+With modern EdgeBinder adapters, no compiler pass is needed. Adapters auto-register when their packages are loaded via Composer's autoload files mechanism.
 
 ```yaml
 # Tag your adapter factories
@@ -242,9 +213,8 @@ class EdgeBinderServiceProvider extends ServiceProvider
     
     public function boot()
     {
-        // Register adapter factories
-        AdapterRegistry::register(new RedisAdapterFactory());
-        
+        // Adapters auto-register when packages are loaded
+
         // Publish configuration
         $this->publishes([
             __DIR__.'/../../config/edgebinder.php' => config_path('edgebinder.php'),
@@ -347,8 +317,7 @@ $containerBuilder->addDefinitions([
     },
 ]);
 
-// Register adapter factories
-AdapterRegistry::register(new RedisAdapterFactory());
+// Adapters auto-register when packages are loaded
 
 return $containerBuilder->build();
 ```
@@ -427,8 +396,7 @@ $redis = new \Redis();
 $redis->connect('localhost', 6379);
 $container->set('redis.client.cache', $redis);
 
-// Register adapter factories
-AdapterRegistry::register(new RedisAdapterFactory());
+// Adapters auto-register when packages are loaded
 
 // Create EdgeBinder
 $config = [
@@ -495,19 +463,15 @@ foreach ($configs as $name => $config) {
 // Test adapter registration in framework context
 public function testFrameworkIntegration(): void
 {
-    // Clear registry for clean test
-    AdapterRegistry::clear();
-    
-    // Register adapter
-    AdapterRegistry::register(new RedisAdapterFactory());
-    
-    // Verify registration
+    // Adapter auto-registers when package is loaded
+
+    // Verify adapter is available
     $this->assertTrue(AdapterRegistry::hasAdapter('redis'));
-    
+
     // Test EdgeBinder creation
     $container = $this->createMockContainer();
     $config = ['adapter' => 'redis', 'redis_client' => 'test.redis'];
-    
+
     $edgeBinder = EdgeBinder::fromConfiguration($config, $container);
     $this->assertInstanceOf(EdgeBinder::class, $edgeBinder);
 }
@@ -540,7 +504,7 @@ public function testWithRealFramework(): void
 ### Common Framework Issues
 
 1. **Service Not Found**: Ensure client services are properly registered in the container
-2. **Adapter Not Registered**: Check that `AdapterRegistry::register()` is called during bootstrap
+2. **Adapter Not Found**: Ensure adapter package is installed and auto-registration bootstrap is working
 3. **Configuration Mismatch**: Verify configuration structure matches framework patterns
 4. **Container Scope**: Ensure container has access to required services
 

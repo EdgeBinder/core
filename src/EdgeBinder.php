@@ -33,6 +33,11 @@ use Psr\Container\ContainerInterface;
 class EdgeBinder implements EdgeBinderInterface
 {
     /**
+     * EdgeBinder version for compatibility checks.
+     */
+    public const VERSION = '0.2.0';
+
+    /**
      * Create a new EdgeBinder instance.
      *
      * @param PersistenceAdapterInterface $persistenceAdapter Storage adapter for persistence operations
