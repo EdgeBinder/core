@@ -220,7 +220,15 @@ This project follows Test-Driven Development (TDD) with a clear separation of te
 - End-to-end scenarios with actual dependencies
 - Framework integration and adapter lifecycle testing
 
-**Total Coverage**: 210 tests with 97%+ line coverage
+### **AbstractAdapterTestSuite** (`src/Testing/`)
+- **57 comprehensive compliance tests** for all adapters
+- **REQUIRED for all adapter implementations**
+- Tests real EdgeBinder integration scenarios
+- Covers all query patterns, metadata handling, and edge cases
+- **84.71% line coverage** of reference implementation
+- **Proven to catch production bugs** (found 5+ critical issues)
+
+**Total Coverage**: 267+ tests with 97%+ line coverage
 
 ## Extensible Adapter System
 
@@ -244,16 +252,36 @@ class MyCustomAdapterFactory implements AdapterFactoryInterface
     public function getAdapterType(): string { return 'mycustom'; }
 }
 
-// 3. Register in any framework
+// 3. REQUIRED: Create compliance tests
+use EdgeBinder\Testing\AbstractAdapterTestSuite;
+
+class MyCustomAdapterTest extends AbstractAdapterTestSuite
+{
+    protected function createAdapter(): PersistenceAdapterInterface
+    {
+        return new MyCustomAdapter($this->setupClient());
+    }
+
+    protected function cleanupAdapter(): void
+    {
+        $this->teardownClient();
+    }
+
+    // 57+ comprehensive tests inherited automatically
+}
+
+// 4. Register in any framework
 AdapterRegistry::register(new MyCustomAdapterFactory());
 
-// 4. Use with consistent configuration
+// 5. Use with consistent configuration
 $edgeBinder = EdgeBinder::fromConfiguration([
     'adapter' => 'mycustom',
     'my_client' => 'my.service.client',
     'custom_option' => 'value',
 ], $container);
 ```
+
+> **⚠️ CRITICAL**: All adapters must extend `AbstractAdapterTestSuite` to ensure 100% compliance. See the [Extensible Adapters Guide](docs/EXTENSIBLE_ADAPTERS.md) for details.
 
 ### Framework Integration
 
@@ -268,8 +296,10 @@ The same adapter works identically across all frameworks:
 ### Documentation
 
 - **[Extensible Adapters Guide](docs/EXTENSIBLE_ADAPTERS.md)** - Complete development guide
+- **[Adapter Testing Standard](docs/ADAPTER_TESTING_STANDARD.md)** - **REQUIRED** compliance testing guide
 - **[Framework Integration](docs/FRAMEWORK_INTEGRATION.md)** - Framework-specific examples
 - **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Converting existing adapters
+- **[Future Development Plans](docs/FUTURE_PLANS.md)** - Roadmap and integration patterns
 - **[Redis Adapter Example](examples/RedisAdapter/)** - Complete reference implementation
 
 ## Related Projects

@@ -6,6 +6,9 @@ parameters:
     paths:
         - src
         - tests
+    excludePaths:
+        # Exclude WeaviateAdapter integration test - references external package classes
+        - tests/Integration/WeaviateAdapterIntegrationTest.php
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
         # Allow new static() in BindingQueryBuilder for fluent interface pattern

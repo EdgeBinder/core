@@ -138,8 +138,8 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
 
             if (is_object($value)) {
                 if ($value instanceof \DateTimeInterface) {
-                    // Convert DateTime objects to ISO 8601 strings
-                    $normalized[$key] = $value->format(\DateTimeInterface::ATOM);
+                    // Keep DateTime objects as-is for in-memory storage
+                    $normalized[$key] = $value;
                 } else {
                     throw new InvalidMetadataException('Metadata can only contain DateTime objects, not '.get_class($value));
                 }
@@ -158,6 +158,11 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
     {
         try {
             $id = $binding->getId();
+
+            // Check for duplicate ID
+            if (isset($this->bindings[$id])) {
+                throw new PersistenceException('store', "Binding with ID '{$id}' already exists");
+            }
 
             // Validate metadata
             $this->validateAndNormalizeMetadata($binding->getMetadata());
@@ -266,8 +271,10 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
             $results = $this->filterBindings($criteria);
 
             // Apply ordering
-            if (isset($criteria['orderBy'])) {
-                $results = $this->applyOrdering($results, $criteria['orderBy']);
+            if (isset($criteria['order_by'])) {
+                foreach ($criteria['order_by'] as $orderClause) {
+                    $results = $this->applyOrdering($results, $orderClause);
+                }
             }
 
             // Apply pagination
@@ -478,8 +485,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         $value = $condition['value'] ?? null;
 
         return array_filter($bindings, function (BindingInterface $binding) use ($field, $operator, $value) {
-            $metadata = $binding->getMetadata();
-            $fieldValue = $metadata[$field] ?? null;
+            $fieldValue = $this->getFieldValue($binding, $field);
 
             return match ($operator) {
                 '=' => $fieldValue === $value,
@@ -492,9 +498,9 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                 'not_in' => is_array($value) && !in_array($fieldValue, $value, true),
                 'between' => is_array($value) && 2 === count($value)
                            && $fieldValue >= $value[0] && $fieldValue <= $value[1],
-                'exists' => array_key_exists($field, $metadata),
-                'null' => !array_key_exists($field, $metadata) || null === $fieldValue,
-                'not_null' => array_key_exists($field, $metadata) && null !== $fieldValue,
+                'exists' => $this->fieldExists($binding, $field),
+                'null' => !$this->fieldExists($binding, $field) || null === $fieldValue,
+                'not_null' => $this->fieldExists($binding, $field) && null !== $fieldValue,
                 default => throw new PersistenceException('query', "Unsupported operator: {$operator}"),
             };
         });
@@ -545,6 +551,50 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
             'createdAt' => $binding->getCreatedAt()->getTimestamp(),
             'updatedAt' => $binding->getUpdatedAt()->getTimestamp(),
             default => $binding->getMetadata()[$field] ?? null,
+        };
+    }
+
+    /**
+     * Get field value from binding, supporting nested paths like 'metadata.level'.
+     */
+    private function getFieldValue(BindingInterface $binding, string $field): mixed
+    {
+        // Handle metadata fields
+        if (str_starts_with($field, 'metadata.')) {
+            $metadataKey = substr($field, 9); // Remove 'metadata.' prefix
+            $metadata = $binding->getMetadata();
+
+            return array_key_exists($metadataKey, $metadata) ? $metadata[$metadataKey] : null;
+        }
+
+        // Handle direct binding properties
+        return match ($field) {
+            'id' => $binding->getId(),
+            'from_type' => $binding->getFromType(),
+            'from_id' => $binding->getFromId(),
+            'to_type' => $binding->getToType(),
+            'to_id' => $binding->getToId(),
+            'type' => $binding->getType(),
+            default => $binding->getMetadata()[$field] ?? null,
+        };
+    }
+
+    /**
+     * Check if field exists in binding, supporting nested paths.
+     */
+    private function fieldExists(BindingInterface $binding, string $field): bool
+    {
+        // Handle metadata fields
+        if (str_starts_with($field, 'metadata.')) {
+            $metadataKey = substr($field, 9); // Remove 'metadata.' prefix
+
+            return array_key_exists($metadataKey, $binding->getMetadata());
+        }
+
+        // Handle direct binding properties
+        return match ($field) {
+            'id', 'from_type', 'from_id', 'to_type', 'to_id', 'type' => true,
+            default => array_key_exists($field, $binding->getMetadata()),
         };
     }
 }

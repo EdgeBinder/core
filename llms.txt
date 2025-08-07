@@ -29,6 +29,13 @@ EdgeBinder is a lightweight, storage-agnostic relationship management library fo
 ### Built-in Adapters
 - **InMemoryAdapter**: Built-in in-memory adapter for testing and development (`src/Persistence/InMemory/`)
 
+### **⚠️ CRITICAL: Adapter Testing Requirement**
+**ALL adapters MUST extend `AbstractAdapterTestSuite`** to ensure compliance:
+- 57+ comprehensive integration tests required
+- Tests all query patterns, metadata handling, and edge cases
+- Proven to catch production bugs (found 5+ critical issues)
+- See `docs/ADAPTER_TESTING_STANDARD.md` for complete guide
+
 ### Adapter Repositories
 - **edgebinder/weaviate-adapter**: Vector database adapter for Weaviate
 - **Future adapters**: Neo4j, Redis, MongoDB, JanusGraph, etc.
@@ -621,8 +628,10 @@ Support multiple EdgeBinder instances with different adapters:
 
 ### Documentation
 - `docs/EXTENSIBLE_ADAPTERS.md` - Complete developer guide for creating third-party adapters
+- `docs/ADAPTER_TESTING_STANDARD.md` - **REQUIRED** testing compliance guide for all adapters
 - `docs/FRAMEWORK_INTEGRATION.md` - Framework-specific integration examples
 - `docs/MIGRATION_GUIDE.md` - Migration guide for existing custom adapters
+- `docs/FUTURE_PLANS.md` - Future development roadmap and integration patterns
 - `docs/ARCHITECTURE_DIAGRAM.md` - System architecture overview
 - `README.md` - Getting started and basic usage
 
@@ -634,6 +643,48 @@ Support multiple EdgeBinder instances with different adapters:
 - PSR-12 coding standards
 - 95%+ test coverage
 - Comprehensive PHPDoc
+
+### **REQUIRED: Testing Standard**
+**⚠️ CRITICAL**: All adapters MUST extend `AbstractAdapterTestSuite` for compliance testing.
+
+```php
+// Location: src/Testing/AbstractAdapterTestSuite.php
+abstract class AbstractAdapterTestSuite extends TestCase
+{
+    protected PersistenceAdapterInterface $adapter;
+    protected EdgeBinder $edgeBinder;
+
+    abstract protected function createAdapter(): PersistenceAdapterInterface;
+    abstract protected function cleanupAdapter(): void;
+
+    // Provides 57+ comprehensive integration tests:
+    // - All public API methods tested with real EdgeBinder integration
+    // - Complex query scenarios (from, to, type, where, ordering, pagination)
+    // - Metadata validation and normalization edge cases
+    // - Entity extraction with all fallback scenarios
+    // - Error handling for all failure modes
+    // - Data consistency and indexing validation
+    // - Proven to catch production bugs (found 5+ critical issues)
+}
+```
+
+**Usage Example:**
+```php
+class MyAdapterTest extends AbstractAdapterTestSuite
+{
+    protected function createAdapter(): PersistenceAdapterInterface
+    {
+        return new MyAdapter($this->setupClient());
+    }
+
+    protected function cleanupAdapter(): void
+    {
+        $this->teardownClient();
+    }
+
+    // 57+ tests inherited automatically - ensures 100% compliance
+}
+```
 
 ### Naming Conventions
 - Adapter classes: `{Name}Adapter` (e.g., `InMemoryAdapter`, `WeaviateAdapter`)

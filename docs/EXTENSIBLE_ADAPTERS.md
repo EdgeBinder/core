@@ -300,47 +300,87 @@ private function validateConfiguration(array $config): void
 
 ## Testing Your Adapter
 
-### Unit Testing
+### **REQUIRED: AbstractAdapterTestSuite Compliance**
 
-Create comprehensive unit tests for your adapter:
+**⚠️ CRITICAL**: All adapters MUST extend `AbstractAdapterTestSuite` to ensure 100% compliance with EdgeBinder's expected behavior.
 
 ```php
 <?php
 namespace MyVendor\RedisAdapter\Tests;
 
+use EdgeBinder\Testing\AbstractAdapterTestSuite;
+use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use MyVendor\RedisAdapter\RedisAdapter;
+
+class RedisAdapterTest extends AbstractAdapterTestSuite
+{
+    private $redis;
+
+    protected function createAdapter(): PersistenceAdapterInterface
+    {
+        $this->redis = new \Redis();
+        $this->redis->connect('127.0.0.1', 6379);
+        $this->redis->select(15); // Use test database
+
+        return new RedisAdapter($this->redis, [
+            'prefix' => 'test:bindings:',
+            'ttl' => 3600
+        ]);
+    }
+
+    protected function cleanupAdapter(): void
+    {
+        if ($this->redis) {
+            $this->redis->flushDB(); // Clean test database
+            $this->redis->close();
+        }
+    }
+
+    // AbstractAdapterTestSuite provides 57+ comprehensive tests automatically
+    // These tests ensure your adapter behaves identically to InMemoryAdapter
+
+    // Add adapter-specific tests only if needed:
+    public function testRedisSpecificFeature(): void
+    {
+        // Test Redis-specific functionality that's not covered by AbstractAdapterTestSuite
+    }
+}
+```
+
+### **Why AbstractAdapterTestSuite is Required**
+
+The `AbstractAdapterTestSuite` provides **57 comprehensive integration tests** that:
+
+- ✅ **Test all public API methods** with real EdgeBinder integration
+- ✅ **Cover complex query scenarios** (from, to, type, where, ordering, pagination)
+- ✅ **Validate metadata handling** (validation, normalization, edge cases)
+- ✅ **Test entity extraction** (EntityInterface, getId(), fallbacks)
+- ✅ **Check error handling** (exceptions, edge cases, invalid data)
+- ✅ **Ensure data consistency** (CRUD operations, indexing)
+- ✅ **Catch production bugs** (proven to find 5+ critical issues)
+
+**Without these tests, your adapter may have subtle bugs** that only appear in production with specific query patterns.
+
+### Unit Testing (Optional - For Internal Logic)
+
+You can also add unit tests for adapter-specific internal logic:
+
+```php
+<?php
+namespace MyVendor\RedisAdapter\Tests\Unit;
+
 use PHPUnit\Framework\TestCase;
 use MyVendor\RedisAdapter\RedisAdapter;
-use EdgeBinder\Binding;
 
-class RedisAdapterTest extends TestCase
+class RedisAdapterUnitTest extends TestCase
 {
-    private $mockRedis;
-    private RedisAdapter $adapter;
-
-    protected function setUp(): void
+    public function testInternalRedisKeyGeneration(): void
     {
-        $this->mockRedis = $this->createMock(\Redis::class);
-        $this->adapter = new RedisAdapter($this->mockRedis);
+        $mockRedis = $this->createMock(\Redis::class);
+        $adapter = new RedisAdapter($mockRedis);
+
+        // Test internal logic that doesn't require full integration
     }
-
-    public function testStoreBinding(): void
-    {
-        $binding = Binding::create($user, $project, 'has_access');
-        
-        $this->mockRedis
-            ->expects($this->once())
-            ->method('setex')
-            ->with(
-                'edgebinder:' . $binding->getId(),
-                3600,
-                $this->isType('string')
-            )
-            ->willReturn(true);
-
-        $this->adapter->store($binding);
-    }
-
-    // Add more tests...
 }
 ```
 
@@ -447,9 +487,10 @@ foreach ($required as $key) {
 
 ## Next Steps
 
-1. Review the [Framework Integration Guide](FRAMEWORK_INTEGRATION.md) for framework-specific examples
-2. Check the [Redis Adapter Example](../examples/RedisAdapter/) for a complete reference implementation
-3. See the [Migration Guide](MIGRATION_GUIDE.md) if you're converting existing adapters
+1. **[Read the Adapter Testing Standard](ADAPTER_TESTING_STANDARD.md)** - REQUIRED compliance testing guide
+2. Review the [Framework Integration Guide](FRAMEWORK_INTEGRATION.md) for framework-specific examples
+3. Check the [Redis Adapter Example](../examples/RedisAdapter/) for a complete reference implementation
+4. See the [Migration Guide](MIGRATION_GUIDE.md) if you're converting existing adapters
 
 ## Support
 

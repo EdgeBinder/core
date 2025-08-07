@@ -70,7 +70,8 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
     public function where(string $field, mixed $operator, mixed $value = null): static
     {
         // If only two arguments provided, treat operator as value and use '=' as operator
-        if (null === $value) {
+        // Use func_num_args() to distinguish between where($field, $value) and where($field, '=', null)
+        if (2 === func_num_args()) {
             $value = $operator;
             $operator = '=';
         }

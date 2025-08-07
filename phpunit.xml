@@ -13,6 +13,7 @@
     <testsuites>
         <testsuite name="default">
             <directory>tests</directory>
+            <exclude>tests/Integration/WeaviateAdapterIntegrationTest.php</exclude>
         </testsuite>
     </testsuites>
     <source>
