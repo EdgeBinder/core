@@ -562,7 +562,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             /**
              * @param array<mixed> $args
              */
-            public function __call(string $method, array $args)
+            public function __call(string $method, array $args): mixed
             {
                 return $this->originalAdapter->$method(...$args);
             }
