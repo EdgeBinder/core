@@ -1590,6 +1590,58 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->assertEquals(1, $results[0]->getMetadata()['priority']);
     }
 
+    public function testComparisonOperators(): void
+    {
+        $user = $this->createTestEntity('user-1', 'User');
+        $project1 = $this->createTestEntity('project-1', 'Project');
+        $project2 = $this->createTestEntity('project-2', 'Project');
+        $project3 = $this->createTestEntity('project-3', 'Project');
+        $project4 = $this->createTestEntity('project-4', 'Project');
+
+        $this->edgeBinder->bind($user, $project1, 'hasAccess', ['score' => 85]);
+        $this->edgeBinder->bind($user, $project2, 'hasAccess', ['score' => 90]);
+        $this->edgeBinder->bind($user, $project3, 'hasAccess', ['score' => 75]);
+        $this->edgeBinder->bind($user, $project4, 'hasAccess', ['score' => 90]);
+
+        // Test >= operator
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.score', '>=', 90)
+            ->get();
+        $this->assertCount(2, $results);
+        foreach ($results as $binding) {
+            $this->assertGreaterThanOrEqual(90, $binding->getMetadata()['score']);
+        }
+
+        // Test <= operator
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.score', '<=', 85)
+            ->get();
+        $this->assertCount(2, $results);
+        foreach ($results as $binding) {
+            $this->assertLessThanOrEqual(85, $binding->getMetadata()['score']);
+        }
+
+        // Test < operator
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.score', '<', 85)
+            ->get();
+        $this->assertCount(1, $results);
+        $this->assertEquals(75, $results[0]->getMetadata()['score']);
+
+        // Test > operator
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.score', '>', 85)
+            ->get();
+        $this->assertCount(2, $results);
+        foreach ($results as $binding) {
+            $this->assertGreaterThan(85, $binding->getMetadata()['score']);
+        }
+    }
+
     // ========================================
     // Direct Binding Property Query Tests (Missing Coverage)
     // ========================================
@@ -1754,5 +1806,88 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $toIds = array_map(fn($b) => $b->getToId(), $results);
         sort($toIds);
         $this->assertEquals(['project-1', 'project-3'], $toIds);
+    }
+
+    public function testOperatorEdgeCases(): void
+    {
+        $user = $this->createTestEntity('user-1', 'User');
+        $project1 = $this->createTestEntity('project-1', 'Project');
+        $project2 = $this->createTestEntity('project-2', 'Project');
+
+        $this->edgeBinder->bind($user, $project1, 'hasAccess', ['level' => 'admin']);
+        $this->edgeBinder->bind($user, $project2, 'hasAccess', ['level' => 'user']);
+
+        // Test 'in' operator with non-array value (should not match anything)
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.level', 'in', 'admin') // Not an array
+            ->get();
+        $this->assertCount(0, $results);
+
+        // Test 'notIn' operator with non-array value (should not match anything)
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.level', 'notIn', 'admin') // Not an array
+            ->get();
+        $this->assertCount(0, $results);
+
+        // Test 'between' operator with invalid array (not exactly 2 elements)
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.level', 'between', ['admin']) // Only 1 element
+            ->get();
+        $this->assertCount(0, $results);
+
+        // Test 'between' operator with too many elements
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.level', 'between', ['a', 'b', 'c']) // 3 elements
+            ->get();
+        $this->assertCount(0, $results);
+    }
+
+    public function testUnsupportedOperator(): void
+    {
+        $user = $this->createTestEntity('user-1', 'User');
+        $project = $this->createTestEntity('project-1', 'Project');
+
+        $this->edgeBinder->bind($user, $project, 'hasAccess', ['level' => 'admin']);
+
+        $this->expectException(PersistenceException::class);
+        $this->expectExceptionMessage('Unsupported operator: invalid_operator');
+
+        $this->edgeBinder->query()
+            ->from($user)
+            ->where('metadata.level', 'invalid_operator', 'admin')
+            ->get();
+    }
+
+    public function testFieldExistsWithNonStandardField(): void
+    {
+        $user = $this->createTestEntity('user-1', 'User');
+        $project1 = $this->createTestEntity('project-1', 'Project');
+        $project2 = $this->createTestEntity('project-2', 'Project');
+
+        // Create bindings where one has a custom field in metadata, one doesn't
+        $this->edgeBinder->bind($user, $project1, 'hasAccess', ['customField' => 'value']);
+        $this->edgeBinder->bind($user, $project2, 'hasAccess', ['level' => 'admin']);
+
+        // Test 'exists' operator with a non-standard field name (not prefixed with metadata.)
+        // This should trigger the default case in fieldExists() method
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('customField', 'exists', true)
+            ->get();
+
+        $this->assertCount(1, $results);
+        $this->assertEquals('project-1', $results[0]->getToId());
+
+        // Test with a field that doesn't exist in any binding
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('nonExistentField', 'exists', true)
+            ->get();
+
+        $this->assertCount(0, $results);
     }
 }
