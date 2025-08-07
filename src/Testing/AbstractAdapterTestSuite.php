@@ -1894,4 +1894,34 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
         $this->assertCount(0, $results);
     }
+
+    public function testFieldExistsWithStandardBindingProperties(): void
+    {
+        $user = $this->createTestEntity('user-1', 'User');
+        $project = $this->createTestEntity('project-1', 'Project');
+
+        $this->edgeBinder->bind($user, $project, 'hasAccess', ['level' => 'admin']);
+
+        // Test 'exists' operator with standard binding properties (should always return true)
+        // This tests line 598 in fieldExists() method - the standard property list
+        $standardFields = ['id', 'fromType', 'fromId', 'toType', 'toId', 'type', 'createdAt', 'updatedAt'];
+
+        foreach ($standardFields as $field) {
+            $results = $this->edgeBinder->query()
+                ->from($user)
+                ->where($field, 'exists', true)
+                ->get();
+
+            $this->assertCount(1, $results, "Field '{$field}' should exist and return 1 result");
+        }
+
+        // Test that all standard fields are recognized as existing
+        // The 'exists' operator ignores the value parameter and just checks field existence
+        $results = $this->edgeBinder->query()
+            ->from($user)
+            ->where('id', 'exists', true)
+            ->get();
+
+        $this->assertCount(1, $results, "Standard field 'id' should always exist");
+    }
 }
