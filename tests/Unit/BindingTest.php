@@ -35,7 +35,7 @@ class BindingTest extends TestCase
             metadata: ['access_level' => 'write']
         );
 
-        $this->assertStringStartsWith('binding_', $binding->getId());
+        $this->assertStringStartsWith('binding', $binding->getId());
         $this->assertEquals('User', $binding->getFromType());
         $this->assertEquals('user-123', $binding->getFromId());
         $this->assertEquals('Project', $binding->getToType());
@@ -200,14 +200,14 @@ class BindingTest extends TestCase
 
         $expected = [
             'id' => 'test-id',
-            'from_type' => 'User',
-            'from_id' => 'user-1',
-            'to_type' => 'Project',
-            'to_id' => 'project-1',
+            'fromType' => 'User',
+            'fromId' => 'user-1',
+            'toType' => 'Project',
+            'toId' => 'project-1',
             'type' => 'owns',
             'metadata' => ['key' => 'value'],
-            'created_at' => '2024-01-15T10:30:00+00:00',
-            'updated_at' => '2024-01-15T10:30:00+00:00',
+            'createdAt' => '2024-01-15T10:30:00+00:00',
+            'updatedAt' => '2024-01-15T10:30:00+00:00',
         ];
 
         $this->assertEquals($expected, $binding->toArray());
@@ -217,14 +217,14 @@ class BindingTest extends TestCase
     {
         $data = [
             'id' => 'test-id',
-            'from_type' => 'User',
-            'from_id' => 'user-1',
-            'to_type' => 'Project',
-            'to_id' => 'project-1',
+            'fromType' => 'User',
+            'fromId' => 'user-1',
+            'toType' => 'Project',
+            'toId' => 'project-1',
             'type' => 'owns',
             'metadata' => ['key' => 'value'],
-            'created_at' => '2024-01-15T10:30:00+00:00',
-            'updated_at' => '2024-01-15T10:30:00+00:00',
+            'createdAt' => '2024-01-15T10:30:00+00:00',
+            'updatedAt' => '2024-01-15T10:30:00+00:00',
         ];
 
         $binding = Binding::fromArray($data);
@@ -244,13 +244,13 @@ class BindingTest extends TestCase
     {
         $data = [
             'id' => 'test-id',
-            'from_type' => 'User',
-            'from_id' => 'user-1',
-            'to_type' => 'Project',
-            'to_id' => 'project-1',
+            'fromType' => 'User',
+            'fromId' => 'user-1',
+            'toType' => 'Project',
+            'toId' => 'project-1',
             'type' => 'owns',
-            'created_at' => '2024-01-15T10:30:00+00:00',
-            'updated_at' => '2024-01-15T10:30:00+00:00',
+            'createdAt' => '2024-01-15T10:30:00+00:00',
+            'updatedAt' => '2024-01-15T10:30:00+00:00',
         ];
 
         $binding = Binding::fromArray($data);

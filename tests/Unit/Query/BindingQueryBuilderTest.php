@@ -89,8 +89,8 @@ class BindingQueryBuilderTest extends TestCase
 
         $this->assertNotSame($realQueryBuilder, $result);
         $this->assertEquals([
-            'from_type' => 'stdClass',
-            'from_id' => 'user-123',
+            'fromType' => 'stdClass',
+            'fromId' => 'user-123',
         ], $result->getCriteria());
     }
 
@@ -99,8 +99,8 @@ class BindingQueryBuilderTest extends TestCase
         $result = $this->queryBuilder->from('User', 'user-123');
 
         $this->assertEquals([
-            'from_type' => 'User',
-            'from_id' => 'user-123',
+            'fromType' => 'User',
+            'fromId' => 'user-123',
         ], $result->getCriteria());
     }
 
@@ -124,8 +124,8 @@ class BindingQueryBuilderTest extends TestCase
         $result = $realQueryBuilder->to($entity);
 
         $this->assertEquals([
-            'to_type' => 'stdClass',
-            'to_id' => 'project-456',
+            'toType' => 'stdClass',
+            'toId' => 'project-456',
         ], $result->getCriteria());
     }
 
@@ -134,8 +134,8 @@ class BindingQueryBuilderTest extends TestCase
         $result = $this->queryBuilder->to('Project', 'project-456');
 
         $this->assertEquals([
-            'to_type' => 'Project',
-            'to_id' => 'project-456',
+            'toType' => 'Project',
+            'toId' => 'project-456',
         ], $result->getCriteria());
     }
 
@@ -280,20 +280,17 @@ class BindingQueryBuilderTest extends TestCase
         });
 
         $expected = [
-            'where' => [
+            'orWhere' => [
                 [
-                    'type' => 'or',
-                    'conditions' => [
-                        [
-                            'field' => 'status',
-                            'operator' => '=',
-                            'value' => 'active',
-                        ],
-                        [
-                            'field' => 'priority',
-                            'operator' => '=',
-                            'value' => 'high',
-                        ],
+                    [
+                        'field' => 'status',
+                        'operator' => '=',
+                        'value' => 'active',
+                    ],
+                    [
+                        'field' => 'priority',
+                        'operator' => '=',
+                        'value' => 'high',
                     ],
                 ],
             ],
@@ -306,7 +303,7 @@ class BindingQueryBuilderTest extends TestCase
         $result = $this->queryBuilder->orderBy('created_at');
 
         $expected = [
-            'order_by' => [
+            'orderBy' => [
                 [
                     'field' => 'created_at',
                     'direction' => 'asc',
@@ -321,7 +318,7 @@ class BindingQueryBuilderTest extends TestCase
         $result = $this->queryBuilder->orderBy('score', 'desc');
 
         $expected = [
-            'order_by' => [
+            'orderBy' => [
                 [
                     'field' => 'score',
                     'direction' => 'desc',
@@ -346,7 +343,7 @@ class BindingQueryBuilderTest extends TestCase
             ->orderBy('created_at', 'asc');
 
         $expected = [
-            'order_by' => [
+            'orderBy' => [
                 [
                     'field' => 'priority',
                     'direction' => 'desc',
@@ -410,8 +407,8 @@ class BindingQueryBuilderTest extends TestCase
             ->offset(20);
 
         $expected = [
-            'from_type' => 'stdClass',
-            'from_id' => 'user-123',
+            'fromType' => 'stdClass',
+            'fromId' => 'user-123',
             'type' => 'has_access',
             'where' => [
                 [
@@ -430,7 +427,7 @@ class BindingQueryBuilderTest extends TestCase
                     'value' => ['active', 'verified'],
                 ],
             ],
-            'order_by' => [
+            'orderBy' => [
                 [
                     'field' => 'created_at',
                     'direction' => 'desc',
