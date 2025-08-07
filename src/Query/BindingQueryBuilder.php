@@ -44,7 +44,7 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
             }
         }
 
-        return $this->withCriteria(['from_type' => $entityType, 'from_id' => $entityId]);
+        return $this->withCriteria(['fromType' => $entityType, 'fromId' => $entityId]);
     }
 
     public function to(object|string $entity, ?string $entityId = null): static
@@ -59,7 +59,7 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
             }
         }
 
-        return $this->withCriteria(['to_type' => $entityType, 'to_id' => $entityId]);
+        return $this->withCriteria(['toType' => $entityType, 'toId' => $entityId]);
     }
 
     public function type(string $type): static
@@ -129,17 +129,37 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
         return $this->addToArray('where', $whereClause);
     }
 
+    public function whereNotNull(string $field): static
+    {
+        $whereClause = [
+            'field' => $field,
+            'operator' => 'notNull',
+            'value' => true,
+        ];
+
+        return $this->addToArray('where', $whereClause);
+    }
+
+    public function whereNotIn(string $field, array $values): static
+    {
+        $whereClause = [
+            'field' => $field,
+            'operator' => 'notIn',
+            'value' => $values,
+        ];
+
+        return $this->addToArray('where', $whereClause);
+    }
+
     public function orWhere(callable $callback): static
     {
         $subQuery = new static($this->storage, []);
         $subQuery = $callback($subQuery);
 
-        $orClause = [
-            'type' => 'or',
-            'conditions' => $subQuery->getCriteria()['where'] ?? [],
-        ];
+        // Get the where conditions from the subquery
+        $orConditions = $subQuery->getCriteria()['where'] ?? [];
 
-        return $this->addToArray('where', $orClause);
+        return $this->addToArray('orWhere', $orConditions);
     }
 
     public function orderBy(string $field, string $direction = 'asc'): static
@@ -154,7 +174,7 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
             'direction' => $direction,
         ];
 
-        return $this->addToArray('order_by', $orderClause);
+        return $this->addToArray('orderBy', $orderClause);
     }
 
     public function limit(int $limit): static

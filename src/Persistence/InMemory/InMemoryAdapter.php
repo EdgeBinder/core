@@ -271,8 +271,8 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
             $results = $this->filterBindings($criteria);
 
             // Apply ordering
-            if (isset($criteria['order_by'])) {
-                foreach ($criteria['order_by'] as $orderClause) {
+            if (isset($criteria['orderBy'])) {
+                foreach ($criteria['orderBy'] as $orderClause) {
                     $results = $this->applyOrdering($results, $orderClause);
                 }
             }
@@ -419,9 +419,9 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         $results = array_values($this->bindings);
 
         // Filter by from entity
-        if (isset($criteria['from_type']) && isset($criteria['from_id'])) {
-            $fromType = $criteria['from_type'];
-            $fromId = $criteria['from_id'];
+        if (isset($criteria['fromType']) && isset($criteria['fromId'])) {
+            $fromType = $criteria['fromType'];
+            $fromId = $criteria['fromId'];
             $results = array_filter(
                 $results,
                 fn (BindingInterface $binding) => $binding->getFromType() === $fromType && $binding->getFromId() === $fromId
@@ -429,9 +429,9 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         }
 
         // Filter by to entity
-        if (isset($criteria['to_type']) && isset($criteria['to_id'])) {
-            $toType = $criteria['to_type'];
-            $toId = $criteria['to_id'];
+        if (isset($criteria['toType']) && isset($criteria['toId'])) {
+            $toType = $criteria['toType'];
+            $toId = $criteria['toId'];
             $results = array_filter(
                 $results,
                 fn (BindingInterface $binding) => $binding->getToType() === $toType && $binding->getToId() === $toId
@@ -495,12 +495,12 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
                 '<' => $fieldValue < $value,
                 '<=' => $fieldValue <= $value,
                 'in' => is_array($value) && in_array($fieldValue, $value, true),
-                'not_in' => is_array($value) && !in_array($fieldValue, $value, true),
+                'notIn' => is_array($value) && !in_array($fieldValue, $value, true),
                 'between' => is_array($value) && 2 === count($value)
                            && $fieldValue >= $value[0] && $fieldValue <= $value[1],
                 'exists' => $this->fieldExists($binding, $field),
                 'null' => !$this->fieldExists($binding, $field) || null === $fieldValue,
-                'not_null' => $this->fieldExists($binding, $field) && null !== $fieldValue,
+                'notNull' => $this->fieldExists($binding, $field) && null !== $fieldValue,
                 default => throw new PersistenceException('query', "Unsupported operator: {$operator}"),
             };
         });
@@ -570,11 +570,13 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         // Handle direct binding properties
         return match ($field) {
             'id' => $binding->getId(),
-            'from_type' => $binding->getFromType(),
-            'from_id' => $binding->getFromId(),
-            'to_type' => $binding->getToType(),
-            'to_id' => $binding->getToId(),
+            'fromType' => $binding->getFromType(),
+            'fromId' => $binding->getFromId(),
+            'toType' => $binding->getToType(),
+            'toId' => $binding->getToId(),
             'type' => $binding->getType(),
+            'createdAt' => $binding->getCreatedAt()->getTimestamp(),
+            'updatedAt' => $binding->getUpdatedAt()->getTimestamp(),
             default => $binding->getMetadata()[$field] ?? null,
         };
     }
@@ -593,7 +595,7 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
 
         // Handle direct binding properties
         return match ($field) {
-            'id', 'from_type', 'from_id', 'to_type', 'to_id', 'type' => true,
+            'id', 'fromType', 'fromId', 'toType', 'toId', 'type', 'createdAt', 'updatedAt' => true,
             default => array_key_exists($field, $binding->getMetadata()),
         };
     }

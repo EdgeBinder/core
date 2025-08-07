@@ -225,14 +225,14 @@ final readonly class Binding implements BindingInterface
     {
         return [
             'id' => $this->id,
-            'from_type' => $this->fromType,
-            'from_id' => $this->fromId,
-            'to_type' => $this->toType,
-            'to_id' => $this->toId,
+            'fromType' => $this->fromType,
+            'fromId' => $this->fromId,
+            'toType' => $this->toType,
+            'toId' => $this->toId,
             'type' => $this->type,
             'metadata' => $this->metadata,
-            'created_at' => $this->createdAt->format(\DateTimeInterface::ATOM),
-            'updated_at' => $this->updatedAt->format(\DateTimeInterface::ATOM),
+            'createdAt' => $this->createdAt->format(\DateTimeInterface::ATOM),
+            'updatedAt' => $this->updatedAt->format(\DateTimeInterface::ATOM),
         ];
     }
 
@@ -247,7 +247,7 @@ final readonly class Binding implements BindingInterface
      */
     public static function fromArray(array $data): self
     {
-        $requiredFields = ['id', 'from_type', 'from_id', 'to_type', 'to_id', 'type', 'created_at', 'updated_at'];
+        $requiredFields = ['id', 'fromType', 'fromId', 'toType', 'toId', 'type', 'createdAt', 'updatedAt'];
 
         foreach ($requiredFields as $field) {
             if (!array_key_exists($field, $data)) {
@@ -257,14 +257,14 @@ final readonly class Binding implements BindingInterface
 
         return new self(
             id: $data['id'],
-            fromType: $data['from_type'],
-            fromId: $data['from_id'],
-            toType: $data['to_type'],
-            toId: $data['to_id'],
+            fromType: $data['fromType'],
+            fromId: $data['fromId'],
+            toType: $data['toType'],
+            toId: $data['toId'],
             type: $data['type'],
             metadata: $data['metadata'] ?? [],
-            createdAt: new \DateTimeImmutable($data['created_at']),
-            updatedAt: new \DateTimeImmutable($data['updated_at']),
+            createdAt: new \DateTimeImmutable($data['createdAt']),
+            updatedAt: new \DateTimeImmutable($data['updatedAt']),
         );
     }
 
@@ -275,6 +275,6 @@ final readonly class Binding implements BindingInterface
      */
     private static function generateId(): string
     {
-        return 'binding_'.bin2hex(random_bytes(16));
+        return 'binding'.bin2hex(random_bytes(16));
     }
 }

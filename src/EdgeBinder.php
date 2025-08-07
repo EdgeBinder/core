@@ -58,9 +58,9 @@ class EdgeBinder implements EdgeBinderInterface
      * ```php
      * $config = [
      *     'adapter' => 'weaviate',  // Required: adapter type
-     *     'weaviate_client' => 'weaviate.client.rag',  // Client service name
-     *     'collection_name' => 'RAGBindings',  // Adapter-specific config
-     *     'schema' => ['auto_create' => true],  // More adapter-specific config
+     *     'weaviateClient' => 'weaviate.client.rag',  // Client service name
+     *     'collectionName' => 'RAGBindings',  // Adapter-specific config
+     *     'schema' => ['autoCreate' => true],  // More adapter-specific config
      * ];
      * ```
      *

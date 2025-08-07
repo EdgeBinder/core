@@ -57,7 +57,7 @@ interface BindingInterface
     /**
      * Get the binding type/relationship name.
      *
-     * Examples: 'has_access', 'belongs_to', 'created_by', 'similar_to'
+     * Examples: 'hasAccess', 'belongsTo', 'createdBy', 'similarTo'
      *
      * @return string The binding type
      */
@@ -67,11 +67,11 @@ interface BindingInterface
      * Get the binding metadata.
      *
      * Metadata can contain any additional information about the relationship:
-     * - Business data (access_level, permissions, roles)
-     * - Vector/AI data (similarity_score, embedding_version)
+     * - Business data (accessLevel, permissions, roles)
+     * - Vector/AI data (similarityScore, embeddingVersion)
      * - Graph data (weight, strength, direction)
-     * - Temporal data (expires_at, valid_from)
-     * - Audit data (created_by, modified_by)
+     * - Temporal data (expiresAt, validFrom)
+     * - Audit data (createdBy, modifiedBy)
      *
      * @return array<string, mixed> The binding metadata
      */
