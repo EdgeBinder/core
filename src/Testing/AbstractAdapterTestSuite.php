@@ -554,33 +554,36 @@ abstract class AbstractAdapterTestSuite extends TestCase
             private PersistenceAdapterInterface $originalAdapter;
             private int $deleteCallCount = 0;
 
-            public function __construct(PersistenceAdapterInterface $adapter) {
+            public function __construct(PersistenceAdapterInterface $adapter)
+            {
                 $this->originalAdapter = $adapter;
             }
 
             /**
              * @param array<mixed> $args
-             * @return mixed
              */
-            public function __call(string $method, array $args) {
+            public function __call(string $method, array $args)
+            {
                 return $this->originalAdapter->$method(...$args);
             }
 
-            public function delete(string $id): void {
-                $this->deleteCallCount++;
-                if ($this->deleteCallCount === 1) {
+            public function delete(string $id): void
+            {
+                ++$this->deleteCallCount;
+                if (1 === $this->deleteCallCount) {
                     // First call succeeds
                     $this->originalAdapter->delete($id);
                 } else {
                     // Second call simulates binding already deleted by another process
-                    throw new \EdgeBinder\Exception\BindingNotFoundException("Binding with ID '{$id}' not found");
+                    throw new BindingNotFoundException("Binding with ID '{$id}' not found");
                 }
             }
 
             /**
              * @return array<BindingInterface>
              */
-            public function findByEntity(string $entityType, string $entityId): array {
+            public function findByEntity(string $entityType, string $entityId): array
+            {
                 return $this->originalAdapter->findByEntity($entityType, $entityId);
             }
         };
@@ -597,15 +600,15 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
         foreach ($bindingsToDelete as $binding) {
             try {
-                if ($deletedCount === 0) {
+                if (0 === $deletedCount) {
                     // First deletion succeeds
                     $this->adapter->delete($binding->getId());
                     ++$deletedCount;
                 } else {
                     // Second deletion simulates race condition - binding already deleted
-                    throw new \EdgeBinder\Exception\BindingNotFoundException("Binding with ID '{$binding->getId()}' not found");
+                    throw new BindingNotFoundException("Binding with ID '{$binding->getId()}' not found");
                 }
-            } catch (\EdgeBinder\Exception\BindingNotFoundException $e) {
+            } catch (BindingNotFoundException $e) {
                 // This should trigger the catch block on line 350
                 // Continue without incrementing deletedCount
             }
@@ -1179,14 +1182,14 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $query = $this->edgeBinder->query()
             ->from($user)
             ->where('metadata.level', '=', 'admin')
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q->where('metadata.level', '=', 'write');
             });
 
         $results = $query->get();
         $this->assertCount(2, $results);
 
-        $levels = array_map(fn($binding) => $binding->getMetadata()['level'], $results);
+        $levels = array_map(fn ($binding) => $binding->getMetadata()['level'], $results);
         sort($levels);
         $this->assertEquals(['admin', 'write'], $levels);
     }
@@ -1209,7 +1212,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->from($user)
             ->where('metadata.level', '=', 'admin')
             ->where('metadata.department', '=', 'engineering')
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q->where('metadata.level', '=', 'read')
                         ->where('metadata.department', '=', 'marketing');
             });
@@ -1218,7 +1221,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->assertCount(2, $results);
 
         // Should match project1 (admin+engineering) and project2 (read+marketing)
-        $matchedProjects = array_map(fn($binding) => $binding->getToId(), $results);
+        $matchedProjects = array_map(fn ($binding) => $binding->getToId(), $results);
         sort($matchedProjects);
         $this->assertEquals(['project-1', 'project-2'], $matchedProjects);
     }
@@ -1234,7 +1237,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $query = $this->edgeBinder->query()
             ->from($user)
             ->where('metadata.level', '=', 'admin')
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q->where('metadata.level', '=', 'write');
             });
 
@@ -1253,7 +1256,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $query = $this->edgeBinder->query()
             ->from($user)
             ->where('metadata.level', '=', 'admin')
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q; // Empty OR condition
             });
 
@@ -1279,17 +1282,17 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $query = $this->edgeBinder->query()
             ->from($user)
             ->where('metadata.level', '=', 'admin')
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q->where('metadata.level', '=', 'read');
             })
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q->where('metadata.level', '=', 'write');
             });
 
         $results = $query->get();
         $this->assertCount(3, $results);
 
-        $levels = array_map(fn($binding) => $binding->getMetadata()['level'], $results);
+        $levels = array_map(fn ($binding) => $binding->getMetadata()['level'], $results);
         sort($levels);
         $this->assertEquals(['admin', 'read', 'write'], $levels);
     }
@@ -1317,7 +1320,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $results = $query->get();
         $this->assertCount(2, $results);
 
-        $levels = array_map(fn($binding) => $binding->getMetadata()['level'], $results);
+        $levels = array_map(fn ($binding) => $binding->getMetadata()['level'], $results);
         sort($levels);
         $this->assertEquals(['admin', 'write'], $levels);
     }
@@ -1364,7 +1367,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $results = $query->get();
         $this->assertCount(2, $results);
 
-        $levels = array_map(fn($binding) => $binding->getMetadata()['level'], $results);
+        $levels = array_map(fn ($binding) => $binding->getMetadata()['level'], $results);
         sort($levels);
         $this->assertEquals(['admin', 'write'], $levels);
     }
@@ -1379,12 +1382,12 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->edgeBinder->bind($user, $project1, 'hasAccess', [
             'count' => 0,
             'active' => false,
-            'name' => ''
+            'name' => '',
         ]);
         $this->edgeBinder->bind($user, $project2, 'hasAccess', [
             'count' => 1,
             'active' => true,
-            'name' => 'test'
+            'name' => 'test',
         ]);
 
         // Test != with integer 0
@@ -1436,7 +1439,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         // Test ordering by 'id'
         $results = $this->edgeBinder->query()->orderBy('id', 'asc')->get();
         $this->assertCount(3, $results);
-        $ids = array_map(fn($b) => $b->getId(), $results);
+        $ids = array_map(fn ($b) => $b->getId(), $results);
         $sortedIds = $ids;
         sort($sortedIds);
         $this->assertEquals($sortedIds, $ids);
@@ -1444,7 +1447,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         // Test ordering by 'type' (binding type)
         $results = $this->edgeBinder->query()->orderBy('type', 'asc')->get();
         $this->assertCount(3, $results);
-        $types = array_map(fn($b) => $b->getType(), $results);
+        $types = array_map(fn ($b) => $b->getType(), $results);
         $this->assertEquals(['hasAccess', 'manages', 'owns'], $types);
 
         // Test ordering by 'fromType'
@@ -1464,13 +1467,13 @@ abstract class AbstractAdapterTestSuite extends TestCase
         // Test ordering by 'fromId'
         $results = $this->edgeBinder->query()->orderBy('fromId', 'asc')->get();
         $this->assertCount(3, $results);
-        $fromIds = array_map(fn($b) => $b->getFromId(), $results);
+        $fromIds = array_map(fn ($b) => $b->getFromId(), $results);
         $this->assertEquals(['user-1', 'user-1', 'user-2'], $fromIds);
 
         // Test ordering by 'toId'
         $results = $this->edgeBinder->query()->orderBy('toId', 'asc')->get();
         $this->assertCount(3, $results);
-        $toIds = array_map(fn($b) => $b->getToId(), $results);
+        $toIds = array_map(fn ($b) => $b->getToId(), $results);
         $this->assertEquals(['project-1', 'project-2', 'project-2'], $toIds);
     }
 
@@ -1497,7 +1500,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->assertCount(3, $results);
 
         // Verify chronological order
-        $timestamps = array_map(fn($b) => $b->getCreatedAt()->getTimestamp(), $results);
+        $timestamps = array_map(fn ($b) => $b->getCreatedAt()->getTimestamp(), $results);
         $this->assertTrue($timestamps[0] <= $timestamps[1]);
         $this->assertTrue($timestamps[1] <= $timestamps[2]);
 
@@ -1510,7 +1513,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->assertCount(3, $results);
 
         // Verify reverse chronological order
-        $timestamps = array_map(fn($b) => $b->getCreatedAt()->getTimestamp(), $results);
+        $timestamps = array_map(fn ($b) => $b->getCreatedAt()->getTimestamp(), $results);
         $this->assertTrue($timestamps[0] >= $timestamps[1]);
         $this->assertTrue($timestamps[1] >= $timestamps[2]);
 
@@ -1523,7 +1526,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->assertCount(3, $results);
 
         // Verify updatedAt ordering
-        $updateTimestamps = array_map(fn($b) => $b->getUpdatedAt()->getTimestamp(), $results);
+        $updateTimestamps = array_map(fn ($b) => $b->getUpdatedAt()->getTimestamp(), $results);
         $this->assertTrue($updateTimestamps[0] <= $updateTimestamps[1]);
         $this->assertTrue($updateTimestamps[1] <= $updateTimestamps[2]);
     }
@@ -1546,7 +1549,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->get();
 
         $this->assertCount(3, $results);
-        $priorities = array_map(fn($b) => $b->getMetadata()['priority'], $results);
+        $priorities = array_map(fn ($b) => $b->getMetadata()['priority'], $results);
 
         // Verify descending order (highest to lowest)
         // Note: The actual ordering might not be perfect, so let's just verify all values are present
@@ -1569,7 +1572,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->get();
 
         $this->assertCount(3, $results);
-        $types = array_map(fn($b) => $b->getType(), $results);
+        $types = array_map(fn ($b) => $b->getType(), $results);
         $this->assertEquals(['charlie', 'beta', 'admin'], $types);
     }
 
@@ -1722,6 +1725,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
         foreach ($results as $result) {
             if ($result->getId() === $binding1->getId()) {
                 $foundBinding1 = true;
+
                 break;
             }
         }
@@ -1765,13 +1769,13 @@ abstract class AbstractAdapterTestSuite extends TestCase
         // Test OR query with binding properties
         $results = $this->edgeBinder->query()
             ->where('type', '=', 'owns')
-            ->orWhere(function($q) {
+            ->orWhere(function ($q) {
                 return $q->where('type', '=', 'manages');
             })
             ->get();
         $this->assertCount(2, $results);
 
-        $types = array_map(fn($b) => $b->getType(), $results);
+        $types = array_map(fn ($b) => $b->getType(), $results);
         sort($types);
         $this->assertEquals(['manages', 'owns'], $types);
     }
@@ -1793,7 +1797,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->get();
         $this->assertCount(2, $results);
 
-        $types = array_map(fn($b) => $b->getType(), $results);
+        $types = array_map(fn ($b) => $b->getType(), $results);
         sort($types);
         $this->assertEquals(['hasAccess', 'manages'], $types);
 
@@ -1803,7 +1807,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->get();
         $this->assertCount(2, $results);
 
-        $toIds = array_map(fn($b) => $b->getToId(), $results);
+        $toIds = array_map(fn ($b) => $b->getToId(), $results);
         sort($toIds);
         $this->assertEquals(['project-1', 'project-3'], $toIds);
     }

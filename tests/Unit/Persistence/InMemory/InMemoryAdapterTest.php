@@ -51,7 +51,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
             'bool' => true,
             'null' => null,
             'array' => ['nested' => 'value'],
-            'datetime' => new \DateTimeImmutable()
+            'datetime' => new \DateTimeImmutable(),
         ]);
 
         $found = $this->adapter->find($binding->getId());
@@ -109,7 +109,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
         // Test maximum nesting depth (exactly 10 levels)
         $metadata = [];
         $current = &$metadata;
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $current['level'] = [];
             $current = &$current['level'];
         }
@@ -120,7 +120,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
 
         // Navigate to verify deep processing
         $deep = $normalized;
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 10; ++$i) {
             $deep = $deep['level'];
         }
         $this->assertEquals('max_depth_value', $deep);
@@ -160,7 +160,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
         // Create binding with complex metadata
         $binding = $this->edgeBinder->bind($user, $project, 'has_access', [
             'nested' => ['deep' => ['value' => 'test']],
-            'timestamp' => time()
+            'timestamp' => time(),
         ]);
 
         // Test direct field access (non-metadata fields)
@@ -196,7 +196,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
         $this->assertCount(3, $results);
 
         // Extract priorities to verify ordering works (test the functionality, not specific order)
-        $priorities = array_map(fn($binding) => $binding->getMetadata()['priority'], $results);
+        $priorities = array_map(fn ($binding) => $binding->getMetadata()['priority'], $results);
 
         // Verify all priorities are present (ordering logic is tested elsewhere)
         sort($priorities); // Sort to check all values are present
@@ -214,7 +214,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
         // Create binding with null metadata value
         $this->edgeBinder->bind($user, $project, 'has_access', [
             'description' => null,
-            'active' => false
+            'active' => false,
         ]);
 
         // Test exists operator on null value (should return true because key exists)
