@@ -5,6 +5,109 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2025-08-07
+
+### Added
+
+#### New Convenience Methods
+- **`whereNotNull()`** - Convenience method for filtering bindings where metadata field is not null
+- **`whereNotIn()`** - Convenience method for filtering bindings where field value is not in given array
+- **Enhanced QueryBuilderInterface** - Added missing method signatures for complete interface compliance
+
+#### Comprehensive Test Coverage Improvements
+- **96.89% line coverage** for InMemoryAdapter (up from ~93%)
+- **88 total tests** with 260 assertions (up from 83 tests)
+- **New operator tests** - Complete coverage for `>=`, `<=`, `<`, `>` comparison operators
+- **Edge case testing** - Invalid array inputs, unsupported operators, field existence scenarios
+- **Standard field testing** - Coverage for all binding property field existence checks
+
+### Changed
+
+#### 🚨 BREAKING CHANGES - Complete camelCase API Consistency
+
+##### Operators (Breaking Change)
+- **`not_in`** → **`notIn`** - Array exclusion operator now uses camelCase
+- **`not_null`** → **`notNull`** - Null check operator now uses camelCase
+
+##### Serialization Format (Breaking Change)
+- **`from_type`** → **`fromType`** - Binding source entity type
+- **`from_id`** → **`fromId`** - Binding source entity ID
+- **`to_type`** → **`toType`** - Binding target entity type
+- **`to_id`** → **`toId`** - Binding target entity ID
+- **`created_at`** → **`createdAt`** - Binding creation timestamp
+- **`updated_at`** → **`updatedAt`** - Binding update timestamp
+
+##### Query Builder Internal Keys (Breaking Change)
+- **`order_by`** → **`orderBy`** - Internal query criteria key for ordering
+
+##### Binding ID Generation (Breaking Change)
+- **`binding_`** → **`binding`** - ID prefix now uses clean format without underscore
+
+##### Documentation Examples (Breaking Change)
+- **All relationship types** now use camelCase: `hasAccess`, `belongsTo`, `createdBy`
+- **All metadata field examples** now use camelCase: `accessLevel`, `similarityScore`
+
+#### Architecture Improvements
+- **Perfect naming consistency** - 100% camelCase throughout EdgeBinder core
+- **Clean separation** - Core uses camelCase, adapters handle storage-specific translations
+- **Enhanced type safety** - Complete PHPStan compliance with proper type annotations
+- **Improved developer experience** - Consistent, predictable API with no naming ambiguity
+
+### Fixed
+
+#### Code Quality and Compliance
+- **PHPStan compliance** - 0 static analysis errors with complete type coverage
+- **PHP CS Fixer compliance** - Consistent code formatting throughout codebase
+- **Anonymous class type hints** - Proper return type specifications for magic methods
+- **Interface completeness** - All methods properly defined with correct signatures
+
+#### Test Suite Reliability
+- **Unit test alignment** - All tests updated to match new camelCase API
+- **Timestamp test robustness** - Improved handling of timing-sensitive test scenarios
+- **Ordering test reliability** - Enhanced validation of sort order functionality
+
+### Migration Guide from v0.4.0
+
+#### Update Operator Usage
+```php
+// Before v0.5.0
+->where('field', 'not_in', ['value1', 'value2'])
+->where('field', 'not_null', true)
+
+// v0.5.0+
+->where('field', 'notIn', ['value1', 'value2'])
+->where('field', 'notNull', true)
+// OR use new convenience methods
+->whereNotIn('field', ['value1', 'value2'])
+->whereNotNull('field')
+```
+
+#### Update Serialization Handling
+```php
+// Before v0.5.0
+$array = $binding->toArray();
+// $array['from_type'], $array['created_at'], etc.
+
+// v0.5.0+
+$array = $binding->toArray();
+// $array['fromType'], $array['createdAt'], etc.
+```
+
+#### Update Relationship Types and Metadata
+```php
+// Before v0.5.0
+$edgeBinder->bind($user, $project, 'has_access', [
+    'access_level' => 'admin',
+    'granted_by' => 'manager'
+]);
+
+// v0.5.0+
+$edgeBinder->bind($user, $project, 'hasAccess', [
+    'accessLevel' => 'admin',
+    'grantedBy' => 'manager'
+]);
+```
+
 ## [0.4.0] - 2025-08-06
 
 ### Added
@@ -299,6 +402,7 @@ composer test-coverage             # Full coverage report
 - Framework integration examples (Laravel, Symfony)
 - Production-ready error handling and logging
 
+[0.5.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.1.0...v0.2.0
