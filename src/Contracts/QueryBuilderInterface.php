@@ -96,6 +96,25 @@ interface QueryBuilderInterface
     public function whereNull(string $field): static;
 
     /**
+     * Filter bindings where metadata field is not null and exists.
+     *
+     * @param string $field The metadata field name
+     *
+     * @return static New query builder instance
+     */
+    public function whereNotNull(string $field): static;
+
+    /**
+     * Filter bindings where field value is not in the given array.
+     *
+     * @param string $field The field name
+     * @param array<mixed> $values Array of values to exclude
+     *
+     * @return static New query builder instance
+     */
+    public function whereNotIn(string $field, array $values): static;
+
+    /**
      * Add OR condition group.
      *
      * @param callable(static): static $callback Callback to build OR conditions

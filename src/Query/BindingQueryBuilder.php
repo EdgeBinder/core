@@ -140,6 +140,9 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
         return $this->addToArray('where', $whereClause);
     }
 
+    /**
+     * @param array<mixed> $values
+     */
     public function whereNotIn(string $field, array $values): static
     {
         $whereClause = [

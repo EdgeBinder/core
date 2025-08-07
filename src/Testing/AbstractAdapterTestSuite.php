@@ -551,14 +551,18 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
         // Create a custom adapter that simulates race condition
         $customAdapter = new class($this->adapter) {
-            private $originalAdapter;
-            private $deleteCallCount = 0;
+            private PersistenceAdapterInterface $originalAdapter;
+            private int $deleteCallCount = 0;
 
-            public function __construct($adapter) {
+            public function __construct(PersistenceAdapterInterface $adapter) {
                 $this->originalAdapter = $adapter;
             }
 
-            public function __call($method, $args) {
+            /**
+             * @param array<mixed> $args
+             * @return mixed
+             */
+            public function __call(string $method, array $args) {
                 return $this->originalAdapter->$method(...$args);
             }
 
@@ -573,6 +577,9 @@ abstract class AbstractAdapterTestSuite extends TestCase
                 }
             }
 
+            /**
+             * @return array<BindingInterface>
+             */
             public function findByEntity(string $entityType, string $entityId): array {
                 return $this->originalAdapter->findByEntity($entityType, $entityId);
             }
