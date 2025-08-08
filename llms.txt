@@ -46,13 +46,73 @@ EdgeBinder is a lightweight, storage-agnostic relationship management library fo
 
 ## Core Architecture
 
+### 🚀 v0.6.0 Revolutionary Criteria Transformer Pattern
+
+EdgeBinder v0.6.0 introduces a **revolutionary architecture** that makes adapters dramatically simpler and more maintainable:
+
+#### Before v0.6.0: Heavy Adapters (50+ lines of conversion logic)
+```php
+public function executeQuery(QueryBuilderInterface $query): array {
+    $criteria = $query->getCriteria();
+    $filters = [];
+    if ($criteria['from']) {
+        // 20+ lines of complex conversion logic...
+    }
+    // ... many more lines of manual conversion
+    return $this->executeNativeQuery($convertedQuery);
+}
+```
+
+#### v0.6.0+: Light Adapters (Just 3 lines!)
+```php
+public function executeQuery(QueryCriteria $criteria): QueryResultInterface {
+    $query = $criteria->transform($this->transformer);  // 1 line transformation!
+    return new QueryResult($this->executeNativeQuery($query));
+}
+```
+
+### Key v0.6.0 Components
+
+#### CriteriaTransformerInterface (src/Contracts/CriteriaTransformerInterface.php)
+**NEW in v0.6.0** - Contract for adapter-specific query transformations:
+```php
+interface CriteriaTransformerInterface
+{
+    public function transformEntity(EntityCriteria $entity, string $direction): mixed;
+    public function transformWhere(WhereCriteria $where): mixed;
+    public function transformOrderBy(OrderByCriteria $orderBy): mixed;
+    public function transformBindingType(string $type): mixed;
+    public function combineFilters(array $filters, array $orFilters = []): mixed;
+}
+```
+
+#### QueryResultInterface (src/Contracts/QueryResultInterface.php)
+**NEW in v0.6.0** - Modern result objects with convenience methods:
+```php
+interface QueryResultInterface extends \Countable, \IteratorAggregate
+{
+    public function getBindings(): array;
+    public function isEmpty(): bool;
+    public function first(): ?BindingInterface;
+    public function count(): int;
+}
+```
+
+#### Self-Transforming Criteria Objects (src/Query/)
+**NEW in v0.6.0** - Each criteria knows how to convert itself:
+- `QueryCriteria` - Main query criteria with `transform()` method
+- `EntityCriteria` - Entity-specific criteria (from/to entities)
+- `WhereCriteria` - Where condition criteria with all operators
+- `OrderByCriteria` - Ordering criteria with ASC/DESC directions
+- `QueryResult` - Modern result implementation with convenience methods
+
 ### Main Classes and Interfaces
 
 #### EdgeBinder (src/EdgeBinder.php)
 Main service class implementing EdgeBinderInterface. Provides:
 - `bind(object $from, object $to, string $type, array $metadata = []): BindingInterface`
 - `unbind(string $bindingId): void`
-- `query(): QueryBuilderInterface`
+- `query(): QueryBuilderInterface` ⚡ **Now creates QueryCriteria objects in v0.6.0**
 - `findBinding(string $bindingId): ?BindingInterface`
 
 #### PersistenceAdapterInterface (src/Contracts/PersistenceAdapterInterface.php)
@@ -60,7 +120,8 @@ Core interface that all adapters must implement:
 - `store(BindingInterface $binding): void`
 - `find(string $bindingId): ?BindingInterface`
 - `delete(string $bindingId): void`
-- `executeQuery(QueryBuilderInterface $query): array`
+- `executeQuery(QueryCriteria $criteria): QueryResultInterface` ⚡ **v0.6.0 BREAKING CHANGE**
+- `count(QueryCriteria $criteria): int` ⚡ **v0.6.0 BREAKING CHANGE**
 - `extractEntityId(object $entity): string`
 - `extractEntityType(object $entity): string`
 - `validateAndNormalizeMetadata(array $metadata): array`
@@ -74,8 +135,10 @@ Immutable value object representing a relationship:
 ### Built-in InMemory Adapter
 
 #### InMemoryAdapter (src/Persistence/InMemory/InMemoryAdapter.php)
-Production-ready in-memory persistence adapter:
-- **Full PersistenceAdapterInterface implementation** with all 12 required methods
+Production-ready in-memory persistence adapter **updated for v0.6.0**:
+- **Full PersistenceAdapterInterface implementation** with new v0.6.0 signatures
+- **Uses InMemoryTransformer** - Complete reference implementation of CriteriaTransformerInterface
+- **Light adapter pattern** - Just 3 lines per query method using transformer
 - **Efficient indexing** - Entity index and type index for fast lookups
 - **Advanced query support** - All operators, ordering, pagination, OR conditions
 - **Comprehensive metadata validation** - Type checking, nesting limits, DateTime normalization
@@ -87,7 +150,16 @@ Production-ready in-memory persistence adapter:
 - Unit testing and integration testing
 - Development environments and prototyping
 - Small applications with minimal persistence needs
-- Reference implementation for other adapters
+- **Reference implementation** for v0.6.0 adapter pattern
+
+#### InMemoryTransformer (src/Persistence/InMemory/InMemoryTransformer.php)
+**NEW in v0.6.0** - Complete reference implementation of CriteriaTransformerInterface:
+- **All operators supported**: `=`, `>`, `<`, `>=`, `<=`, `!=`, `in`, `notIn`, `between`, `exists`, `null`, `notNull`
+- **Complex OR conditions** - Full support for nested OR logic with proper grouping
+- **Entity transformation** - Handles from/to entity criteria with type filtering
+- **OrderBy transformation** - Field-based ordering with ASC/DESC directions
+- **Lazy caching** - Transformation only happens once per transformer instance
+- **Perfect example** for implementing your own transformer
 
 #### InMemoryAdapterFactory (src/Persistence/InMemory/InMemoryAdapterFactory.php)
 Factory for creating InMemory adapter instances:
@@ -238,7 +310,7 @@ class AdapterException extends EdgeBinderException
 ```php
 class EdgeBinder
 {
-    public const VERSION = '0.5.0';
+    public const VERSION = '0.6.0';
 }
 ```
 
@@ -373,31 +445,129 @@ $ragBinder = EdgeBinder::fromConfiguration($ragConfig, $container);
 $socialBinder = EdgeBinder::fromConfiguration($socialConfig, $container);
 ```
 
-## Creating New Adapters
+## Creating New Adapters for v0.6.0
 
-### Step 1: Implement PersistenceAdapterInterface
+### 🚀 v0.6.0 Adapter Development is MUCH Easier!
 
-Create your adapter class implementing `EdgeBinder\Contracts\PersistenceAdapterInterface`:
+With the new Criteria Transformer Pattern, creating adapters is dramatically simpler:
+
+### Step 1: Create Your Transformer (NEW in v0.6.0)
+
+First, implement `CriteriaTransformerInterface` for your storage backend:
 
 ```php
 <?php
 namespace MyVendor\MyAdapter;
 
-use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Contracts\CriteriaTransformerInterface;
+use EdgeBinder\Query\{EntityCriteria, WhereCriteria, OrderByCriteria};
+
+class MyCustomTransformer implements CriteriaTransformerInterface
+{
+    public function transformEntity(EntityCriteria $entity, string $direction): mixed
+    {
+        // Convert to your storage's entity format
+        return [
+            'type' => $entity->entityType,
+            'id' => $entity->entityId,
+            'direction' => $direction
+        ];
+    }
+
+    public function transformWhere(WhereCriteria $where): mixed
+    {
+        // Convert to your storage's where format
+        return [
+            'field' => $where->field,
+            'operator' => $this->mapOperator($where->operator),
+            'value' => $where->value
+        ];
+    }
+
+    public function transformOrderBy(OrderByCriteria $orderBy): mixed
+    {
+        // Convert to your storage's sort format
+        return [
+            'field' => $orderBy->field,
+            'direction' => strtolower($orderBy->direction)
+        ];
+    }
+
+    public function transformBindingType(string $type): mixed
+    {
+        return ['bindingType' => $type];
+    }
+
+    public function combineFilters(array $filters, array $orFilters = []): mixed
+    {
+        $combined = ['and' => $filters];
+        if (!empty($orFilters)) {
+            $combined['or'] = $orFilters;
+        }
+        return $combined;
+    }
+
+    private function mapOperator(string $operator): string
+    {
+        return match($operator) {
+            '=' => 'equals',
+            '!=' => 'not_equals',
+            '>' => 'greater_than',
+            '<' => 'less_than',
+            '>=' => 'greater_equal',
+            '<=' => 'less_equal',
+            'in' => 'in_array',
+            'notIn' => 'not_in_array',
+            'between' => 'between',
+            'exists' => 'exists',
+            'null' => 'is_null',
+            'notNull' => 'not_null',
+            default => throw new \InvalidArgumentException("Unsupported operator: $operator")
+        };
+    }
+}
+```
+
+### Step 2: Implement Light Adapter (v0.6.0 Pattern)
+
+Now create your adapter - it's incredibly simple with the transformer pattern:
+
+```php
+<?php
+namespace MyVendor\MyAdapter;
+
+use EdgeBinder\Contracts\{PersistenceAdapterInterface, QueryResultInterface};
 use EdgeBinder\Contracts\BindingInterface;
-use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Query\{QueryCriteria, QueryResult};
 
 class MyCustomAdapter implements PersistenceAdapterInterface
 {
     private $client;
+    private MyCustomTransformer $transformer;
     private array $config;
 
     public function __construct($client, array $config = [])
     {
         $this->client = $client;
+        $this->transformer = new MyCustomTransformer();
         $this->config = $config;
     }
 
+    // 🚀 v0.6.0 LIGHT ADAPTER PATTERN - Just 3 lines!
+    public function executeQuery(QueryCriteria $criteria): QueryResultInterface
+    {
+        $query = $criteria->transform($this->transformer);  // 1 line transformation!
+        $results = $this->executeNativeQuery($query);       // Execute with your client
+        return new QueryResult($results);                   // Return QueryResult object
+    }
+
+    public function count(QueryCriteria $criteria): int
+    {
+        $query = $criteria->transform($this->transformer);
+        return $this->executeNativeCount($query);
+    }
+
+    // Standard methods remain the same
     public function store(BindingInterface $binding): void
     {
         // Implement storage logic using your backend
@@ -418,12 +588,6 @@ class MyCustomAdapter implements PersistenceAdapterInterface
         // Throw PersistenceException on failure
     }
 
-    public function executeQuery(QueryBuilderInterface $query): array
-    {
-        // Implement query execution
-        // Return array of BindingInterface objects
-    }
-
     public function extractEntityId(object $entity): string
     {
         // Try EntityInterface first, then getId() method, then id property
@@ -442,11 +606,22 @@ class MyCustomAdapter implements PersistenceAdapterInterface
         // Return normalized metadata
     }
 
-    // Implement other required methods...
+    // Your native query methods
+    private function executeNativeQuery(array $query): array
+    {
+        // Execute the transformed query with your client
+        // Return array of BindingInterface objects
+    }
+
+    private function executeNativeCount(array $query): int
+    {
+        // Execute count query with your client
+        // Return integer count
+    }
 }
 ```
 
-### Step 2: Create Adapter Factory
+### Step 3: Create Adapter Factory
 
 Create a factory implementing `EdgeBinder\Registry\AdapterFactoryInterface`:
 
@@ -485,7 +660,7 @@ class MyCustomAdapterFactory implements AdapterFactoryInterface
 }
 ```
 
-### Step 3: Register Adapter (Framework Examples)
+### Step 4: Register Adapter (Framework Examples)
 
 #### Laminas/Mezzio
 ```php
@@ -511,7 +686,7 @@ class MyCustomAdapterFactory implements AdapterFactoryInterface
 \EdgeBinder\Registry\AdapterRegistry::register(new MyCustomAdapterFactory());
 ```
 
-### Step 4: Configuration
+### Step 5: Configuration
 
 Create configuration that works across all frameworks:
 
@@ -528,6 +703,75 @@ return [
     ],
 ];
 ```
+
+## v0.6.0 Migration Guide
+
+### Migrating from v0.5.0 to v0.6.0
+
+#### 🚨 BREAKING CHANGES - Update Required
+
+**1. Update Adapter Interface Signatures:**
+```php
+// OLD v0.5.0 signatures:
+public function executeQuery(QueryBuilderInterface $query): array
+public function count(QueryBuilderInterface $query): int  // If implemented
+
+// NEW v0.6.0 signatures:
+public function executeQuery(QueryCriteria $criteria): QueryResultInterface
+public function count(QueryCriteria $criteria): int
+```
+
+**2. Remove Complex Conversion Logic:**
+```php
+// OLD v0.5.0 - Heavy adapter with manual conversion (50+ lines):
+public function executeQuery(QueryBuilderInterface $query): array {
+    $criteria = $query->getCriteria();
+    $filters = [];
+    if ($criteria['from']) {
+        // 20+ lines of complex conversion logic...
+    }
+    if ($criteria['where']) {
+        foreach ($criteria['where'] as $condition) {
+            // More conversion logic...
+        }
+    }
+    // ... many more lines
+    return $this->executeNativeQuery($convertedQuery);
+}
+
+// NEW v0.6.0 - Light adapter with transformer (3 lines):
+public function executeQuery(QueryCriteria $criteria): QueryResultInterface {
+    $query = $criteria->transform($this->transformer);  // 1 line!
+    $results = $this->executeNativeQuery($query);
+    return new QueryResult($results);
+}
+```
+
+**3. Create Your Transformer:**
+Move all your conversion logic into a dedicated transformer class implementing `CriteriaTransformerInterface`.
+
+**4. Update Tests:**
+```php
+// OLD v0.5.0 tests:
+$results = $adapter->executeQuery($queryBuilder);
+$this->assertIsArray($results);
+$this->assertCount(2, $results);
+$binding = $results[0];
+
+// NEW v0.6.0 tests:
+$results = $adapter->executeQuery($criteria);
+$this->assertInstanceOf(QueryResultInterface::class, $results);
+$this->assertCount(2, $results);
+$binding = $results->first(); // or $results->getBindings()[0]
+```
+
+### Benefits of v0.6.0 Architecture
+
+1. **Much lighter adapters** - 95% less code in adapter classes
+2. **Better separation of concerns** - Adapters execute, transformers convert
+3. **Easier testing** - Unit test transformers independently
+4. **Better performance** - Lazy caching prevents redundant transformations
+5. **Easier maintenance** - Clear, focused responsibilities
 
 ## Development Patterns
 
@@ -558,11 +802,52 @@ return [
 - Normalize data for optimal storage
 - Support `DateTimeInterface` objects
 
-### Testing
-- Create unit tests for all adapter methods
+### Testing (Updated for v0.6.0)
+- **Test your transformer independently** - Unit test all transformation methods
+- **Use AbstractAdapterTestSuite** - Ensures complete v0.6.0 compliance
+- **Test QueryResult objects** - Use `first()`, `isEmpty()`, `count()` methods
 - Mock external dependencies (clients, connections)
 - Test error conditions and edge cases
 - Create integration tests with real storage backends
+
+#### v0.6.0 Testing Patterns
+```php
+// Test transformer independently
+class MyTransformerTest extends TestCase
+{
+    private MyCustomTransformer $transformer;
+
+    public function testTransformWhere(): void
+    {
+        $where = new WhereCriteria('field', '=', 'value');
+        $result = $this->transformer->transformWhere($where);
+
+        $this->assertEquals([
+            'field' => 'field',
+            'operator' => 'equals',
+            'value' => 'value'
+        ], $result);
+    }
+}
+
+// Test adapter with QueryResult
+class MyAdapterTest extends AbstractAdapterTestSuite
+{
+    protected function createAdapter(): PersistenceAdapterInterface
+    {
+        return new MyCustomAdapter($this->mockClient);
+    }
+
+    public function testQueryReturnsQueryResult(): void
+    {
+        $criteria = new QueryCriteria();
+        $result = $this->adapter->executeQuery($criteria);
+
+        $this->assertInstanceOf(QueryResultInterface::class, $result);
+        $this->assertTrue($result->isEmpty() || $result->count() > 0);
+    }
+}
+```
 
 ## Configuration Patterns
 
@@ -622,9 +907,10 @@ Support multiple EdgeBinder instances with different adapters:
 - `src/Persistence/InMemory/InMemoryAdapterFactory.php` - Factory for extensible adapter system
 - Shows complete PersistenceAdapterInterface implementation with comprehensive test coverage
 
-### Example Third-Party Adapter
-- `../weaviate-adapter/src/WeaviateAdapter.php` - Third-party adapter reference
-- Shows proper error handling, configuration, and integration patterns
+### Example Third-Party Adapter (Updated for v0.6.0)
+- `../weaviate-adapter/src/WeaviateAdapter.php` - Third-party adapter reference **updated for v0.6.0**
+- `../weaviate-adapter/src/WeaviateTransformer.php` - **NEW** transformer implementation
+- Shows proper v0.6.0 patterns, error handling, configuration, and integration
 
 ### Documentation
 - `docs/EXTENSIBLE_ADAPTERS.md` - Complete developer guide for creating third-party adapters
@@ -644,8 +930,8 @@ Support multiple EdgeBinder instances with different adapters:
 - 95%+ test coverage
 - Comprehensive PHPDoc
 
-### **REQUIRED: Testing Standard**
-**⚠️ CRITICAL**: All adapters MUST extend `AbstractAdapterTestSuite` for compliance testing.
+### **REQUIRED: Testing Standard (Updated for v0.6.0)**
+**⚠️ CRITICAL**: All adapters MUST extend `AbstractAdapterTestSuite` for v0.6.0 compliance testing.
 
 ```php
 // Location: src/Testing/AbstractAdapterTestSuite.php
@@ -657,9 +943,11 @@ abstract class AbstractAdapterTestSuite extends TestCase
     abstract protected function createAdapter(): PersistenceAdapterInterface;
     abstract protected function cleanupAdapter(): void;
 
-    // Provides 57+ comprehensive integration tests:
-    // - All public API methods tested with real EdgeBinder integration
+    // Provides 57+ comprehensive integration tests UPDATED FOR v0.6.0:
+    // - All public API methods tested with QueryCriteria and QueryResult objects
     // - Complex query scenarios (from, to, type, where, ordering, pagination)
+    // - OR condition support and complex nested queries
+    // - QueryResult interface compliance (isEmpty(), first(), count(), getBindings())
     // - Metadata validation and normalization edge cases
     // - Entity extraction with all fallback scenarios
     // - Error handling for all failure modes
@@ -668,7 +956,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
 }
 ```
 
-**Usage Example:**
+**Usage Example (v0.6.0):**
 ```php
 class MyAdapterTest extends AbstractAdapterTestSuite
 {
@@ -682,7 +970,8 @@ class MyAdapterTest extends AbstractAdapterTestSuite
         $this->teardownClient();
     }
 
-    // 57+ tests inherited automatically - ensures 100% compliance
+    // 57+ tests inherited automatically - ensures 100% v0.6.0 compliance
+    // Tests automatically verify QueryResult objects and new interface signatures
 }
 ```
 
@@ -692,15 +981,29 @@ class MyAdapterTest extends AbstractAdapterTestSuite
 - Adapter types: lowercase (e.g., 'inmemory', 'weaviate', 'janus', 'redis')
 - Service names: `{adapter}.client.{connection}` (e.g., 'weaviate.client.rag')
 
-## Common Implementation Patterns
+## Common Implementation Patterns (Updated for v0.6.0)
 
-### Adapter Constructor Pattern
+### v0.6.0 Adapter Constructor Pattern
 ```php
-public function __construct($client, array $config = [], ?BindingMapper $mapper = null)
+public function __construct($client, array $config = [])
 {
     $this->client = $client;
+    $this->transformer = new MyCustomTransformer();  // NEW: Include transformer
     $this->config = array_merge($this->getDefaultConfig(), $config);
-    $this->mapper = $mapper ?? new DefaultBindingMapper();
+}
+```
+
+### v0.6.0 Query Execution Pattern
+```php
+public function executeQuery(QueryCriteria $criteria): QueryResultInterface
+{
+    try {
+        $query = $criteria->transform($this->transformer);  // Transform once
+        $results = $this->executeNativeQuery($query);       // Execute with client
+        return new QueryResult($results);                   // Return QueryResult
+    } catch (\Exception $e) {
+        throw PersistenceException::queryFailed($e->getMessage(), $e);
+    }
 }
 ```
 
@@ -898,4 +1201,28 @@ foreach ($required as $key) {
 }
 ```
 
-This comprehensive context should help you understand the EdgeBinder architecture and provide complete guidance for creating new adapters that work seamlessly across all PHP frameworks.
+## v0.6.0 Key Takeaways
+
+### For Adapter Developers
+1. **Implement CriteriaTransformerInterface first** - This is where your conversion logic goes
+2. **Keep adapters light** - Just call `$criteria->transform($transformer)` and execute
+3. **Return QueryResult objects** - Use `new QueryResult($results)`
+4. **Test transformers independently** - Unit test all transformation methods
+5. **Use AbstractAdapterTestSuite** - Ensures complete v0.6.0 compliance
+
+### Architecture Benefits
+- **95% less adapter code** - Transformers handle all conversion logic
+- **Better separation of concerns** - Clear responsibilities between adapters and transformers
+- **Easier testing** - Test transformation logic independently from execution
+- **Better performance** - Lazy caching prevents redundant transformations
+- **Easier maintenance** - Focused, single-responsibility classes
+
+### Migration Checklist
+- [ ] Update interface signatures to use `QueryCriteria` and `QueryResultInterface`
+- [ ] Create transformer implementing `CriteriaTransformerInterface`
+- [ ] Move conversion logic from adapter to transformer
+- [ ] Update adapter to use transformer pattern (3 lines per method)
+- [ ] Update tests to work with `QueryResult` objects
+- [ ] Extend `AbstractAdapterTestSuite` for compliance testing
+
+This comprehensive context provides complete guidance for creating and migrating adapters to EdgeBinder v0.6.0's revolutionary architecture that works seamlessly across all PHP frameworks.

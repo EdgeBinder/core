@@ -196,13 +196,14 @@ class RedisAdapterTest extends TestCase
                 json_encode($binding2->toArray())
             );
 
-        $query = $this->createMock(\EdgeBinder\Contracts\QueryBuilderInterface::class);
-        $query->method('getCriteria')->willReturn(['type' => 'has_access']);
+        $criteria = new \EdgeBinder\Query\QueryCriteria();
+        $criteria->bindingType = 'has_access';
 
-        $results = $this->adapter->executeQuery($query);
-        
+        $results = $this->adapter->executeQuery($criteria);
+
+        $this->assertInstanceOf(\EdgeBinder\Contracts\QueryResultInterface::class, $results);
         $this->assertCount(1, $results);
-        $this->assertEquals($binding1->getId(), $results[0]->getId());
+        $this->assertEquals($binding1->getId(), $results->first()->getId());
     }
 
     public function testExecuteQueryNoResults(): void
@@ -213,12 +214,12 @@ class RedisAdapterTest extends TestCase
             ->with('edgebinder:*')
             ->willReturn([]);
 
-        $query = $this->createMock(\EdgeBinder\Contracts\QueryBuilderInterface::class);
-        $query->method('getCriteria')->willReturn(['type' => 'has_access']);
+        $criteria = new \EdgeBinder\Query\QueryCriteria();
 
-        $results = $this->adapter->executeQuery($query);
-        
-        $this->assertEmpty($results);
+        $results = $this->adapter->executeQuery($criteria);
+
+        $this->assertInstanceOf(\EdgeBinder\Contracts\QueryResultInterface::class, $results);
+        $this->assertTrue($results->isEmpty());
     }
 
     public function testExtractEntityIdFromEntityInterface(): void

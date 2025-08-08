@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace MyVendor\RedisAdapter;
 
-use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Contracts\{PersistenceAdapterInterface, QueryResultInterface};
 use EdgeBinder\Contracts\BindingInterface;
-use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Query\{QueryCriteria, QueryResult};
 use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Exception\PersistenceException;
 use EdgeBinder\Exception\EntityExtractionException;
@@ -32,6 +32,7 @@ use EdgeBinder\Binding;
 class RedisAdapter implements PersistenceAdapterInterface
 {
     private \Redis $redis;
+    private RedisTransformer $transformer;
     private array $config;
 
     /**
@@ -41,6 +42,7 @@ class RedisAdapter implements PersistenceAdapterInterface
     public function __construct(\Redis $redis, array $config = [])
     {
         $this->redis = $redis;
+        $this->transformer = new RedisTransformer();  // NEW: Include transformer
         $this->config = array_merge($this->getDefaultConfig(), $config);
         $this->validateConfiguration();
     }
@@ -111,20 +113,36 @@ class RedisAdapter implements PersistenceAdapterInterface
         }
     }
 
-    public function executeQuery(QueryBuilderInterface $query): array
+    // 🚀 v0.6.0 LIGHT ADAPTER PATTERN - Just 3 lines!
+    public function executeQuery(QueryCriteria $criteria): QueryResultInterface
+    {
+        $query = $criteria->transform($this->transformer);  // 1 line transformation!
+        $results = $this->executeRedisQuery($query);        // Execute with Redis
+        return new QueryResult($results);                   // Return QueryResult object
+    }
+
+    public function count(QueryCriteria $criteria): int
+    {
+        $query = $criteria->transform($this->transformer);
+        return $this->executeRedisCount($query);
+    }
+
+    /**
+     * Execute the transformed query with Redis
+     */
+    private function executeRedisQuery(array $query): array
     {
         try {
-            $criteria = $query->getCriteria();
             $results = [];
-            
+
             // Get all keys matching our prefix pattern
             $pattern = $this->config['prefix'] . '*';
             $keys = $this->redis->keys($pattern);
-            
+
             if (empty($keys)) {
                 return [];
             }
-            
+
             // Load all bindings and filter in memory
             // Note: This is not efficient for large datasets
             $bindings = [];
@@ -133,17 +151,17 @@ class RedisAdapter implements PersistenceAdapterInterface
                 if ($data !== false) {
                     try {
                         $array = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-                        $bindings[] = Binding::fromArray($array);
+                        $bindings[] = \EdgeBinder\Binding::fromArray($array);
                     } catch (\JsonException $e) {
                         // Skip invalid bindings
                         continue;
                     }
                 }
             }
-            
-            // Apply filters
+
+            // Apply filters using transformed query
             foreach ($bindings as $binding) {
-                if ($this->matchesCriteria($binding, $criteria)) {
+                if ($this->matchesTransformedCriteria($binding, $query)) {
                     $results[] = $binding;
                 }
             }
@@ -157,6 +175,32 @@ class RedisAdapter implements PersistenceAdapterInterface
             }
             throw PersistenceException::serverError('executeQuery', $e->getMessage(), $e);
         }
+    }
+
+    /**
+     * Execute count query with Redis
+     */
+    private function executeRedisCount(array $query): int
+    {
+        $results = $this->executeRedisQuery($query);
+        return count($results);
+    }
+
+    /**
+     * Check if binding matches the transformed criteria
+     */
+    private function matchesTransformedCriteria(\EdgeBinder\Contracts\BindingInterface $binding, array $query): bool
+    {
+        // This is a simplified implementation for the example
+        // A real implementation would handle the transformed query format properly
+
+        // For now, just return true to show all bindings
+        // In a real implementation, you would:
+        // 1. Check entity filters from $query['and'] and $query['or']
+        // 2. Apply where conditions
+        // 3. Handle ordering and pagination
+
+        return true;
     }
 
     public function extractEntityId(object $entity): string

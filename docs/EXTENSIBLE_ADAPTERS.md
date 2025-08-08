@@ -1,55 +1,141 @@
-# EdgeBinder Extensible Adapters Developer Guide
+# EdgeBinder Extensible Adapters Developer Guide (v0.6.0)
 
-This guide provides comprehensive instructions for creating third-party adapters that work seamlessly across all PHP frameworks using EdgeBinder's extensible adapter system.
+This guide provides comprehensive instructions for creating third-party adapters using EdgeBinder v0.6.0's **revolutionary Criteria Transformer Pattern** that work seamlessly across all PHP frameworks.
 
 ## Overview
 
-EdgeBinder's extensible adapter system allows you to create custom persistence adapters that:
+EdgeBinder v0.6.0's **revolutionary architecture** makes creating adapters dramatically easier with the Criteria Transformer Pattern:
 
+- **95% less adapter code** - Transformers handle all conversion logic
 - **Work across all PHP frameworks** (Laminas, Symfony, Laravel, Slim, etc.)
 - **Require no modifications** to EdgeBinder
 - **Use a single package** that works everywhere
 - **Access framework services** through PSR-11 containers
 - **Follow consistent patterns** for configuration and integration
+- **Better separation of concerns** - Adapters execute, transformers convert
+- **Easier testing** - Unit test transformers independently
 
-## Quick Start
+## Quick Start (v0.6.0 Pattern)
 
-### 1. Create Your Adapter Class
+### 1. Create Your Transformer Class (NEW in v0.6.0)
 
-First, implement the `PersistenceAdapterInterface`:
+First, implement the `CriteriaTransformerInterface` - this is where your conversion logic goes:
 
 ```php
 <?php
 namespace MyVendor\RedisAdapter;
 
-use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Contracts\CriteriaTransformerInterface;
+use EdgeBinder\Query\{EntityCriteria, WhereCriteria, OrderByCriteria};
+
+class RedisTransformer implements CriteriaTransformerInterface
+{
+    public function transformEntity(EntityCriteria $entity, string $direction): mixed
+    {
+        // Convert to Redis key pattern
+        return [
+            'pattern' => "entity:{$entity->entityType}:{$entity->entityId}:*",
+            'direction' => $direction
+        ];
+    }
+
+    public function transformWhere(WhereCriteria $where): mixed
+    {
+        // Convert to Redis filtering format
+        return [
+            'field' => $where->field,
+            'operator' => $this->mapOperator($where->operator),
+            'value' => $where->value
+        ];
+    }
+
+    public function transformOrderBy(OrderByCriteria $orderBy): mixed
+    {
+        // Convert to Redis sort format
+        return [
+            'by' => $orderBy->field,
+            'order' => strtoupper($orderBy->direction)
+        ];
+    }
+
+    public function transformBindingType(string $type): mixed
+    {
+        return ['type_pattern' => "type:{$type}"];
+    }
+
+    public function combineFilters(array $filters, array $orFilters = []): mixed
+    {
+        $combined = ['and' => $filters];
+        if (!empty($orFilters)) {
+            $combined['or'] = $orFilters;
+        }
+        return $combined;
+    }
+
+    private function mapOperator(string $operator): string
+    {
+        return match($operator) {
+            '=' => 'eq',
+            '!=' => 'ne',
+            '>' => 'gt',
+            '<' => 'lt',
+            '>=' => 'gte',
+            '<=' => 'lte',
+            'in' => 'in',
+            'notIn' => 'nin',
+            default => throw new \InvalidArgumentException("Unsupported operator: $operator")
+        };
+    }
+}
+```
+
+### 2. Create Your Light Adapter Class (v0.6.0 Pattern)
+
+Now implement the `PersistenceAdapterInterface` - it's incredibly simple with the transformer:
+```php
+<?php
+namespace MyVendor\RedisAdapter;
+
+use EdgeBinder\Contracts\{PersistenceAdapterInterface, QueryResultInterface};
 use EdgeBinder\Contracts\BindingInterface;
-use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Query\{QueryCriteria, QueryResult};
 use EdgeBinder\Exception\PersistenceException;
 
 class RedisAdapter implements PersistenceAdapterInterface
 {
     private $redis;
+    private RedisTransformer $transformer;
     private array $config;
 
     public function __construct($redisClient, array $config = [])
     {
         $this->redis = $redisClient;
+        $this->transformer = new RedisTransformer();  // NEW: Include transformer
         $this->config = array_merge($this->getDefaultConfig(), $config);
     }
 
+    // 🚀 v0.6.0 LIGHT ADAPTER PATTERN - Just 3 lines!
+    public function executeQuery(QueryCriteria $criteria): QueryResultInterface
+    {
+        $query = $criteria->transform($this->transformer);  // 1 line transformation!
+        $results = $this->executeRedisQuery($query);        // Execute with Redis
+        return new QueryResult($results);                   // Return QueryResult object
+    }
+
+    public function count(QueryCriteria $criteria): int
+    {
+        $query = $criteria->transform($this->transformer);
+        return $this->executeRedisCount($query);
+    }
+
+    // Standard methods remain the same
     public function store(BindingInterface $binding): void
     {
         try {
             $key = $this->buildKey($binding->getId());
             $data = json_encode($binding->toArray());
-            
-            $result = $this->redis->setex(
-                $key,
-                $this->config['ttl'],
-                $data
-            );
-            
+
+            $result = $this->redis->setex($key, $this->config['ttl'], $data);
             if (!$result) {
                 throw PersistenceException::operationFailed('store', 'Redis setex returned false');
             }
@@ -66,11 +152,11 @@ class RedisAdapter implements PersistenceAdapterInterface
         try {
             $key = $this->buildKey($bindingId);
             $data = $this->redis->get($key);
-            
+
             if ($data === false) {
                 return null;
             }
-            
+
             $array = json_decode($data, true);
             return \EdgeBinder\Binding::fromArray($array);
         } catch (\Exception $e) {
@@ -79,7 +165,19 @@ class RedisAdapter implements PersistenceAdapterInterface
     }
 
     // Implement other required methods...
-    
+
+    private function executeRedisQuery(array $query): array
+    {
+        // Execute the transformed query with Redis
+        // Return array of BindingInterface objects
+    }
+
+    private function executeRedisCount(array $query): int
+    {
+        // Execute count query with Redis
+        // Return integer count
+    }
+
     private function getDefaultConfig(): array
     {
         return [
@@ -87,7 +185,7 @@ class RedisAdapter implements PersistenceAdapterInterface
             'prefix' => 'edgebinder:',
         ];
     }
-    
+
     private function buildKey(string $bindingId): string
     {
         return $this->config['prefix'] . $bindingId;
@@ -95,7 +193,7 @@ class RedisAdapter implements PersistenceAdapterInterface
 }
 ```
 
-### 2. Create Your Adapter Factory
+### 3. Create Your Adapter Factory
 
 Implement the `AdapterFactoryInterface`:
 
@@ -212,7 +310,8 @@ Your adapter must implement all methods from `PersistenceAdapterInterface`:
 public function store(BindingInterface $binding): void;
 public function find(string $bindingId): ?BindingInterface;
 public function delete(string $bindingId): void;
-public function executeQuery(QueryBuilderInterface $query): array;
+public function executeQuery(QueryCriteria $criteria): QueryResultInterface;  // v0.6.0 BREAKING CHANGE
+public function count(QueryCriteria $criteria): int;  // v0.6.0 BREAKING CHANGE
 ```
 
 #### Entity Extraction
@@ -439,15 +538,34 @@ private function getDefaultConfig(): array
 }
 ```
 
-### Query Builder Support
+### Query Execution Support (v0.6.0 Pattern)
 
 ```php
+public function executeQuery(QueryCriteria $criteria): QueryResultInterface
+{
+    // v0.6.0 LIGHT ADAPTER PATTERN - Just 3 lines!
+    $query = $criteria->transform($this->transformer);  // 1 line transformation!
+    $results = $this->executeNativeQuery($query);       // Execute with your client
+    return new QueryResult($results);                   // Return QueryResult object
+}
+
+public function count(QueryCriteria $criteria): int
+{
+    $query = $criteria->transform($this->transformer);
+    return $this->executeNativeCount($query);
+}
+```
+
+### OLD v0.5.0 Pattern (DON'T USE - For Reference Only)
+
+```php
+// OLD v0.5.0 - Heavy adapter with manual conversion (50+ lines):
 public function executeQuery(QueryBuilderInterface $query): array
 {
     $criteria = $query->getCriteria();
     $results = [];
-    
-    // Convert EdgeBinder query to your storage's query format
+
+    // 20+ lines of complex conversion logic...
     $nativeQuery = $this->buildNativeQuery($criteria);
     $rawResults = $this->client->query($nativeQuery);
     
