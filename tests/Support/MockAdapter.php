@@ -61,6 +61,7 @@ class MockAdapter implements PersistenceAdapterInterface
         // In a real adapter, this would execute the transformed query
         // The $transformedQuery would be used to filter/sort the results
         unset($transformedQuery); // Suppress unused parameter warning
+
         return array_slice($this->bindings, 0, 2); // Return first 2 bindings
     }
 
@@ -120,8 +121,8 @@ class MockAdapter implements PersistenceAdapterInterface
     public function findByEntity(string $entityType, string $entityId): array
     {
         return array_filter($this->bindings, function (BindingInterface $binding) use ($entityType, $entityId) {
-            return ($binding->getFromType() === $entityType && $binding->getFromId() === $entityId) ||
-                   ($binding->getToType() === $entityType && $binding->getToId() === $entityId);
+            return ($binding->getFromType() === $entityType && $binding->getFromId() === $entityId)
+                   || ($binding->getToType() === $entityType && $binding->getToId() === $entityId);
         });
     }
 
@@ -136,12 +137,12 @@ class MockAdapter implements PersistenceAdapterInterface
         ?string $bindingType = null
     ): array {
         return array_filter($this->bindings, function (BindingInterface $binding) use ($fromType, $fromId, $toType, $toId, $bindingType) {
-            $matches = $binding->getFromType() === $fromType &&
-                      $binding->getFromId() === $fromId &&
-                      $binding->getToType() === $toType &&
-                      $binding->getToId() === $toId;
+            $matches = $binding->getFromType() === $fromType
+                      && $binding->getFromId() === $fromId
+                      && $binding->getToType() === $toType
+                      && $binding->getToId() === $toId;
 
-            if ($bindingType !== null) {
+            if (null !== $bindingType) {
                 $matches = $matches && $binding->getType() === $bindingType;
             }
 
@@ -177,12 +178,13 @@ class MockAdapter implements PersistenceAdapterInterface
     {
         $count = 0;
         foreach ($this->bindings as $id => $binding) {
-            if (($binding->getFromType() === $entityType && $binding->getFromId() === $entityId) ||
-                ($binding->getToType() === $entityType && $binding->getToId() === $entityId)) {
+            if (($binding->getFromType() === $entityType && $binding->getFromId() === $entityId)
+                || ($binding->getToType() === $entityType && $binding->getToId() === $entityId)) {
                 unset($this->bindings[$id]);
-                $count++;
+                ++$count;
             }
         }
+
         return $count;
     }
 

@@ -56,7 +56,7 @@ interface CriteriaTransformerInterface
     /**
      * Combine multiple filters into a single adapter-specific query.
      *
-     * @param array<mixed> $filters   Array of adapter-specific filter objects
+     * @param array<mixed>        $filters   Array of adapter-specific filter objects
      * @param array<array<mixed>> $orFilters Array of OR condition groups
      *
      * @return mixed Final adapter-specific query object

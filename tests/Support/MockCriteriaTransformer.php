@@ -67,7 +67,7 @@ class MockCriteriaTransformer implements CriteriaTransformerInterface
     }
 
     /**
-     * @param array<mixed> $filters
+     * @param array<mixed>        $filters
      * @param array<array<mixed>> $orFilters
      */
     public function combineFilters(array $filters, array $orFilters = []): mixed

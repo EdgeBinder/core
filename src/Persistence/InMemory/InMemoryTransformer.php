@@ -65,8 +65,9 @@ class InMemoryTransformer implements CriteriaTransformerInterface
     }
 
     /**
-     * @param array<mixed> $filters
+     * @param array<mixed>        $filters
      * @param array<array<mixed>> $orFilters
+     *
      * @return array<string, mixed>
      */
     public function combineFilters(array $filters, array $orFilters = []): array

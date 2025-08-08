@@ -19,14 +19,14 @@ class QueryCriteria
     private mixed $lastTransformer = null;
 
     /**
-     * @param EntityCriteria|null $from    Entity to query bindings from
-     * @param EntityCriteria|null $to      Entity to query bindings to
-     * @param string|null         $type    Binding type filter
-     * @param array<WhereCriteria>     $where   Where conditions
-     * @param array<array<WhereCriteria>>   $orWhere OR condition groups
-     * @param array<OrderByCriteria>   $orderBy Ordering criteria
-     * @param int|null            $limit   Maximum number of results
-     * @param int|null            $offset  Number of results to skip
+     * @param EntityCriteria|null         $from    Entity to query bindings from
+     * @param EntityCriteria|null         $to      Entity to query bindings to
+     * @param string|null                 $type    Binding type filter
+     * @param array<WhereCriteria>        $where   Where conditions
+     * @param array<array<WhereCriteria>> $orWhere OR condition groups
+     * @param array<OrderByCriteria>      $orderBy Ordering criteria
+     * @param int|null                    $limit   Maximum number of results
+     * @param int|null                    $offset  Number of results to skip
      */
     public function __construct(
         public readonly ?EntityCriteria $from = null,
