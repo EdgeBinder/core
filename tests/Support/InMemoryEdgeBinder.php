@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Testing;
+namespace EdgeBinder\Tests\Support;
 
 use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
@@ -234,7 +234,7 @@ class InMemoryEdgeBinder implements EdgeBinderInterface
         // Create a query that matches all bindings
         $query = $this->query();
 
-        return $this->adapter->count($query);
+        return $query->count();
     }
 
     /**
@@ -260,7 +260,7 @@ class InMemoryEdgeBinder implements EdgeBinderInterface
      */
     public function getAllBindings(): array
     {
-        return $this->query()->get();
+        return $this->query()->get()->getBindings();
     }
 
     /**

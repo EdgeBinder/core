@@ -154,9 +154,9 @@ interface QueryBuilderInterface
     /**
      * Execute the query and return all matching bindings.
      *
-     * @return BindingInterface[] Array of matching bindings
+     * @return QueryResultInterface Query results with bindings
      */
-    public function get(): array;
+    public function get(): QueryResultInterface;
 
     /**
      * Execute the query and return the first matching binding.

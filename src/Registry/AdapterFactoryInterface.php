@@ -93,7 +93,7 @@ interface AdapterFactoryInterface
      * Get the adapter type this factory handles.
      *
      * This should be a unique string identifier for the adapter type
-     * (e.g., 'janus', 'neo4j', 'redis', 'mongodb', 'weaviate').
+     * (e.g., 'janus', 'neo4j', 'redis', 'mongodb', 'inmemory').
      *
      * The adapter type is used for:
      * - Registry lookup and registration

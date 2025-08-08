@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Integration;
+namespace EdgeBinder\Tests\Integration\Registry;
 
 use EdgeBinder\EdgeBinder;
 use EdgeBinder\Exception\AdapterException;
 use EdgeBinder\Registry\AdapterRegistry;
+use EdgeBinder\Tests\Integration\Support\MockAdapterFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 

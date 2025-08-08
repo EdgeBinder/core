@@ -14,9 +14,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 
 /**
- * Integration tests for EdgeBinder builder methods and adapter registry integration.
+ * Integration tests for EdgeBinder core functionality and adapter registry integration.
  */
-final class EdgeBinderBuilderTest extends TestCase
+final class EdgeBinderIntegrationTest extends TestCase
 {
     protected function setUp(): void
     {

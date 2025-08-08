@@ -8,7 +8,7 @@ use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EdgeBinderInterface;
 use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Exception\BindingNotFoundException;
-use EdgeBinder\Testing\InMemoryEdgeBinder;
+use EdgeBinder\Tests\Support\InMemoryEdgeBinder;
 use PHPUnit\Framework\TestCase;
 
 /**

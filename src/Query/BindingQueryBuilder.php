@@ -7,6 +7,7 @@ namespace EdgeBinder\Query;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Contracts\QueryResultInterface;
 
 /**
  * Fluent query builder for constructing binding queries.
@@ -198,21 +199,25 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
         return $this->withCriteria(['offset' => $offset]);
     }
 
-    public function get(): array
+    public function get(): QueryResultInterface
     {
-        return $this->storage->executeQuery($this);
+        $criteria = $this->buildQueryCriteria();
+
+        return $this->storage->executeQuery($criteria);
     }
 
     public function first(): ?BindingInterface
     {
-        $results = $this->limit(1)->get();
+        $result = $this->limit(1)->get();
 
-        return $results[0] ?? null;
+        return $result->first();
     }
 
     public function count(): int
     {
-        return $this->storage->count($this);
+        $criteria = $this->buildQueryCriteria();
+
+        return $this->storage->count($criteria);
     }
 
     public function exists(): bool
@@ -223,6 +228,39 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
     public function getCriteria(): array
     {
         return $this->criteria;
+    }
+
+    /**
+     * Build QueryCriteria object from internal criteria array.
+     */
+    private function buildQueryCriteria(): QueryCriteria
+    {
+        return new QueryCriteria(
+            from: isset($this->criteria['fromType'], $this->criteria['fromId'])
+                ? new EntityCriteria($this->criteria['fromType'], $this->criteria['fromId'])
+                : null,
+            to: isset($this->criteria['toType'], $this->criteria['toId'])
+                ? new EntityCriteria($this->criteria['toType'], $this->criteria['toId'])
+                : null,
+            type: $this->criteria['type'] ?? null,
+            where: array_map(
+                fn ($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
+                $this->criteria['where'] ?? []
+            ),
+            orWhere: array_map(
+                fn ($orGroup) => array_map(
+                    fn ($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
+                    $orGroup
+                ),
+                $this->criteria['orWhere'] ?? []
+            ),
+            orderBy: array_map(
+                fn ($o) => new OrderByCriteria($o['field'], $o['direction']),
+                $this->criteria['orderBy'] ?? []
+            ),
+            limit: $this->criteria['limit'] ?? null,
+            offset: $this->criteria['offset'] ?? null
+        );
     }
 
     /**

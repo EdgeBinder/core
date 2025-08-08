@@ -57,10 +57,9 @@ class EdgeBinder implements EdgeBinderInterface
      * Configuration format:
      * ```php
      * $config = [
-     *     'adapter' => 'weaviate',  // Required: adapter type
-     *     'weaviateClient' => 'weaviate.client.rag',  // Client service name
-     *     'collectionName' => 'RAGBindings',  // Adapter-specific config
-     *     'schema' => ['autoCreate' => true],  // More adapter-specific config
+     *     'adapter' => 'inmemory',  // Required: adapter type
+     *     'validateMetadata' => true,  // Adapter-specific config
+     *     'maxBindings' => 10000,  // More adapter-specific config
      * ];
      * ```
      *
