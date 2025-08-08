@@ -78,14 +78,13 @@ class InMemoryTransformer implements CriteriaTransformerInterface
                 $criteria['type'] = $filter['type'];
             }
             
-            // Collect where conditions
-            if (isset($filter['field'])) {
-                $whereConditions[] = $filter;
-            }
-            
-            // Collect order by conditions
+            // Collect order by conditions (check this first since they have both field and direction)
             if (isset($filter['field']) && isset($filter['direction'])) {
                 $orderByConditions[] = $filter;
+            }
+            // Collect where conditions (only if not an orderBy condition)
+            elseif (isset($filter['field'])) {
+                $whereConditions[] = $filter;
             }
         }
         
