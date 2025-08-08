@@ -7,8 +7,8 @@ namespace EdgeBinder\Tests\Unit\Testing;
 use EdgeBinder\Contracts\EdgeBinderInterface;
 use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\EdgeBinder;
-use EdgeBinder\Testing\EdgeBinderTestFactory;
-use EdgeBinder\Testing\InMemoryEdgeBinder;
+use EdgeBinder\Tests\Support\EdgeBinderTestFactory;
+use EdgeBinder\Tests\Support\InMemoryEdgeBinder;
 use PHPUnit\Framework\TestCase;
 
 /**

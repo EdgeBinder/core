@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace EdgeBinder\Tests\Unit\Query;
 
 use EdgeBinder\Query\EntityCriteria;
-use EdgeBinder\Testing\MockCriteriaTransformer;
-use EdgeBinder\Testing\WeaviateLikeTransformer;
+use EdgeBinder\Tests\Support\MockCriteriaTransformer;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,31 +28,7 @@ class EntityCriteriaTransformTest extends TestCase
         ], $result);
     }
     
-    public function testTransformWithWeaviateLikeTransformer(): void
-    {
-        $entity = new EntityCriteria('Project', 'proj456');
-        $transformer = new WeaviateLikeTransformer();
-        
-        $result = $entity->transform($transformer, 'to');
-        
-        $expected = [
-            'operator' => 'And',
-            'operands' => [
-                [
-                    'path' => ['toEntityType'],
-                    'operator' => 'Equal',
-                    'valueText' => 'Project',
-                ],
-                [
-                    'path' => ['toEntityId'],
-                    'operator' => 'Equal',
-                    'valueText' => 'proj456',
-                ],
-            ],
-        ];
-        
-        $this->assertEquals($expected, $result);
-    }
+
     
     public function testTransformCaching(): void
     {

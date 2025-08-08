@@ -12,7 +12,7 @@ use EdgeBinder\Query\WhereCriteria;
  * Interface for transforming generic criteria into adapter-specific query formats.
  * 
  * Each adapter implements this interface to convert EdgeBinder's generic criteria
- * objects into their native query format (e.g., Weaviate Filters, Cypher queries, etc.).
+ * objects into their native query format (e.g., SQL queries, NoSQL filters, graph queries, etc.).
  */
 interface CriteriaTransformerInterface
 {

@@ -13,7 +13,7 @@ namespace EdgeBinder\Exception;
  * Example usage:
  * ```php
  * // When adapter type is not found
- * throw AdapterException::factoryNotFound('unknown_adapter', ['weaviate', 'janus']);
+ * throw AdapterException::factoryNotFound('unknown_adapter', ['inmemory', 'janus']);
  *
  * // When adapter creation fails
  * throw AdapterException::creationFailed('janus', 'Connection timeout', $previousException);

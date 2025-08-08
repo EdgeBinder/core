@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Testing;
+namespace EdgeBinder\Tests\Support;
 
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\CriteriaTransformerInterface;
@@ -29,7 +29,7 @@ class MockAdapter implements PersistenceAdapterInterface
     
     public function __construct(?CriteriaTransformerInterface $transformer = null)
     {
-        $this->transformer = $transformer ?? new MockCriteriaTransformer();
+        $this->transformer = $transformer ?? new \EdgeBinder\Tests\Support\MockCriteriaTransformer();
     }
     
     public function executeQuery(QueryCriteria $criteria): QueryResultInterface

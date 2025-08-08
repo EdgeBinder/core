@@ -19,7 +19,7 @@ use PHPUnit\Framework\TestCase;
  *
  * This test suite contains comprehensive integration tests converted from InMemoryAdapterTest.
  * These tests use the real EdgeBinder and BindingQueryBuilder to ensure all adapters behave
- * consistently and would catch bugs like the WeaviateAdapter query filtering issue.
+ * consistently and would catch common adapter query filtering issues.
  *
  * To use this test suite:
  * 1. Extend this class in your adapter's integration test
@@ -55,12 +55,12 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
     // ========================================
     // CRITICAL: EdgeBinder Query Integration Tests
-    // These are the key tests that would catch the WeaviateAdapter bug
+    // These are the key tests that would catch common adapter filtering bugs
     // ========================================
 
     /**
-     * THE CRITICAL TEST: This is the exact scenario that was failing in WeaviateAdapter
-     * $edgeBinder->query()->from($user)->type('owns')->get() was returning 80 results instead of 2.
+     * THE CRITICAL TEST: This tests proper query filter application.
+     * Ensures that $edgeBinder->query()->from($user)->type('owns')->get() returns only matching results.
      */
     public function testExecuteQueryFiltersAreProperlyApplied(): void
     {
@@ -79,14 +79,14 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $this->edgeBinder->bind($user1, $ownedProject1, 'owns');
         $this->edgeBinder->bind($user1, $ownedProject2, 'owns');
 
-        // THE CRITICAL TEST: This exact query was returning 80 results in WeaviateAdapter
+        // THE CRITICAL TEST: This query must return only matching results
         $results = $this->edgeBinder->query()->from($user1)->type('owns')->get();
 
         // MUST return exactly 2 results, not 80+ (the entire database)
         $this->assertCount(
             2,
             $results,
-            'CRITICAL BUG: Query filters not applied! This is the exact WeaviateAdapter bug.'
+            'CRITICAL BUG: Query filters not applied! Adapter returned all results instead of filtered results.'
         );
 
         foreach ($results as $binding) {
