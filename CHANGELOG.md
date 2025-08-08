@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-08-08
+
+### Changed
+
+#### Test Organization Improvement
+- **Moved InMemoryAdapterTest to Integration tests** - Correctly categorized `InMemoryAdapterTest` from `tests/Unit/` to `tests/Integration/` directory
+- **Updated namespace** - Changed from `EdgeBinder\Tests\Unit\Persistence\InMemory` to `EdgeBinder\Tests\Integration\Persistence\InMemory`
+- **Improved test structure** - Better alignment with testing standards where integration tests use real dependencies and test component interactions
+
+### Technical Details
+
+#### Test Structure Changes
+- **From**: `tests/Unit/Persistence/InMemory/InMemoryAdapterTest.php`
+- **To**: `tests/Integration/Persistence/InMemory/InMemoryAdapterTest.php`
+- **Rationale**: The test extends `AbstractAdapterTestSuite` and uses full EdgeBinder integration, making it an integration test rather than a unit test
+- **Test Results**: All 88 tests continue to pass, maintaining 100% compatibility
+
+This release improves the codebase organization by correctly categorizing tests according to their actual behavior and dependencies.
+
 ## [0.6.1] - 2025-08-08
 
 ### Added
@@ -643,6 +662,7 @@ composer test-coverage             # Full coverage report
 - Framework integration examples (Laravel, Symfony)
 - Production-ready error handling and logging
 
+[0.6.2]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.4.0...v0.5.0

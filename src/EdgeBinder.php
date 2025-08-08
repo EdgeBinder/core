@@ -35,7 +35,7 @@ class EdgeBinder implements EdgeBinderInterface
     /**
      * EdgeBinder version for compatibility checks.
      */
-    public const VERSION = '0.6.1';
+    public const VERSION = '0.6.2';
 
     /**
      * Create a new EdgeBinder instance.

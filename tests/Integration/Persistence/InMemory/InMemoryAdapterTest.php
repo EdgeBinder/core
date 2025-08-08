@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EdgeBinder\Tests\Unit\Persistence\InMemory;
+namespace EdgeBinder\Tests\Integration\Persistence\InMemory;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Persistence\InMemory\InMemoryAdapter;

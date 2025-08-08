@@ -1,6 +1,6 @@
-# EdgeBinder Extensible Adapters Developer Guide (v0.6.1)
+# EdgeBinder Extensible Adapters Developer Guide (v0.6.2)
 
-This guide provides comprehensive instructions for creating third-party adapters using EdgeBinder v0.6.1's **revolutionary Criteria Transformer Pattern** that work seamlessly across all PHP frameworks.
+This guide provides comprehensive instructions for creating third-party adapters using EdgeBinder v0.6.2's **revolutionary Criteria Transformer Pattern** that work seamlessly across all PHP frameworks.
 
 ## Overview
 
