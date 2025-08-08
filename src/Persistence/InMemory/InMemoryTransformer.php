@@ -52,7 +52,7 @@ class InMemoryTransformer implements CriteriaTransformerInterface
         ];
     }
     
-    public function combineFilters(array $filters): array
+    public function combineFilters(array $filters, array $orFilters = []): array
     {
         $criteria = [];
         $whereConditions = [];
@@ -96,7 +96,12 @@ class InMemoryTransformer implements CriteriaTransformerInterface
         if (!empty($orderByConditions)) {
             $criteria['orderBy'] = $orderByConditions;
         }
-        
+
+        // Add OR conditions
+        if (!empty($orFilters)) {
+            $criteria['orWhere'] = $orFilters;
+        }
+
         return $criteria;
     }
 }

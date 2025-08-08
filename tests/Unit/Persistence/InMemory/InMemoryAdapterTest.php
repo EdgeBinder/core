@@ -169,7 +169,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
 
         $results = $query->get();
         $this->assertCount(1, $results);
-        $this->assertEquals($binding->getId(), $results[0]->getId());
+        $this->assertEquals($binding->getId(), $results->getBindings()[0]->getId());
     }
 
     /**
@@ -196,7 +196,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
         $this->assertCount(3, $results);
 
         // Extract priorities to verify ordering works (test the functionality, not specific order)
-        $priorities = array_map(fn ($binding) => $binding->getMetadata()['priority'], $results);
+        $priorities = array_map(fn ($binding) => $binding->getMetadata()['priority'], $results->getBindings());
 
         // Verify all priorities are present (ordering logic is tested elsewhere)
         sort($priorities); // Sort to check all values are present
@@ -223,7 +223,7 @@ final class InMemoryAdapterTest extends AbstractAdapterTestSuite
 
         $results = $query->get();
         $this->assertCount(1, $results);
-        $this->assertTrue(array_key_exists('description', $results[0]->getMetadata()));
-        $this->assertNull($results[0]->getMetadata()['description']);
+        $this->assertTrue(array_key_exists('description', $results->getBindings()[0]->getMetadata()));
+        $this->assertNull($results->getBindings()[0]->getMetadata()['description']);
     }
 }

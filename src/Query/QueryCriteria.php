@@ -23,6 +23,7 @@ class QueryCriteria
      * @param EntityCriteria|null $to Entity to query bindings to
      * @param string|null $type Binding type filter
      * @param WhereCriteria[] $where Where conditions
+     * @param WhereCriteria[][] $orWhere OR condition groups
      * @param OrderByCriteria[] $orderBy Ordering criteria
      * @param int|null $limit Maximum number of results
      * @param int|null $offset Number of results to skip
@@ -32,6 +33,7 @@ class QueryCriteria
         public readonly ?EntityCriteria $to = null,
         public readonly ?string $type = null,
         public readonly array $where = [],
+        public readonly array $orWhere = [],
         public readonly array $orderBy = [],
         public readonly ?int $limit = null,
         public readonly ?int $offset = null
@@ -86,13 +88,23 @@ class QueryCriteria
             $filters[] = $condition->transform($transformer);
         }
 
+        // Transform OR where conditions
+        $orFilters = [];
+        foreach ($this->orWhere as $orGroup) {
+            $orGroupFilters = [];
+            foreach ($orGroup as $condition) {
+                $orGroupFilters[] = $condition->transform($transformer);
+            }
+            $orFilters[] = $orGroupFilters;
+        }
+
         // Transform order by conditions
         foreach ($this->orderBy as $orderBy) {
             $filters[] = $orderBy->transform($transformer);
         }
 
         // Let transformer combine all filters and handle pagination
-        $result = $transformer->combineFilters($filters);
+        $result = $transformer->combineFilters($filters, $orFilters);
 
         // Add limit and offset if present
         if (is_array($result)) {

@@ -54,7 +54,7 @@ class MockCriteriaTransformer implements CriteriaTransformerInterface
         ];
     }
     
-    public function combineFilters(array $filters): array
+    public function combineFilters(array $filters, array $orFilters = []): mixed
     {
         return [
             'type' => 'combined',

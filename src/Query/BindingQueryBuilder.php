@@ -248,6 +248,13 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
                 fn($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
                 $this->criteria['where'] ?? []
             ),
+            orWhere: array_map(
+                fn($orGroup) => array_map(
+                    fn($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
+                    $orGroup
+                ),
+                $this->criteria['orWhere'] ?? []
+            ),
             orderBy: array_map(
                 fn($o) => new OrderByCriteria($o['field'], $o['direction']),
                 $this->criteria['orderBy'] ?? []

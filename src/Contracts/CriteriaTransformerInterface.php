@@ -51,9 +51,10 @@ interface CriteriaTransformerInterface
     
     /**
      * Combine multiple filters into a single adapter-specific query.
-     * 
+     *
      * @param array $filters Array of adapter-specific filter objects
+     * @param array $orFilters Array of OR condition groups
      * @return mixed Final adapter-specific query object
      */
-    public function combineFilters(array $filters): mixed;
+    public function combineFilters(array $filters, array $orFilters = []): mixed;
 }
