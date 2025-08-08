@@ -8,12 +8,10 @@ use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
-use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Contracts\QueryResultInterface;
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
-use EdgeBinder\Persistence\InMemory\InMemoryTransformer;
 use EdgeBinder\Query\QueryCriteria;
 use EdgeBinder\Query\QueryResult;
 

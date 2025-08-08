@@ -8,10 +8,6 @@ use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
 use EdgeBinder\Contracts\QueryResultInterface;
-use EdgeBinder\Query\EntityCriteria;
-use EdgeBinder\Query\OrderByCriteria;
-use EdgeBinder\Query\QueryCriteria;
-use EdgeBinder\Query\WhereCriteria;
 
 /**
  * Fluent query builder for constructing binding queries.
@@ -206,18 +202,21 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
     public function get(): QueryResultInterface
     {
         $criteria = $this->buildQueryCriteria();
+
         return $this->storage->executeQuery($criteria);
     }
 
     public function first(): ?BindingInterface
     {
         $result = $this->limit(1)->get();
+
         return $result->first();
     }
 
     public function count(): int
     {
         $criteria = $this->buildQueryCriteria();
+
         return $this->storage->count($criteria);
     }
 
@@ -245,18 +244,18 @@ readonly class BindingQueryBuilder implements QueryBuilderInterface
                 : null,
             type: $this->criteria['type'] ?? null,
             where: array_map(
-                fn($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
+                fn ($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
                 $this->criteria['where'] ?? []
             ),
             orWhere: array_map(
-                fn($orGroup) => array_map(
-                    fn($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
+                fn ($orGroup) => array_map(
+                    fn ($w) => new WhereCriteria($w['field'], $w['operator'], $w['value']),
                     $orGroup
                 ),
                 $this->criteria['orWhere'] ?? []
             ),
             orderBy: array_map(
-                fn($o) => new OrderByCriteria($o['field'], $o['direction']),
+                fn ($o) => new OrderByCriteria($o['field'], $o['direction']),
                 $this->criteria['orderBy'] ?? []
             ),
             limit: $this->criteria['limit'] ?? null,

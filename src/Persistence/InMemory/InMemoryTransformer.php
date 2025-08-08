@@ -11,23 +11,29 @@ use EdgeBinder\Query\WhereCriteria;
 
 /**
  * Transformer for InMemoryAdapter.
- * 
+ *
  * Converts EdgeBinder criteria objects into the array format
  * that the InMemoryAdapter expects for filtering.
  */
 class InMemoryTransformer implements CriteriaTransformerInterface
 {
+    /**
+     * @return array<string, string>
+     */
     public function transformEntity(EntityCriteria $entity, string $direction): array
     {
-        $typeKey = $direction === 'from' ? 'fromType' : 'toType';
-        $idKey = $direction === 'from' ? 'fromId' : 'toId';
-        
+        $typeKey = 'from' === $direction ? 'fromType' : 'toType';
+        $idKey = 'from' === $direction ? 'fromId' : 'toId';
+
         return [
             $typeKey => $entity->type,
             $idKey => $entity->id,
         ];
     }
-    
+
+    /**
+     * @return array<string, mixed>
+     */
     public function transformWhere(WhereCriteria $where): array
     {
         return [
@@ -36,14 +42,20 @@ class InMemoryTransformer implements CriteriaTransformerInterface
             'value' => $where->value,
         ];
     }
-    
+
+    /**
+     * @return array<string, string>
+     */
     public function transformBindingType(string $type): array
     {
         return [
             'type' => $type,
         ];
     }
-    
+
+    /**
+     * @return array<string, string>
+     */
     public function transformOrderBy(OrderByCriteria $orderBy): array
     {
         return [
@@ -51,13 +63,18 @@ class InMemoryTransformer implements CriteriaTransformerInterface
             'direction' => $orderBy->direction,
         ];
     }
-    
+
+    /**
+     * @param array<mixed> $filters
+     * @param array<array<mixed>> $orFilters
+     * @return array<string, mixed>
+     */
     public function combineFilters(array $filters, array $orFilters = []): array
     {
         $criteria = [];
         $whereConditions = [];
         $orderByConditions = [];
-        
+
         foreach ($filters as $filter) {
             // Merge entity filters (fromType, fromId, toType, toId)
             if (isset($filter['fromType'])) {
@@ -72,12 +89,12 @@ class InMemoryTransformer implements CriteriaTransformerInterface
             if (isset($filter['toId'])) {
                 $criteria['toId'] = $filter['toId'];
             }
-            
+
             // Handle binding type
             if (isset($filter['type'])) {
                 $criteria['type'] = $filter['type'];
             }
-            
+
             // Collect order by conditions (check this first since they have both field and direction)
             if (isset($filter['field']) && isset($filter['direction'])) {
                 $orderByConditions[] = $filter;
@@ -87,12 +104,12 @@ class InMemoryTransformer implements CriteriaTransformerInterface
                 $whereConditions[] = $filter;
             }
         }
-        
+
         // Add collected conditions to criteria
         if (!empty($whereConditions)) {
             $criteria['where'] = $whereConditions;
         }
-        
+
         if (!empty($orderByConditions)) {
             $criteria['orderBy'] = $orderByConditions;
         }

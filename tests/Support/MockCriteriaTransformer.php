@@ -11,12 +11,15 @@ use EdgeBinder\Query\WhereCriteria;
 
 /**
  * Mock transformer for testing the criteria transformation pattern.
- * 
+ *
  * This transformer converts criteria into simple array representations
  * that can be easily tested and verified.
  */
 class MockCriteriaTransformer implements CriteriaTransformerInterface
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function transformEntity(EntityCriteria $entity, string $direction): array
     {
         return [
@@ -26,7 +29,10 @@ class MockCriteriaTransformer implements CriteriaTransformerInterface
             'entityId' => $entity->id,
         ];
     }
-    
+
+    /**
+     * @return array<string, mixed>
+     */
     public function transformWhere(WhereCriteria $where): array
     {
         return [
@@ -36,7 +42,10 @@ class MockCriteriaTransformer implements CriteriaTransformerInterface
             'value' => $where->value,
         ];
     }
-    
+
+    /**
+     * @return array<string, string>
+     */
     public function transformBindingType(string $type): array
     {
         return [
@@ -44,7 +53,10 @@ class MockCriteriaTransformer implements CriteriaTransformerInterface
             'value' => $type,
         ];
     }
-    
+
+    /**
+     * @return array<string, string>
+     */
     public function transformOrderBy(OrderByCriteria $orderBy): array
     {
         return [
@@ -53,7 +65,11 @@ class MockCriteriaTransformer implements CriteriaTransformerInterface
             'direction' => $orderBy->direction,
         ];
     }
-    
+
+    /**
+     * @param array<mixed> $filters
+     * @param array<array<mixed>> $orFilters
+     */
     public function combineFilters(array $filters, array $orFilters = []): mixed
     {
         return [
