@@ -9,9 +9,13 @@ use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\EntityInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Contracts\QueryResultInterface;
 use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
+use EdgeBinder\Persistence\InMemory\InMemoryTransformer;
+use EdgeBinder\Query\QueryCriteria;
+use EdgeBinder\Query\QueryResult;
 
 /**
  * In-memory persistence adapter for EdgeBinder.
@@ -264,37 +268,42 @@ final class InMemoryAdapter implements PersistenceAdapterInterface
         return $results;
     }
 
-    public function executeQuery(QueryBuilderInterface $query): array
+    public function executeQuery(QueryCriteria $criteria): QueryResultInterface
     {
         try {
-            $criteria = $query->getCriteria();
-            $results = $this->filterBindings($criteria);
+            // Transform QueryCriteria to the array format this adapter expects
+            $transformer = new InMemoryTransformer();
+            $criteriaArray = $criteria->transform($transformer);
+
+            $results = $this->filterBindings($criteriaArray);
 
             // Apply ordering
-            if (isset($criteria['orderBy'])) {
-                foreach ($criteria['orderBy'] as $orderClause) {
+            if (isset($criteriaArray['orderBy'])) {
+                foreach ($criteriaArray['orderBy'] as $orderClause) {
                     $results = $this->applyOrdering($results, $orderClause);
                 }
             }
 
             // Apply pagination
-            if (isset($criteria['offset']) || isset($criteria['limit'])) {
-                $offset = $criteria['offset'] ?? 0;
-                $limit = $criteria['limit'] ?? null;
+            if (isset($criteriaArray['offset']) || isset($criteriaArray['limit'])) {
+                $offset = $criteriaArray['offset'] ?? 0;
+                $limit = $criteriaArray['limit'] ?? null;
                 $results = array_slice($results, $offset, $limit);
             }
 
-            return array_values($results);
+            return new QueryResult(array_values($results));
         } catch (\Throwable $e) {
             throw new PersistenceException('query', 'Query execution failed: '.$e->getMessage(), $e);
         }
     }
 
-    public function count(QueryBuilderInterface $query): int
+    public function count(QueryCriteria $criteria): int
     {
         try {
-            $criteria = $query->getCriteria();
-            $results = $this->filterBindings($criteria);
+            // Transform QueryCriteria to the array format this adapter expects
+            $transformer = new InMemoryTransformer();
+            $criteriaArray = $criteria->transform($transformer);
+            $results = $this->filterBindings($criteriaArray);
 
             return count($results);
         } catch (\Throwable $e) {

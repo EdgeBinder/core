@@ -86,7 +86,24 @@ class QueryCriteria
             $filters[] = $condition->transform($transformer);
         }
 
-        // Let transformer combine all filters
-        return $transformer->combineFilters($filters);
+        // Transform order by conditions
+        foreach ($this->orderBy as $orderBy) {
+            $filters[] = $orderBy->transform($transformer);
+        }
+
+        // Let transformer combine all filters and handle pagination
+        $result = $transformer->combineFilters($filters);
+
+        // Add limit and offset if present
+        if (is_array($result)) {
+            if ($this->limit !== null) {
+                $result['limit'] = $this->limit;
+            }
+            if ($this->offset !== null) {
+                $result['offset'] = $this->offset;
+            }
+        }
+
+        return $result;
     }
 }
