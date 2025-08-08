@@ -8,6 +8,7 @@ use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\EntityExtractionException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
+use EdgeBinder\Query\QueryCriteria;
 
 /**
  * Persistence adapter interface for persisting and retrieving bindings.
@@ -134,24 +135,24 @@ interface PersistenceAdapterInterface
     /**
      * Execute a query and return matching bindings.
      *
-     * @param QueryBuilderInterface $query The query to execute
+     * @param QueryCriteria $criteria The query criteria to execute
      *
-     * @return BindingInterface[] Array of matching bindings
+     * @return QueryResultInterface Query results with bindings
      *
      * @throws PersistenceException If the query fails
      */
-    public function executeQuery(QueryBuilderInterface $query): array;
+    public function executeQuery(QueryCriteria $criteria): QueryResultInterface;
 
     /**
      * Count bindings matching a query.
      *
-     * @param QueryBuilderInterface $query The query to count
+     * @param QueryCriteria $criteria The query criteria to count
      *
      * @return int Number of matching bindings
      *
      * @throws PersistenceException If the query fails
      */
-    public function count(QueryBuilderInterface $query): int;
+    public function count(QueryCriteria $criteria): int;
 
     /**
      * Update a binding's metadata.
