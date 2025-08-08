@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2025-08-08
+
+### Added
+
+#### 📚 Complete v0.6.0 Documentation Update
+- **Comprehensive documentation overhaul** - Updated all documentation to reflect v0.6.0 Criteria Transformer Pattern
+- **Migration guidance** - Complete step-by-step migration guide from v0.5.0 to v0.6.0
+- **Reference implementations** - Added RedisTransformer as complete transformer example
+- **Updated examples** - All code examples now show v0.6.0 patterns
+
+### Changed
+
+#### Documentation Improvements
+- **llms.txt** - Major update with v0.6.0 architecture documentation and migration guidance
+- **docs/EXTENSIBLE_ADAPTERS.md** - Complete overhaul showing transformer-first development approach
+- **examples/RedisAdapter** - Updated to demonstrate v0.6.0 light adapter pattern with transformer
+- **Test patterns** - Updated all test examples to use QueryResult objects instead of arrays
+
+### Fixed
+
+#### Documentation Consistency
+- **Resolved WeaviateAdapter migration issues** - Documentation now clearly explains PSR-4 errors and solutions
+- **Complete v0.6.0 coverage** - All documentation now consistently reflects the revolutionary architecture changes
+- **Migration clarity** - Clear explanation of why adapters need to remove duplicate core classes
+
+### Technical Details
+
+#### Updated Documentation Files
+- `llms.txt` - Comprehensive v0.6.0 architecture documentation with migration guide
+- `docs/EXTENSIBLE_ADAPTERS.md` - Complete overhaul for v0.6.0 transformer pattern
+- `examples/RedisAdapter/src/RedisTransformer.php` - **NEW** reference transformer implementation
+- `examples/RedisAdapter/src/RedisAdapter.php` - Updated to use v0.6.0 light adapter pattern
+- `examples/RedisAdapter/tests/RedisAdapterTest.php` - Updated test patterns for QueryResult objects
+
+This release ensures that all documentation is consistent with v0.6.0's revolutionary Criteria Transformer Pattern and provides complete guidance for adapter developers migrating from earlier versions.
+
 ## [0.6.0] - 2025-08-08
 
 ### Added
@@ -607,6 +643,7 @@ composer test-coverage             # Full coverage report
 - Framework integration examples (Laravel, Symfony)
 - Production-ready error handling and logging
 
+[0.6.1]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.3.0...v0.4.0

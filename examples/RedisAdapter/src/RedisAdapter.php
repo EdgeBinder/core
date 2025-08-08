@@ -113,7 +113,7 @@ class RedisAdapter implements PersistenceAdapterInterface
         }
     }
 
-    // 🚀 v0.6.0 LIGHT ADAPTER PATTERN - Just 3 lines!
+    // 🚀 v0.6.1 LIGHT ADAPTER PATTERN - Just 3 lines!
     public function executeQuery(QueryCriteria $criteria): QueryResultInterface
     {
         $query = $criteria->transform($this->transformer);  // 1 line transformation!

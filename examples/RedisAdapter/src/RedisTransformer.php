@@ -8,10 +8,10 @@ use EdgeBinder\Contracts\CriteriaTransformerInterface;
 use EdgeBinder\Query\{EntityCriteria, WhereCriteria, OrderByCriteria};
 
 /**
- * Redis-specific criteria transformer for EdgeBinder v0.6.0
- * 
+ * Redis-specific criteria transformer for EdgeBinder v0.6.1
+ *
  * Transforms EdgeBinder query criteria into Redis-compatible query format.
- * This is a reference implementation showing the v0.6.0 transformer pattern.
+ * This is a reference implementation showing the v0.6.1 transformer pattern.
  */
 class RedisTransformer implements CriteriaTransformerInterface
 {
