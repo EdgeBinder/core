@@ -6,6 +6,7 @@ namespace EdgeBinder\Tests\Unit\Registry;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -22,19 +23,19 @@ class AdapterFactoryInterfaceTest extends TestCase
         $this->assertEquals('test', $factory->getAdapterType());
 
         // Test createAdapter method signature
-        $config = [
-            'instance' => [
+        $config = new AdapterConfiguration(
+            instance: [
                 'adapter' => 'test',
                 'test_client' => 'test.client.default',
                 'host' => 'localhost',
                 'port' => 1234,
             ],
-            'global' => [
+            global: [
                 'default_metadata_validation' => true,
                 'entity_extraction_strategy' => 'reflection',
             ],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $adapter = $factory->createAdapter($config);
         $this->assertInstanceOf(PersistenceAdapterInterface::class, $adapter);
@@ -44,11 +45,11 @@ class AdapterFactoryInterfaceTest extends TestCase
     {
         $factory = $this->createTestFactory();
 
-        $config = [
-            'instance' => ['adapter' => 'test'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'test'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $adapter = $factory->createAdapter($config);
         $this->assertInstanceOf(PersistenceAdapterInterface::class, $adapter);
@@ -61,8 +62,8 @@ class AdapterFactoryInterfaceTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willReturn(new \stdClass());
 
-        $config = [
-            'instance' => [
+        $config = new AdapterConfiguration(
+            instance: [
                 'adapter' => 'test',
                 'test_client' => 'test.client.custom',
                 'host' => 'example.com',
@@ -72,14 +73,14 @@ class AdapterFactoryInterfaceTest extends TestCase
                 'ssl' => true,
                 'custom_option' => 'custom_value',
             ],
-            'global' => [
+            global: [
                 'default_metadata_validation' => true,
                 'entity_extraction_strategy' => 'interface',
                 'max_metadata_size' => 1024,
                 'debug_mode' => false,
             ],
-            'container' => $container,
-        ];
+            container: $container
+        );
 
         $adapter = $factory->createAdapter($config);
         $this->assertInstanceOf(PersistenceAdapterInterface::class, $adapter);
@@ -89,27 +90,28 @@ class AdapterFactoryInterfaceTest extends TestCase
     {
         $factory = $this->createTestFactory(true); // Create factory that throws on invalid config
 
-        $config = [
-            'instance' => ['adapter' => 'test'],
-            'global' => [],
-            // Missing 'container' key
-        ];
+        // Create a valid config - the factory will still validate and throw
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'test'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Missing required configuration key: container');
-
-        $factory->createAdapter($config);
+        // The factory should not throw since AdapterConfiguration guarantees valid structure
+        // This test now verifies that the factory works correctly with valid configuration
+        $adapter = $factory->createAdapter($config);
+        $this->assertInstanceOf(PersistenceAdapterInterface::class, $adapter);
     }
 
     public function testAdapterFactoryThrowsRuntimeExceptionOnCreationFailure(): void
     {
         $factory = $this->createTestFactory(false, true); // Create factory that throws runtime exception
 
-        $config = [
-            'instance' => ['adapter' => 'test'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'test'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Failed to connect to test service');
@@ -146,11 +148,12 @@ class AdapterFactoryInterfaceTest extends TestCase
             ) {
             }
 
-            /** @param array<string, mixed> $config */
-            public function createAdapter(array $config): PersistenceAdapterInterface
+            public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
             {
                 if ($this->throwInvalidArgument) {
-                    if (!isset($config['container'])) {
+                    // Test that we can access the container (this will always work with AdapterConfiguration)
+                    $container = $config->getContainer();
+                    if (!$container instanceof ContainerInterface) {
                         throw new \InvalidArgumentException('Missing required configuration key: container');
                     }
                 }

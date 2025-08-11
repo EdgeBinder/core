@@ -243,10 +243,13 @@ class MyCustomAdapter implements PersistenceAdapterInterface { /* ... */ }
 // 2. Create a factory
 class MyCustomAdapterFactory implements AdapterFactoryInterface
 {
-    public function createAdapter(array $config): PersistenceAdapterInterface
+    public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
     {
-        $client = $config['container']->get($config['instance']['my_client']);
-        return new MyCustomAdapter($client, $config['instance']);
+        $container = $config->getContainer();
+        $instanceConfig = $config->getInstanceConfig();
+
+        $client = $container->get($instanceConfig['my_client']);
+        return new MyCustomAdapter($client, $instanceConfig);
     }
 
     public function getAdapterType(): string { return 'mycustom'; }

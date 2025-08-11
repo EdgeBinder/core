@@ -285,18 +285,20 @@ $edgeBinder = EdgeBinder::fromConfiguration($config, $container);
 
 ### Understanding the Configuration Structure
 
-Your adapter factory receives a standardized configuration array with three sections:
+Your adapter factory receives a standardized configuration object with three main sections:
 
 ```php
+// AdapterConfiguration object provides type-safe access to:
+$config->getInstanceConfig();  // Instance-specific configuration
+$config->getGlobalSettings();  // Global EdgeBinder settings
+$config->getContainer();       // PSR-11 container instance
+
+// Example instance configuration:
 [
-    'instance' => [
-        'adapter' => 'redis',           // Your adapter type
-        'redis_client' => 'redis.client.cache',  // Service names
-        'ttl' => 7200,                 // Adapter-specific config
-        'prefix' => 'myapp:',          // More adapter config
-    ],
-    'global' => $globalEdgeBinderConfig,  // Full global EdgeBinder config
-    'container' => $psrContainer,         // PSR-11 container instance
+    'adapter' => 'redis',           // Your adapter type
+    'redis_client' => 'redis.client.cache',  // Service names
+    'ttl' => 7200,                 // Adapter-specific config
+    'prefix' => 'myapp:',          // More adapter config
 ]
 ```
 
@@ -594,13 +596,11 @@ public function executeQuery(QueryBuilderInterface $query): array
 $types = AdapterRegistry::getRegisteredTypes();
 var_dump($types);
 
-// Validate configuration structure
-$required = ['instance', 'global', 'container'];
-foreach ($required as $key) {
-    if (!isset($config[$key])) {
-        throw new \InvalidArgumentException("Missing config key: {$key}");
-    }
-}
+// Configuration validation is handled by AdapterConfiguration constructor
+// Your factory receives a validated configuration object
+$container = $config->getContainer();
+$instanceConfig = $config->getInstanceConfig();
+$globalSettings = $config->getGlobalSettings();
 ```
 
 ## Next Steps

@@ -19,9 +19,15 @@ use EdgeBinder\Exception\AdapterException;
  * // Register an adapter factory
  * AdapterRegistry::register(new JanusAdapterFactory());
  *
- * // Check if adapter is available
+ * // Create configuration object
+ * $config = new AdapterConfiguration(
+ *     instance: ['adapter' => 'janus', 'host' => 'localhost'],
+ *     global: ['debug' => true],
+ *     container: $psrContainer
+ * );
+ *
+ * // Check if adapter is available and create instance
  * if (AdapterRegistry::hasAdapter('janus')) {
- *     // Create adapter instance
  *     $adapter = AdapterRegistry::create('janus', $config);
  * }
  *
@@ -77,13 +83,13 @@ final class AdapterRegistry
      * Create adapter instance.
      *
      * @param string               $type   The adapter type to create
-     * @param array<string, mixed> $config Configuration for the adapter
+     * @param AdapterConfiguration $config Configuration for the adapter
      *
      * @return PersistenceAdapterInterface The created adapter instance
      *
      * @throws AdapterException If adapter type is not registered or creation fails
      */
-    public static function create(string $type, array $config): PersistenceAdapterInterface
+    public static function create(string $type, AdapterConfiguration $config): PersistenceAdapterInterface
     {
         if (!isset(self::$factories[$type])) {
             throw AdapterException::factoryNotFound($type, array_keys(self::$factories));

@@ -7,6 +7,7 @@ namespace EdgeBinder\Tests\Unit\Registry;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Exception\AdapterException;
 use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 use EdgeBinder\Registry\AdapterRegistry;
 use PHPUnit\Framework\TestCase;
@@ -66,11 +67,11 @@ class AdapterRegistryTest extends TestCase
 
         AdapterRegistry::register($factory);
 
-        $config = [
-            'instance' => ['adapter' => 'test_adapter'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'test_adapter'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $result = AdapterRegistry::create('test_adapter', $config);
 
@@ -79,11 +80,11 @@ class AdapterRegistryTest extends TestCase
 
     public function testCreateUnregisteredAdapterThrowsException(): void
     {
-        $config = [
-            'instance' => ['adapter' => 'unknown_adapter'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'unknown_adapter'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $this->expectException(AdapterException::class);
         $this->expectExceptionMessage("Adapter factory for type 'unknown_adapter' not found. No adapters are currently registered.");
@@ -99,11 +100,11 @@ class AdapterRegistryTest extends TestCase
         AdapterRegistry::register($factory1);
         AdapterRegistry::register($factory2);
 
-        $config = [
-            'instance' => ['adapter' => 'unknown_adapter'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'unknown_adapter'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $this->expectException(AdapterException::class);
         $this->expectExceptionMessage("Adapter factory for type 'unknown_adapter' not found. Available types: adapter1, adapter2");
@@ -121,11 +122,11 @@ class AdapterRegistryTest extends TestCase
 
         AdapterRegistry::register($factory);
 
-        $config = [
-            'instance' => ['adapter' => 'test_adapter'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'test_adapter'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $this->expectException(AdapterException::class);
         $this->expectExceptionMessage("Invalid configuration for adapter type 'test_adapter': Missing required config");
@@ -143,11 +144,11 @@ class AdapterRegistryTest extends TestCase
 
         AdapterRegistry::register($factory);
 
-        $config = [
-            'instance' => ['adapter' => 'test_adapter'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'test_adapter'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $this->expectException(AdapterException::class);
         $this->expectExceptionMessage("Failed to create adapter of type 'test_adapter': Connection failed");

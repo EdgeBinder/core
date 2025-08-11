@@ -13,6 +13,7 @@ use EdgeBinder\Exception\BindingNotFoundException;
 use EdgeBinder\Exception\InvalidMetadataException;
 use EdgeBinder\Exception\PersistenceException;
 use EdgeBinder\Query\BindingQueryBuilder;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterRegistry;
 use Psr\Container\ContainerInterface;
 
@@ -99,12 +100,12 @@ class EdgeBinder implements EdgeBinderInterface
             throw new \InvalidArgumentException('Adapter type must be a non-empty string, got: '.gettype($adapterType));
         }
 
-        // Build adapter configuration structure expected by AdapterFactoryInterface
-        $adapterConfig = [
-            'instance' => $config,
-            'global' => $globalConfig,
-            'container' => $container,
-        ];
+        // Build adapter configuration object
+        $adapterConfig = new AdapterConfiguration(
+            instance: $config,
+            global: $globalConfig,
+            container: $container
+        );
 
         // Create adapter through registry
         $adapter = AdapterRegistry::create($adapterType, $adapterConfig);

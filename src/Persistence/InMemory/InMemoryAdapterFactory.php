@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EdgeBinder\Persistence\InMemory;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 
 /**
@@ -43,25 +44,22 @@ final class InMemoryAdapterFactory implements AdapterFactoryInterface
      * The InMemory adapter requires no configuration as it stores all data
      * in PHP memory arrays. All configuration parameters are ignored.
      *
-     * Configuration structure (all optional):
+     * Example usage:
      * ```php
-     * [
-     *     'instance' => [
-     *         'adapter' => 'inmemory',
-     *         // No other configuration needed
-     *     ],
-     *     'global' => [
-     *         // Global EdgeBinder configuration (ignored by InMemory adapter)
-     *     ],
-     *     'container' => $psrContainer, // PSR-11 container (not used by InMemory adapter)
-     * ]
+     * $config = new AdapterConfiguration(
+     *     instance: ['adapter' => 'inmemory'],
+     *     global: [], // Ignored by InMemory adapter
+     *     container: $psrContainer // Not used by InMemory adapter
+     * );
+     *
+     * $adapter = $factory->createAdapter($config);
      * ```
      *
-     * @param array<string, mixed> $config Configuration array (ignored)
+     * @param AdapterConfiguration $config Configuration object (ignored)
      *
      * @return PersistenceAdapterInterface Configured InMemory adapter instance
      */
-    public function createAdapter(array $config): PersistenceAdapterInterface
+    public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
     {
         // InMemory adapter requires no configuration or dependencies
         return new InMemoryAdapter();

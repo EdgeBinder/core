@@ -7,6 +7,7 @@ namespace EdgeBinder\Tests\Unit\Persistence\InMemory;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 use EdgeBinder\Persistence\InMemory\InMemoryAdapterFactory;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -35,11 +36,11 @@ final class InMemoryAdapterFactoryTest extends TestCase
 
     public function testCreateAdapterWithMinimalConfig(): void
     {
-        $config = [
-            'instance' => ['adapter' => 'inmemory'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'inmemory'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $adapter = $this->factory->createAdapter($config);
 
@@ -49,7 +50,11 @@ final class InMemoryAdapterFactoryTest extends TestCase
 
     public function testCreateAdapterWithEmptyConfig(): void
     {
-        $config = [];
+        $config = new AdapterConfiguration(
+            instance: [],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $adapter = $this->factory->createAdapter($config);
 
@@ -60,18 +65,18 @@ final class InMemoryAdapterFactoryTest extends TestCase
     public function testCreateAdapterWithFullConfig(): void
     {
         $container = $this->createMock(ContainerInterface::class);
-        $config = [
-            'instance' => [
+        $config = new AdapterConfiguration(
+            instance: [
                 'adapter' => 'inmemory',
                 'some_ignored_setting' => 'value',
                 'another_ignored_setting' => 123,
             ],
-            'global' => [
+            global: [
                 'debug' => true,
                 'some_global_setting' => 'global_value',
             ],
-            'container' => $container,
-        ];
+            container: $container
+        );
 
         $adapter = $this->factory->createAdapter($config);
 
@@ -81,11 +86,11 @@ final class InMemoryAdapterFactoryTest extends TestCase
 
     public function testCreateAdapterReturnsNewInstanceEachTime(): void
     {
-        $config = [
-            'instance' => ['adapter' => 'inmemory'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'inmemory'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $adapter1 = $this->factory->createAdapter($config);
         $adapter2 = $this->factory->createAdapter($config);
@@ -97,11 +102,11 @@ final class InMemoryAdapterFactoryTest extends TestCase
 
     public function testCreatedAdapterIsFullyFunctional(): void
     {
-        $config = [
-            'instance' => ['adapter' => 'inmemory'],
-            'global' => [],
-            'container' => $this->createMock(ContainerInterface::class),
-        ];
+        $config = new AdapterConfiguration(
+            instance: ['adapter' => 'inmemory'],
+            global: [],
+            container: $this->createMock(ContainerInterface::class)
+        );
 
         $adapter = $this->factory->createAdapter($config);
 

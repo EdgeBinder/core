@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace MyVendor\RedisAdapter;
 
 use EdgeBinder\Registry\AdapterFactoryInterface;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Exception\AdapterException;
 use Psr\Container\ContainerInterface;
@@ -46,26 +47,24 @@ class RedisAdapterFactory implements AdapterFactoryInterface
      * - 'prefix': Key prefix for Redis keys (default: 'edgebinder:')
      * - 'timeout': Connection timeout in seconds (default: 30)
      * - 'max_metadata_size': Maximum metadata size in bytes (default: 1048576)
-     * 
-     * @param array<string, mixed> $config Configuration array
-     * 
+     *
+     * @param AdapterConfiguration $config Configuration object
+     *
      * @return PersistenceAdapterInterface Configured Redis adapter instance
-     * 
+     *
      * @throws AdapterException If configuration is invalid or adapter creation fails
      */
-    public function createAdapter(array $config): PersistenceAdapterInterface
+    public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
     {
         try {
-            $this->validateConfiguration($config);
-            
-            $container = $config['container'];
-            $instanceConfig = $config['instance'];
-            $globalConfig = $config['global'];
-            
+            $container = $config->getContainer();
+            $instanceConfig = $config->getInstanceConfig();
+            $globalConfig = $config->getGlobalSettings();
+
             // Get Redis client from container
-            $redisClientService = $instanceConfig['redis_client'] ?? 'redis.client.default';
+            $redisClientService = $config->getInstanceValue('redis_client', 'redis.client.default');
             $redisClient = $this->getRedisClient($container, $redisClientService);
-            
+
             // Build adapter configuration from instance config
             $adapterConfig = $this->buildAdapterConfig($instanceConfig, $globalConfig);
             
@@ -93,49 +92,7 @@ class RedisAdapterFactory implements AdapterFactoryInterface
         return 'redis';
     }
     
-    /**
-     * Validate the configuration structure.
-     * 
-     * @param array<string, mixed> $config Configuration to validate
-     * 
-     * @throws AdapterException If configuration is invalid
-     */
-    private function validateConfiguration(array $config): void
-    {
-        $required = ['container', 'instance', 'global'];
-        $missing = [];
-        
-        foreach ($required as $key) {
-            if (!isset($config[$key])) {
-                $missing[] = $key;
-            }
-        }
-        
-        if (!empty($missing)) {
-            throw AdapterException::missingConfiguration($this->getAdapterType(), $missing);
-        }
-        
-        if (!$config['container'] instanceof ContainerInterface) {
-            throw AdapterException::invalidConfiguration(
-                $this->getAdapterType(),
-                'Container must implement Psr\Container\ContainerInterface'
-            );
-        }
-        
-        if (!is_array($config['instance'])) {
-            throw AdapterException::invalidConfiguration(
-                $this->getAdapterType(),
-                'Instance configuration must be an array'
-            );
-        }
-        
-        if (!is_array($config['global'])) {
-            throw AdapterException::invalidConfiguration(
-                $this->getAdapterType(),
-                'Global configuration must be an array'
-            );
-        }
-    }
+
     
     /**
      * Get Redis client from container.

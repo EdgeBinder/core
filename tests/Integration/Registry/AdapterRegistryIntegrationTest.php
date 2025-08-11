@@ -126,17 +126,13 @@ final class AdapterRegistryIntegrationTest extends TestCase
     {
         // Create a factory that validates the configuration structure
         $factory = new class implements \EdgeBinder\Registry\AdapterFactoryInterface {
-            /** @var array<string, mixed> */
-            public array $receivedConfig = [];
+            public ?\EdgeBinder\Registry\AdapterConfiguration $receivedConfig = null;
 
-            public function createAdapter(array $config): \EdgeBinder\Contracts\PersistenceAdapterInterface
+            public function createAdapter(\EdgeBinder\Registry\AdapterConfiguration $config): \EdgeBinder\Contracts\PersistenceAdapterInterface
             {
                 $this->receivedConfig = $config;
 
-                // Validate the expected structure
-                if (!isset($config['instance'], $config['global'], $config['container'])) {
-                    throw new \InvalidArgumentException('Invalid configuration structure');
-                }
+                // AdapterConfiguration type system guarantees correct types
 
                 return new \EdgeBinder\Persistence\InMemory\InMemoryAdapter();
             }
@@ -160,26 +156,25 @@ final class AdapterRegistryIntegrationTest extends TestCase
 
         EdgeBinder::fromConfiguration($config, $container, $globalConfig);
 
-        // Verify the factory received the correct configuration structure
-        $this->assertArrayHasKey('instance', $factory->receivedConfig);
-        $this->assertArrayHasKey('global', $factory->receivedConfig);
-        $this->assertArrayHasKey('container', $factory->receivedConfig);
+        // Verify the factory received the correct configuration object
+        $this->assertNotNull($factory->receivedConfig);
+        $this->assertInstanceOf(\EdgeBinder\Registry\AdapterConfiguration::class, $factory->receivedConfig);
 
         // Verify instance config contains our original config
-        $this->assertEquals($config, $factory->receivedConfig['instance']);
+        $this->assertEquals($config, $factory->receivedConfig->getInstanceConfig());
 
         // Verify global config was passed
-        $this->assertEquals($globalConfig, $factory->receivedConfig['global']);
+        $this->assertEquals($globalConfig, $factory->receivedConfig->getGlobalSettings());
 
         // Verify container was passed
-        $this->assertSame($container, $factory->receivedConfig['container']);
+        $this->assertSame($container, $factory->receivedConfig->getContainer());
     }
 
     public function testErrorHandlingForAdapterCreationFailure(): void
     {
         // Register a factory that throws an exception
         $factory = new class implements \EdgeBinder\Registry\AdapterFactoryInterface {
-            public function createAdapter(array $config): \EdgeBinder\Contracts\PersistenceAdapterInterface
+            public function createAdapter(\EdgeBinder\Registry\AdapterConfiguration $config): \EdgeBinder\Contracts\PersistenceAdapterInterface
             {
                 throw new \RuntimeException('Database connection failed');
             }

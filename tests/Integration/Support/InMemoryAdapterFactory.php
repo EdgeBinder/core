@@ -6,6 +6,7 @@ namespace EdgeBinder\Tests\Integration\Support;
 
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterFactoryInterface;
 
 /**
@@ -21,7 +22,7 @@ final class InMemoryAdapterFactory implements AdapterFactoryInterface
     ) {
     }
 
-    public function createAdapter(array $config): PersistenceAdapterInterface
+    public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
     {
         // The InMemory adapter doesn't need any configuration
         return new InMemoryAdapter();

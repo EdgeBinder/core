@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use MyVendor\RedisAdapter\RedisAdapterFactory;
 use MyVendor\RedisAdapter\RedisAdapter;
 use EdgeBinder\Exception\AdapterException;
+use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterRegistry;
 use EdgeBinder\EdgeBinder;
 use Psr\Container\ContainerInterface;
@@ -54,13 +55,13 @@ class RedisAdapterFactoryTest extends TestCase
             ->with('redis.client.default')
             ->willReturn($this->mockRedis);
 
-        $config = [
-            'container' => $this->mockContainer,
-            'instance' => [
+        $config = new AdapterConfiguration(
+            container: $this->mockContainer,
+            instance: [
                 'redis_client' => 'redis.client.default',
             ],
-            'global' => [],
-        ];
+            global: []
+        );
 
         $adapter = $this->factory->createAdapter($config);
         
@@ -81,19 +82,19 @@ class RedisAdapterFactoryTest extends TestCase
             ->with('redis.client.cache')
             ->willReturn($this->mockRedis);
 
-        $config = [
-            'container' => $this->mockContainer,
-            'instance' => [
+        $config = new AdapterConfiguration(
+            container: $this->mockContainer,
+            instance: [
                 'redis_client' => 'redis.client.cache',
                 'ttl' => 7200,
                 'prefix' => 'myapp:',
                 'timeout' => 60,
                 'max_metadata_size' => 2097152,
             ],
-            'global' => [
+            global: [
                 'debug' => true,
-            ],
-        ];
+            ]
+        );
 
         $adapter = $this->factory->createAdapter($config);
         
@@ -102,13 +103,18 @@ class RedisAdapterFactoryTest extends TestCase
 
     public function testCreateAdapterMissingContainer(): void
     {
-        $config = [
-            'instance' => [],
-            'global' => [],
-        ];
+        // Since AdapterConfiguration requires a container, we can't test missing container
+        // Instead, test that the validation works correctly with a valid config
+        $config = new AdapterConfiguration(
+            container: $this->mockContainer,
+            instance: [],
+            global: []
+        );
 
+        // This should work fine - the validation logic has changed since AdapterConfiguration
+        // guarantees we have a valid container
         $this->expectException(AdapterException::class);
-        $this->expectExceptionMessage('Missing required configuration for adapter type \'redis\': container');
+        $this->expectExceptionMessage('Service \'redis.client.default\' not found in container');
 
         $this->factory->createAdapter($config);
     }

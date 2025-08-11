@@ -16,19 +16,19 @@ use EdgeBinder\Contracts\PersistenceAdapterInterface;
  * ```php
  * class JanusAdapterFactory implements AdapterFactoryInterface
  * {
- *     public function createAdapter(array $config): PersistenceAdapterInterface
+ *     public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
  *     {
- *         $container = $config['container'];
- *         $instanceConfig = $config['instance'];
- *         $globalConfig = $config['global'];
+ *         $container = $config->getContainer();
  *
- *         // Get configuration from flatter structure
- *         $janusClient = $container->get($instanceConfig['janus_client'] ?? 'janus.client.default');
+ *         // Get configuration using convenience methods with defaults
+ *         $janusClient = $container->get($config->getInstanceValue('janus_client', 'janus.client.default'));
  *
- *         // Build adapter configuration from flatter structure
+ *         // Build adapter configuration from instance config
  *         $adapterConfig = [
- *             'graph_name' => $instanceConfig['graph_name'] ?? 'DefaultGraph',
- *             'consistency_level' => $instanceConfig['consistency_level'] ?? 'eventual',
+ *             'graph_name' => $config->getInstanceValue('graph_name', 'DefaultGraph'),
+ *             'consistency_level' => $config->getInstanceValue('consistency_level', 'eventual'),
+ *             'host' => $config->getInstanceValue('host', 'localhost'),
+ *             'port' => $config->getInstanceValue('port', 8182),
  *         ];
  *
  *         return new JanusAdapter($janusClient, $adapterConfig);
@@ -52,15 +52,15 @@ interface AdapterFactoryInterface
     /**
      * Create adapter instance with configuration.
      *
-     * The configuration array contains three main sections:
-     * - 'instance': Instance-specific configuration including adapter type and connection details
-     * - 'global': Global EdgeBinder configuration for context
-     * - 'container': PSR-11 container for dependency injection
+     * The configuration object contains three main sections:
+     * - Instance-specific configuration including adapter type and connection details
+     * - Global EdgeBinder configuration for context
+     * - PSR-11 container for dependency injection
      *
-     * Example configuration structure:
+     * Example usage:
      * ```php
-     * [
-     *     'instance' => [
+     * $config = new AdapterConfiguration(
+     *     instance: [
      *         'adapter' => 'janus',
      *         'janus_client' => 'janus.client.social',
      *         'graph_name' => 'SocialNetwork',
@@ -68,26 +68,24 @@ interface AdapterFactoryInterface
      *         'host' => 'localhost',
      *         'port' => 8182,
      *     ],
-     *     'global' => [
-     *         // Full global EdgeBinder configuration
+     *     global: [
      *         'default_metadata_validation' => true,
      *         'entity_extraction_strategy' => 'reflection',
      *     ],
-     *     'container' => $psrContainer, // PSR-11 ContainerInterface instance
-     * ]
+     *     container: $psrContainer
+     * );
+     *
+     * $adapter = $factory->createAdapter($config);
      * ```
      *
-     * @param array<string, mixed> $config Configuration array containing:
-     *                                     - 'instance': instance-specific configuration
-     *                                     - 'global': global EdgeBinder configuration
-     *                                     - 'container': PSR-11 container for dependency injection
+     * @param AdapterConfiguration $config Configuration object containing instance, global, and container
      *
      * @return PersistenceAdapterInterface The configured adapter instance
      *
-     * @throws \InvalidArgumentException If configuration is invalid or missing required keys
+     * @throws \InvalidArgumentException If configuration is invalid or missing required values
      * @throws \RuntimeException         If adapter cannot be created (e.g., connection failure)
      */
-    public function createAdapter(array $config): PersistenceAdapterInterface;
+    public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface;
 
     /**
      * Get the adapter type this factory handles.

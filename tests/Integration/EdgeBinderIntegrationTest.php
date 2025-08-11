@@ -179,19 +179,18 @@ final class EdgeBinderIntegrationTest extends TestCase
         $mockFactory->method('getAdapterType')->willReturn('test');
         $mockFactory->expects($this->once())
             ->method('createAdapter')
-            ->with($this->callback(function (array $config) use ($container): bool {
-                // Verify the configuration structure matches AdapterFactoryInterface expectations
-                $this->assertArrayHasKey('instance', $config);
-                $this->assertArrayHasKey('global', $config);
-                $this->assertArrayHasKey('container', $config);
+            ->with($this->callback(function (\EdgeBinder\Registry\AdapterConfiguration $config) use ($container): bool {
+                // Verify the configuration object has the expected structure
+                $instanceConfig = $config->getInstanceConfig();
+                $configContainer = $config->getContainer();
 
                 // Verify instance config contains our original config
-                $this->assertEquals('test', $config['instance']['adapter']);
-                $this->assertEquals('test.client.default', $config['instance']['test_client']);
-                $this->assertEquals('localhost', $config['instance']['host']);
+                $this->assertEquals('test', $instanceConfig['adapter']);
+                $this->assertEquals('test.client.default', $instanceConfig['test_client']);
+                $this->assertEquals('localhost', $instanceConfig['host']);
 
                 // Verify container is passed through
-                $this->assertSame($container, $config['container']);
+                $this->assertSame($container, $configContainer);
 
                 return true;
             }))
@@ -225,10 +224,11 @@ final class EdgeBinderIntegrationTest extends TestCase
         $factory->method('getAdapterType')->willReturn($type);
         $factory->expects($this->once())
             ->method('createAdapter')
-            ->with($this->callback(function (array $config): bool {
+            ->with($this->callback(function (\EdgeBinder\Registry\AdapterConfiguration $config): bool {
                 // Verify global config is passed
-                $this->assertArrayHasKey('global', $config);
-                $this->assertEquals('reflection', $config['global']['entity_extraction_strategy']);
+                $globalConfig = $config->getGlobalSettings();
+                $this->assertArrayHasKey('entity_extraction_strategy', $globalConfig);
+                $this->assertEquals('reflection', $globalConfig['entity_extraction_strategy']);
 
                 return true;
             }))
