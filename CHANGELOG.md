@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-08-11
+
+### Added
+
+#### AdapterConfiguration Class
+- **NEW: Type-safe configuration object** - Introduced `AdapterConfiguration` class to replace array-based configuration
+- **Immutable design** - Configuration objects cannot be modified after creation
+- **Convenience methods** - Added `getInstanceValue()` and `getGlobalValue()` with default value support
+- **Constructor validation** - Type system ensures valid `ContainerInterface` and array types
+
+### Changed
+
+#### 🚨 BREAKING CHANGES - Adapter Factory Interface
+
+**Updated Method Signatures:**
+```php
+// OLD v0.6.2:
+public function createAdapter(array $config): PersistenceAdapterInterface
+
+// NEW v0.7.0:
+public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
+```
+
+**Updated Registry Interface:**
+```php
+// OLD v0.6.2:
+AdapterRegistry::create(string $type, array $config)
+
+// NEW v0.7.0:
+AdapterRegistry::create(string $type, AdapterConfiguration $config)
+```
+
+#### Method Naming Improvements
+- **`getInstance()` → `getInstanceConfig()`** - Clearer intent about returning configuration data
+- **`getGlobal()` → `getGlobalSettings()`** - More descriptive name for global settings access
+
+#### Migration Required for Third-Party Adapters
+```php
+// OLD v0.6.2 adapter implementation:
+public function createAdapter(array $config): PersistenceAdapterInterface
+{
+    $container = $config['container'];
+    $instanceConfig = $config['instance'];
+    $globalConfig = $config['global'];
+
+    $client = $container->get($instanceConfig['my_client']);
+    return new MyAdapter($client, $instanceConfig);
+}
+
+// NEW v0.7.0 adapter implementation:
+public function createAdapter(AdapterConfiguration $config): PersistenceAdapterInterface
+{
+    $container = $config->getContainer();
+    $instanceConfig = $config->getInstanceConfig();
+    $globalSettings = $config->getGlobalSettings();
+
+    // Use convenience methods with defaults
+    $client = $container->get($config->getInstanceValue('my_client', 'default.client'));
+    return new MyAdapter($client, $instanceConfig);
+}
+```
+
+### Removed
+
+#### Backward Compatibility Layer
+- **Removed array-to-object conversion** - Clean API without compatibility overhead
+- **Removed redundant validation** - Type system handles validation automatically
+- **No performance overhead** - Direct configuration object usage throughout
+
+### Technical Details
+
+#### Code Quality Improvements
+- **PHPStan Level 8 compliance** - All static analysis errors resolved
+- **Type safety enforced** - Strong typing prevents configuration errors
+- **Cleaner codebase** - Removed redundant validation and conversion code
+
+#### Test Coverage
+- **All 270 tests passing** - Complete test suite updated for new API
+- **Updated documentation** - All examples and guides reflect new configuration class
+- **Integration tests updated** - Mock factories and test scenarios updated
+
+### Benefits
+
+1. **Type Safety** - Strong typing prevents configuration errors at compile time
+2. **Better Developer Experience** - IntelliSense support and clearer method names
+3. **Immutability** - Configuration cannot be accidentally modified
+4. **Performance** - No array-to-object conversion overhead
+5. **Maintainability** - Cleaner, more consistent API
+
+### Migration Guide
+
+**For Third-Party Adapter Developers:**
+
+1. Update your factory method signature to accept `AdapterConfiguration`
+2. Replace array access with getter methods:
+   - `$config['container']` → `$config->getContainer()`
+   - `$config['instance']` → `$config->getInstanceConfig()`
+   - `$config['global']` → `$config->getGlobalSettings()`
+3. Use convenience methods for safer access:
+   - `$config->getInstanceValue('key', 'default')`
+   - `$config->getGlobalValue('key', 'default')`
+
+**For End Users:**
+- No changes required - `EdgeBinder::fromConfiguration()` API remains unchanged
+- Internal adapter creation now uses type-safe configuration objects
+
 ## [0.6.2] - 2025-08-08
 
 ### Changed
@@ -662,6 +768,7 @@ composer test-coverage             # Full coverage report
 - Framework integration examples (Laravel, Symfony)
 - Production-ready error handling and logging
 
+[0.7.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.5.0...v0.6.0
