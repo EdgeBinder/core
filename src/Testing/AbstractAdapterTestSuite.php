@@ -58,6 +58,266 @@ abstract class AbstractAdapterTestSuite extends TestCase
     // These are the key tests that would catch common adapter filtering bugs
     // ========================================
 
+    // ========================================
+    // CRITICAL: Anonymous Class Entity Tests
+    // These tests catch bugs with anonymous class entity handling (like the Weaviate adapter bug)
+    // ========================================
+
+    /**
+     * Test that anonymous class entities work with basic query operations.
+     *
+     * This test verifies the core functionality that should work across all adapters.
+     * Anonymous classes are commonly used in testing scenarios and have unpredictable
+     * type names like "class@anonymous /path/to/file.php:42$abc123".
+     */
+    public function testAnonymousClassEntitiesWithQuery(): void
+    {
+        // Create anonymous class entities (common in tests)
+        $user = new class('user-query-test', 'Query Test User') {
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+        };
+
+        $project = new class('project-query-test', 'Query Test Project') {
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+        };
+
+        // Create relationship
+        $binding = $this->edgeBinder->bind(
+            from: $user,
+            to: $project,
+            type: 'has_access',
+            metadata: ['level' => 'admin']
+        );
+
+        $this->assertNotNull($binding);
+        $this->assertEquals('has_access', $binding->getType());
+        $this->assertEquals('user-query-test', $binding->getFromId());
+        $this->assertEquals('project-query-test', $binding->getToId());
+        $this->assertEquals(['level' => 'admin'], $binding->getMetadata());
+
+        // Test query by from entity
+        $result1 = $this->edgeBinder->query()
+            ->from($user)
+            ->get();
+
+        $this->assertNotEmpty($result1->getBindings(), 'Query by from entity should return results for anonymous class entities');
+        $this->assertCount(1, $result1->getBindings());
+
+        // Test query by type
+        $result2 = $this->edgeBinder->query()
+            ->type('has_access')
+            ->get();
+
+        $this->assertNotEmpty($result2->getBindings(), 'Query by type should return results for anonymous class entities');
+        $this->assertGreaterThanOrEqual(1, count($result2->getBindings()));
+
+        // Test query by from entity and type (the critical failing case from bug reports)
+        $result3 = $this->edgeBinder->query()
+            ->from($user)
+            ->type('has_access')
+            ->get();
+
+        $this->assertNotEmpty($result3->getBindings(), 'CRITICAL: Query by from entity and type should return results for anonymous class entities');
+        $this->assertCount(1, $result3->getBindings());
+
+        $foundBinding = $result3->getBindings()[0];
+        $this->assertEquals($binding->getId(), $foundBinding->getId());
+        $this->assertEquals('has_access', $foundBinding->getType());
+        $this->assertEquals('user-query-test', $foundBinding->getFromId());
+        $this->assertEquals('project-query-test', $foundBinding->getToId());
+    }
+
+    /**
+     * Test that anonymous class entities work with findBindingsFor method.
+     *
+     * This test specifically targets the findBindingsFor functionality which
+     * has been problematic with some adapters (particularly Weaviate) when
+     * handling anonymous class entity type names.
+     */
+    public function testAnonymousClassEntitiesWithFindBindingsFor(): void
+    {
+        // Create anonymous class entities
+        $user = new class('user-find-test', 'Find Test User') {
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+        };
+
+        $project1 = new class('project-find-1', 'Find Test Project 1') {
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+        };
+
+        $project2 = new class('project-find-2', 'Find Test Project 2') {
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+        };
+
+        // Create multiple relationships
+        $binding1 = $this->edgeBinder->bind(from: $user, to: $project1, type: 'owns');
+        $binding2 = $this->edgeBinder->bind(from: $user, to: $project2, type: 'manages');
+        $binding3 = $this->edgeBinder->bind(from: $project1, to: $user, type: 'owned_by');
+
+        // Test findBindingsFor - this should find all bindings where user is involved
+        $userBindings = $this->edgeBinder->findBindingsFor($user);
+
+        $this->assertNotEmpty($userBindings, 'CRITICAL: findBindingsFor should return bindings for anonymous class entities');
+        $this->assertCount(3, $userBindings, 'Should find all 3 bindings involving the user');
+
+        // Verify the found bindings
+        $bindingIds = array_map(fn ($b) => $b->getId(), $userBindings);
+        $this->assertContains($binding1->getId(), $bindingIds);
+        $this->assertContains($binding2->getId(), $bindingIds);
+        $this->assertContains($binding3->getId(), $bindingIds);
+
+        // Test findBindingsFor with project entity
+        $project1Bindings = $this->edgeBinder->findBindingsFor($project1);
+
+        $this->assertNotEmpty($project1Bindings, 'findBindingsFor should work with different anonymous class types');
+        $this->assertCount(2, $project1Bindings, 'Should find 2 bindings involving project1');
+
+        $project1BindingIds = array_map(fn ($b) => $b->getId(), $project1Bindings);
+        $this->assertContains($binding1->getId(), $project1BindingIds);
+        $this->assertContains($binding3->getId(), $project1BindingIds);
+    }
+
+    /**
+     * Test edge cases with anonymous class entity type extraction.
+     *
+     * This test ensures that the adapter properly handles various edge cases
+     * in anonymous class naming and entity type extraction.
+     */
+    public function testAnonymousClassEntityTypeExtraction(): void
+    {
+        // Create anonymous classes with different characteristics
+        $entity1 = new class('test-1', 'Entity 1') {
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+        };
+
+        $entity2 = new class('test-2', 'Entity 2') {
+            private string $extraProperty = 'extra';
+
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+
+            public function getExtra(): string
+            {
+                return $this->extraProperty;
+            }
+        };
+
+        // Create relationships between different anonymous class types
+        $binding = $this->edgeBinder->bind(
+            from: $entity1,
+            to: $entity2,
+            type: 'relates_to'
+        );
+
+        $this->assertNotNull($binding);
+
+        // Verify that both query methods work with different anonymous class types
+        $queryResult = $this->edgeBinder->query()
+            ->from($entity1)
+            ->to($entity2)
+            ->type('relates_to')
+            ->get();
+
+        $this->assertNotEmpty($queryResult->getBindings(), 'Query with from/to/type should work with different anonymous class types');
+        $this->assertCount(1, $queryResult->getBindings());
+
+        // Verify findBindingsFor works with both entity types
+        $entity1Bindings = $this->edgeBinder->findBindingsFor($entity1);
+        $entity2Bindings = $this->edgeBinder->findBindingsFor($entity2);
+
+        $this->assertNotEmpty($entity1Bindings, 'findBindingsFor should work with first anonymous class type');
+        $this->assertNotEmpty($entity2Bindings, 'findBindingsFor should work with second anonymous class type');
+        $this->assertCount(1, $entity1Bindings);
+        $this->assertCount(1, $entity2Bindings);
+
+        // Both should find the same binding
+        $this->assertEquals($binding->getId(), $entity1Bindings[0]->getId());
+        $this->assertEquals($binding->getId(), $entity2Bindings[0]->getId());
+    }
+
     /**
      * THE CRITICAL TEST: This tests proper query filter application.
      * Ensures that $edgeBinder->query()->from($user)->type('owns')->get() returns only matching results.
