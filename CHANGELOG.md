@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2025-08-12
+
+### Added
+
+#### Enhanced AbstractAdapterTestSuite - Combined Query Pattern Testing
+- **NEW: Comprehensive combined query pattern tests** - Added 6 critical tests to catch adapter-specific bugs
+  - `testCombinedQueryPatternConsistency()` - Reproduces exact bug report scenarios with from() + type() combinations
+  - `testAllDualCriteriaQueryCombinations()` - Systematic testing of all dual-criteria query patterns
+  - `testTripleCriteriaQueryCombinations()` - Validation of triple-criteria queries (from + to + type)
+  - `testIdenticalQueryPatternConsistency()` - Ensures identical patterns produce consistent results
+  - `testCrossEntityTypeQueryConsistency()` - Cross-entity-type validation across different entity classes
+  - `testWeaviateAdapterBugReproduction()` - Exact reproduction of reported query pattern bugs
+
+#### Bug Detection & Prevention
+- **Enhanced adapter certification** - All adapters must now pass comprehensive combined query pattern tests
+- **Regression prevention** - Future adapter implementations will be tested against all query combinations
+- **Cross-adapter consistency** - Ensures all adapters behave identically to InMemoryAdapter (source of truth)
+
+### Fixed
+- **Risky test warnings** - Added positive assertions to ensure all tests perform meaningful validation
+- **Test coverage gaps** - Systematic coverage of all query method combinations (from, to, type)
+
+### Technical Details
+
+#### Query Pattern Coverage
+The enhanced test suite now covers all possible query combinations:
+- **Single criteria**: `from()`, `to()`, `type()`
+- **Dual criteria**: `from() + type()`, `to() + type()`, `from() + to()`
+- **Triple criteria**: `from() + to() + type()`
+- **Consistency validation**: Multiple identical patterns across different entity types
+
+#### Impact
+- **For Adapter Developers**: Comprehensive test coverage catches subtle query filtering bugs
+- **For EdgeBinder Users**: More reliable adapter ecosystem with guaranteed consistent behavior
+- **For Bug Reports**: Clear reproduction tests for debugging adapter-specific issues
+
 ## [0.7.1] - 2025-08-12
 
 ### Added
@@ -805,6 +841,8 @@ composer test-coverage             # Full coverage report
 - Framework integration examples (Laravel, Symfony)
 - Production-ready error handling and logging
 
+[0.7.2]: https://github.com/EdgeBinder/edgebinder/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/EdgeBinder/edgebinder/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.0...v0.6.1
