@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2025-08-12
+
+### Added
+
+#### Enhanced AbstractAdapterTestSuite
+- **NEW: Anonymous class entity tests** - Added 3 critical tests for anonymous class entity handling
+  - `testAnonymousClassEntitiesWithQuery()` - Tests basic query operations with anonymous entities
+  - `testAnonymousClassEntitiesWithFindBindingsFor()` - Tests findBindingsFor method with anonymous entities
+  - `testAnonymousClassEntityTypeExtraction()` - Tests edge cases with different anonymous class types
+- **Mandatory adapter certification** - All adapters must pass these tests to ensure consistent behavior
+- **Bug prevention** - These tests catch adapter bugs that only manifest with anonymous class entities
+
+### Fixed
+
+#### Code Coverage Configuration
+- **Excluded src/Testing from coverage** - Test infrastructure should not be included in coverage metrics
+- **Resolved false coverage reports** - Codecov no longer reports "uncovered" lines in test suites
+- **Cleaner coverage metrics** - Coverage now only measures production code, not test infrastructure
+
+### Technical Details
+
+#### Anonymous Class Entity Support
+Anonymous class entities (common in testing) have unpredictable type names like:
+```
+class@anonymous /path/to/file.php:42$abc123
+```
+
+The new tests ensure all adapters properly handle:
+- Entity type extraction from anonymous classes
+- Query filtering with unpredictable type names
+- Type matching between stored and queried entities
+
+#### Impact
+- **For Adapter Developers**: New mandatory tests ensure robust anonymous class support
+- **For EdgeBinder Users**: More reliable adapter ecosystem with consistent behavior
+- **For Contributors**: Cleaner coverage reports and better testing infrastructure
+
 ## [0.7.0] - 2025-08-11
 
 ### Added

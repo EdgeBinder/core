@@ -310,7 +310,7 @@ class AdapterException extends EdgeBinderException
 ```php
 class EdgeBinder
 {
-    public const VERSION = '0.7.0';
+    public const VERSION = '0.7.1';
 }
 ```
 
