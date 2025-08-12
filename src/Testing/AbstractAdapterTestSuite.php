@@ -463,6 +463,505 @@ abstract class AbstractAdapterTestSuite extends TestCase
     }
 
     // ========================================
+    // CRITICAL: Combined Query Pattern Tests
+    // These tests expose the bug described in EDGEBINDER_QUERY_PATTERN_BUG_REPORT.md
+    // where from() + type() combinations return inconsistent results
+    // ========================================
+
+    /**
+     * Test systematic combined query patterns to expose inconsistency bugs.
+     *
+     * This test reproduces the exact bug pattern from the bug report where
+     * some from() + type() combinations work while others fail, despite
+     * relationships existing.
+     */
+    public function testCombinedQueryPatternConsistency(): void
+    {
+        // Create test entities exactly like in the bug report
+        $user = new class('user-123', 'Test User') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        $profile = new class('profile-789', 'Test Profile') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        $project = new class('project-456', 'Test Project') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        $workspace = new class('workspace-101', 'Test Workspace') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        // Create relationships exactly like in the bug report
+        $binding1 = $this->edgeBinder->bind(from: $user, to: $project, type: 'has_access');
+        $binding2 = $this->edgeBinder->bind(from: $profile, to: $workspace, type: 'owns');
+
+        // Verify relationships were created
+        $this->assertNotNull($binding1);
+        $this->assertNotNull($binding2);
+        $this->assertEquals('has_access', $binding1->getType());
+        $this->assertEquals('owns', $binding2->getType());
+
+        // Test the patterns from the bug report
+
+        // ❌ FAILS in bug report: This combination returns empty results
+        $result1 = $this->edgeBinder->query()
+            ->from($user)
+            ->type('has_access')
+            ->get();
+
+        $this->assertNotEmpty($result1->getBindings(),
+            'CRITICAL BUG: user + has_access query should return 1 result but returned 0');
+        $this->assertCount(1, $result1->getBindings(),
+            'user + has_access should find exactly 1 binding');
+        $this->assertEquals($binding1->getId(), $result1->getBindings()[0]->getId());
+
+        // ✅ WORKS in bug report: This combination returns correct results
+        $result2 = $this->edgeBinder->query()
+            ->from($profile)
+            ->type('owns')
+            ->get();
+
+        $this->assertNotEmpty($result2->getBindings(),
+            'profile + owns query should return 1 result');
+        $this->assertCount(1, $result2->getBindings());
+        $this->assertEquals($binding2->getId(), $result2->getBindings()[0]->getId());
+
+        // ✅ WORKS: Individual queries work fine
+        $result3 = $this->edgeBinder->query()
+            ->from($user)
+            ->get();
+
+        $this->assertCount(1, $result3->getBindings(),
+            'user only query should return 1 result');
+
+        $result4 = $this->edgeBinder->query()
+            ->type('has_access')
+            ->get();
+
+        $this->assertCount(1, $result4->getBindings(),
+            'has_access only query should return 1 result');
+    }
+
+    /**
+     * Test all possible dual-criteria query combinations systematically.
+     *
+     * This test creates a matrix of relationships and tests every possible
+     * combination of from(), to(), and type() to ensure consistent behavior.
+     */
+    public function testAllDualCriteriaQueryCombinations(): void
+    {
+        // Create diverse entities for comprehensive testing
+        $entities = [
+            'user1' => $this->createTestEntity('test-user-1', 'User'),
+            'user2' => $this->createTestEntity('test-user-2', 'User'),
+            'project1' => $this->createTestEntity('test-project-1', 'Project'),
+            'project2' => $this->createTestEntity('test-project-2', 'Project'),
+            'workspace' => $this->createTestEntity('test-workspace', 'Workspace'),
+        ];
+
+        $relationshipTypes = ['has_access', 'owns', 'manages', 'member_of'];
+
+        // Create comprehensive relationship matrix
+        $createdBindings = [];
+        $entityList = array_values($entities);
+
+        for ($i = 0; $i < count($entityList); $i++) {
+            for ($j = 0; $j < count($entityList); $j++) {
+                if ($i !== $j) {
+                    $from = $entityList[$i];
+                    $to = $entityList[$j];
+                    $type = $relationshipTypes[($i + $j) % count($relationshipTypes)];
+
+                    $binding = $this->edgeBinder->bind(from: $from, to: $to, type: $type);
+                    $createdBindings[] = [
+                        'binding' => $binding,
+                        'from' => $from,
+                        'to' => $to,
+                        'type' => $type,
+                    ];
+                }
+            }
+        }
+
+        $this->assertNotEmpty($createdBindings, 'Should have created test relationships');
+
+        // Test every dual-criteria combination for each relationship
+        $failedQueries = [];
+
+        foreach ($createdBindings as $rel) {
+            $testCases = [
+                // CRITICAL: These are the patterns that fail in the bug report
+                'from_and_type' => fn() => $this->edgeBinder->query()->from($rel['from'])->type($rel['type'])->get(),
+                'to_and_type' => fn() => $this->edgeBinder->query()->to($rel['to'])->type($rel['type'])->get(),
+                'from_and_to' => fn() => $this->edgeBinder->query()->from($rel['from'])->to($rel['to'])->get(),
+            ];
+
+            foreach ($testCases as $testName => $queryFunc) {
+                $result = $queryFunc();
+                $bindings = $result->getBindings();
+
+                // Each query should find at least the relationship we're testing for
+                $found = false;
+                foreach ($bindings as $foundBinding) {
+                    if ($foundBinding->getId() === $rel['binding']->getId()) {
+                        $found = true;
+                        break;
+                    }
+                }
+
+                if (!$found) {
+                    $failedQueries[] = [
+                        'test' => $testName,
+                        'from_id' => $rel['from']->getId(),
+                        'to_id' => $rel['to']->getId(),
+                        'type' => $rel['type'],
+                        'binding_id' => $rel['binding']->getId(),
+                        'results_count' => count($bindings),
+                    ];
+                }
+            }
+        }
+
+        // Report all failures with detailed information
+        if (!empty($failedQueries)) {
+            $failureReport = "Combined query pattern failures detected (reproduces bug from EDGEBINDER_QUERY_PATTERN_BUG_REPORT.md):\n";
+            foreach ($failedQueries as $failure) {
+                $failureReport .= "- {$failure['test']}: {$failure['from_id']} -> {$failure['to_id']} ({$failure['type']}) ";
+                $failureReport .= "expected binding {$failure['binding_id']}, got {$failure['results_count']} results\n";
+            }
+            $this->fail($failureReport);
+        }
+    }
+
+    /**
+     * Test triple-criteria query combinations (from + to + type).
+     *
+     * This ensures the most specific queries work correctly across all adapters.
+     */
+    public function testTripleCriteriaQueryCombinations(): void
+    {
+        // Create test entities
+        $user = $this->createTestEntity('triple-user', 'User');
+        $project1 = $this->createTestEntity('triple-project-1', 'Project');
+        $project2 = $this->createTestEntity('triple-project-2', 'Project');
+        $workspace = $this->createTestEntity('triple-workspace', 'Workspace');
+
+        // Create specific relationships
+        $binding1 = $this->edgeBinder->bind(from: $user, to: $project1, type: 'has_access');
+        $binding2 = $this->edgeBinder->bind(from: $user, to: $project2, type: 'owns');
+        $binding3 = $this->edgeBinder->bind(from: $user, to: $workspace, type: 'has_access');
+
+        // Test triple-criteria queries (most specific)
+        $testCases = [
+            [
+                'query' => fn() => $this->edgeBinder->query()->from($user)->to($project1)->type('has_access')->get(),
+                'expected_binding' => $binding1,
+                'description' => 'user -> project1 with has_access'
+            ],
+            [
+                'query' => fn() => $this->edgeBinder->query()->from($user)->to($project2)->type('owns')->get(),
+                'expected_binding' => $binding2,
+                'description' => 'user -> project2 with owns'
+            ],
+            [
+                'query' => fn() => $this->edgeBinder->query()->from($user)->to($workspace)->type('has_access')->get(),
+                'expected_binding' => $binding3,
+                'description' => 'user -> workspace with has_access'
+            ],
+        ];
+
+        foreach ($testCases as $testCase) {
+            $result = $testCase['query']();
+            $bindings = $result->getBindings();
+
+            $this->assertCount(1, $bindings,
+                "Triple-criteria query ({$testCase['description']}) should return exactly 1 result");
+
+            $this->assertEquals($testCase['expected_binding']->getId(), $bindings[0]->getId(),
+                "Triple-criteria query ({$testCase['description']}) should find the correct binding");
+        }
+    }
+
+    /**
+     * CRITICAL BUG REPRODUCTION: Test identical relationship patterns for consistency.
+     *
+     * This test reproduces the exact scenario from the bug report where
+     * identical query patterns produce different results. This should expose
+     * the inconsistency bug where some entity/type combinations work while
+     * others fail despite being structurally identical.
+     */
+    public function testIdenticalQueryPatternConsistency(): void
+    {
+        // Create multiple sets of identical relationship patterns
+        $testSets = [];
+
+        for ($i = 1; $i <= 5; $i++) {
+            $user = new class("user-{$i}", "User {$i}") {
+                public function __construct(private string $id, private string $name) {}
+                public function getId(): string { return $this->id; }
+                public function getName(): string { return $this->name; }
+            };
+
+            $project = new class("project-{$i}", "Project {$i}") {
+                public function __construct(private string $id, private string $name) {}
+                public function getId(): string { return $this->id; }
+                public function getName(): string { return $this->name; }
+            };
+
+            // Create identical relationship pattern
+            $binding = $this->edgeBinder->bind(from: $user, to: $project, type: 'has_access');
+
+            $testSets[] = [
+                'user' => $user,
+                'project' => $project,
+                'binding' => $binding,
+                'set' => $i
+            ];
+        }
+
+        // Test each set with the SAME query pattern - all should return 1 result
+        $inconsistentResults = [];
+
+        foreach ($testSets as $set) {
+            $user = $set['user'];
+            $setNum = $set['set'];
+
+            // Test the problematic pattern: from() + type()
+            $result = $this->edgeBinder->query()
+                ->from($user)
+                ->type('has_access')
+                ->get();
+
+            $count = count($result->getBindings());
+
+            if ($count !== 1) {
+                $inconsistentResults[] = [
+                    'set' => $setNum,
+                    'user_id' => $user->getId(),
+                    'expected' => 1,
+                    'actual' => $count,
+                    'binding_id' => $set['binding']->getId()
+                ];
+            } else {
+                // Verify we found the correct binding
+                $foundBinding = $result->getBindings()[0];
+                $this->assertEquals($set['binding']->getId(), $foundBinding->getId(),
+                    "Set {$setNum}: Found binding should match created binding");
+            }
+        }
+
+        // If any sets failed, report the inconsistency
+        if (!empty($inconsistentResults)) {
+            $errorMessage = "CRITICAL BUG: Identical query patterns produced inconsistent results:\n";
+            foreach ($inconsistentResults as $failure) {
+                $errorMessage .= "- Set {$failure['set']} ({$failure['user_id']}): expected {$failure['expected']}, got {$failure['actual']} results\n";
+                $errorMessage .= "  Missing binding: {$failure['binding_id']}\n";
+            }
+            $errorMessage .= "\nThis reproduces the bug from EDGEBINDER_QUERY_PATTERN_BUG_REPORT.md";
+            $this->fail($errorMessage);
+        }
+    }
+
+    /**
+     * Test cross-entity-type query pattern consistency.
+     *
+     * This test verifies that the same query patterns work consistently
+     * across different entity types and relationship types.
+     */
+    public function testCrossEntityTypeQueryConsistency(): void
+    {
+        // Create different entity types
+        $entityTypes = [
+            ['id' => 'user-cross', 'name' => 'Cross User', 'class_suffix' => 'User'],
+            ['id' => 'profile-cross', 'name' => 'Cross Profile', 'class_suffix' => 'Profile'],
+            ['id' => 'workspace-cross', 'name' => 'Cross Workspace', 'class_suffix' => 'Workspace'],
+            ['id' => 'organization-cross', 'name' => 'Cross Organization', 'class_suffix' => 'Organization'],
+        ];
+
+        $relationshipTypes = ['has_access', 'owns', 'manages', 'contains'];
+
+        // Create entities and relationships
+        $testData = [];
+        foreach ($entityTypes as $i => $fromEntityData) {
+            foreach ($entityTypes as $j => $toEntityData) {
+                if ($i !== $j) {
+                    $fromEntity = new class($fromEntityData['id'], $fromEntityData['name']) {
+                        public function __construct(private string $id, private string $name) {}
+                        public function getId(): string { return $this->id; }
+                        public function getName(): string { return $this->name; }
+                    };
+
+                    $toEntity = new class($toEntityData['id'], $toEntityData['name']) {
+                        public function __construct(private string $id, private string $name) {}
+                        public function getId(): string { return $this->id; }
+                        public function getName(): string { return $this->name; }
+                    };
+
+                    $type = $relationshipTypes[$i % count($relationshipTypes)];
+                    $binding = $this->edgeBinder->bind(from: $fromEntity, to: $toEntity, type: $type);
+
+                    $testData[] = [
+                        'from' => $fromEntity,
+                        'to' => $toEntity,
+                        'type' => $type,
+                        'binding' => $binding,
+                        'from_class' => $fromEntityData['class_suffix'],
+                        'to_class' => $toEntityData['class_suffix'],
+                    ];
+                }
+            }
+        }
+
+        // Test that ALL from() + type() combinations work consistently
+        $failedCombinations = [];
+
+        foreach ($testData as $data) {
+            $result = $this->edgeBinder->query()
+                ->from($data['from'])
+                ->type($data['type'])
+                ->get();
+
+            $found = false;
+            foreach ($result->getBindings() as $foundBinding) {
+                if ($foundBinding->getId() === $data['binding']->getId()) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                $failedCombinations[] = [
+                    'from_class' => $data['from_class'],
+                    'to_class' => $data['to_class'],
+                    'from_id' => $data['from']->getId(),
+                    'to_id' => $data['to']->getId(),
+                    'type' => $data['type'],
+                    'binding_id' => $data['binding']->getId(),
+                    'results_count' => count($result->getBindings()),
+                ];
+            }
+        }
+
+        // Report any inconsistencies
+        if (!empty($failedCombinations)) {
+            $errorMessage = "Cross-entity-type query inconsistencies detected:\n";
+            foreach ($failedCombinations as $failure) {
+                $errorMessage .= "- {$failure['from_class']} -> {$failure['to_class']} ({$failure['type']}): ";
+                $errorMessage .= "expected binding {$failure['binding_id']}, got {$failure['results_count']} results\n";
+            }
+            $this->fail($errorMessage);
+        }
+    }
+
+    /**
+     * CRITICAL: Weaviate Adapter Bug Reproduction Test
+     *
+     * This test reproduces the exact scenario from the bug report to verify
+     * that the adapter correctly handles the specific entity/type combinations
+     * that were failing in the Weaviate adapter.
+     *
+     * This test should PASS for InMemoryAdapter (source of truth) and
+     * FAIL for Weaviate adapter until the bug is fixed.
+     */
+    public function testWeaviateAdapterBugReproduction(): void
+    {
+        // Create the exact entities from the bug report
+        $user = new class('user-123', 'Test User') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        $profile = new class('profile-789', 'Test Profile') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        $project = new class('project-456', 'Test Project') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        $workspace = new class('workspace-101', 'Test Workspace') {
+            public function __construct(private string $id, private string $name) {}
+            public function getId(): string { return $this->id; }
+            public function getName(): string { return $this->name; }
+        };
+
+        // Create the exact relationships from the bug report
+        $binding1 = $this->edgeBinder->bind(from: $user, to: $project, type: 'has_access');
+        $binding2 = $this->edgeBinder->bind(from: $profile, to: $workspace, type: 'owns');
+
+        // Test the exact failing pattern from the bug report
+        $result1 = $this->edgeBinder->query()
+            ->from($user)
+            ->type('has_access')
+            ->get();
+
+        $this->assertCount(1, $result1->getBindings(),
+            'WEAVIATE BUG: user + has_access should return 1 result (was returning 0 in Weaviate)');
+        $this->assertEquals($binding1->getId(), $result1->getBindings()[0]->getId());
+
+        // Test the working pattern from the bug report (should still work)
+        $result2 = $this->edgeBinder->query()
+            ->from($profile)
+            ->type('owns')
+            ->get();
+
+        $this->assertCount(1, $result2->getBindings(),
+            'profile + owns should return 1 result (was working in bug report)');
+        $this->assertEquals($binding2->getId(), $result2->getBindings()[0]->getId());
+
+        // Verify individual queries work (these were working in the bug report)
+        $result3 = $this->edgeBinder->query()
+            ->from($user)
+            ->get();
+
+        $this->assertCount(1, $result3->getBindings(),
+            'user only query should work (was working in bug report)');
+
+        $result4 = $this->edgeBinder->query()
+            ->type('has_access')
+            ->get();
+
+        $this->assertCount(1, $result4->getBindings(),
+            'has_access only query should work (was working in bug report)');
+
+        // Test systematic combinations as described in the bug report
+        $testCases = [
+            ['entity' => $user, 'type' => 'has_access', 'expected' => 1, 'description' => 'user + has_access (FAILING in Weaviate)'],
+            ['entity' => $profile, 'type' => 'owns', 'expected' => 1, 'description' => 'profile + owns (WORKING in Weaviate)'],
+            ['entity' => $user, 'type' => 'owns', 'expected' => 0, 'description' => 'user + owns (should be 0)'],
+            ['entity' => $profile, 'type' => 'has_access', 'expected' => 0, 'description' => 'profile + has_access (should be 0)'],
+        ];
+
+        foreach ($testCases as $i => $test) {
+            $result = $this->edgeBinder->query()
+                ->from($test['entity'])
+                ->type($test['type'])
+                ->get();
+
+            $actual = count($result->getBindings());
+
+            $this->assertEquals($test['expected'], $actual,
+                "Test case {$i}: {$test['description']} - expected {$test['expected']}, got {$actual}");
+        }
+    }
+
+    // ========================================
     // Additional Essential Integration Tests
     // ========================================
 
