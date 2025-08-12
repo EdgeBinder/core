@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2025-08-12
+
+### Added
+
+#### Comprehensive Core Integration Test Suite
+- **NEW: Core EdgeBinder test suite** - Added comprehensive integration tests to validate core functionality
+  - `EdgeBinderCoreQueryPatternTest` - Systematic testing of all relationship types and query patterns
+  - `RelationshipTypeMatrixTest` - Matrix testing of all relationship types with all query combinations
+  - `QueryDirectionMatrixTest` - Comprehensive testing of query directions (from/to) for all entity types
+  - `TripleCriteriaQueryTest` - Focused testing of from() + to() + type() query patterns
+  - `MemberOfRelationshipAndToQueryDirectionTest` - Specific validation of previously problematic patterns
+
+#### Enhanced AbstractAdapterTestSuite - Systematic Edge Case Coverage
+- **NEW: Systematic relationship type testing** - `testSystematicRelationshipTypeSupport()` validates all relationship types
+- **NEW: Query direction testing** - `testSystematicQueryDirectionSupport()` ensures all entity types work in both directions
+- **NEW: Problematic type isolation** - `testProblematicRelationshipTypes()` tests specific types that have been problematic
+- **NEW: Special character support** - `testSpecialRelationshipTypes()` validates types with underscores, hyphens, etc.
+- **NEW: Bidirectional symmetry** - `testBidirectionalQuerySymmetry()` ensures relationship symmetry
+- **NEW: Complex scenarios** - `testComplexDirectionScenarios()` tests hub-and-spoke patterns
+- **NEW: Environment conditions** - `testEnvironmentSpecificConditions()` validates different entity ID patterns
+
+### Fixed
+- **Risky test warnings** - Eliminated all risky tests by removing echo statements and adding proper assertions
+- **Test naming clarity** - Renamed tests to describe actual functionality rather than bug reproduction
+- **CS-Fixer compliance** - Fixed all code style issues for consistent formatting
+- **PHPStan Level 8** - Resolved all type safety issues with proper type hints and null checks
+- **Unused variable warnings** - Added assertions for all variables to ensure meaningful test validation
+
+### Improved
+- **Test coverage** - 20 new tests with 150+ assertions providing comprehensive edge case coverage
+- **Adapter consistency** - All adapters must now pass identical comprehensive tests
+- **Regression prevention** - Systematic testing prevents reintroduction of relationship type and query direction bugs
+- **Documentation** - Clear test names and descriptions explain what functionality is being validated
+
+### Technical Details
+- **Total new tests**: 20 integration tests across 5 test files
+- **Total new assertions**: 150+ assertions covering all edge cases
+- **Coverage areas**: Relationship types, query directions, entity types, special characters, complex scenarios
+- **Quality gates**: PHPStan Level 8, CS-Fixer, no risky tests, comprehensive assertions
+
 ## [0.7.2] - 2025-08-12
 
 ### Added
@@ -841,6 +881,7 @@ composer test-coverage             # Full coverage report
 - Framework integration examples (Laravel, Symfony)
 - Production-ready error handling and logging
 
+[0.7.3]: https://github.com/EdgeBinder/edgebinder/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/EdgeBinder/edgebinder/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/EdgeBinder/edgebinder/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/EdgeBinder/edgebinder/compare/v0.6.2...v0.7.0
