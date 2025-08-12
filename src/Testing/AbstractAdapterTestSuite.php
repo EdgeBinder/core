@@ -479,27 +479,67 @@ abstract class AbstractAdapterTestSuite extends TestCase
     {
         // Create test entities exactly like in the bug report
         $user = new class('user-123', 'Test User') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         $profile = new class('profile-789', 'Test Profile') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         $project = new class('project-456', 'Test Project') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         $workspace = new class('workspace-101', 'Test Workspace') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         // Create relationships exactly like in the bug report
@@ -520,10 +560,15 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->type('has_access')
             ->get();
 
-        $this->assertNotEmpty($result1->getBindings(),
-            'CRITICAL BUG: user + has_access query should return 1 result but returned 0');
-        $this->assertCount(1, $result1->getBindings(),
-            'user + has_access should find exactly 1 binding');
+        $this->assertNotEmpty(
+            $result1->getBindings(),
+            'CRITICAL BUG: user + has_access query should return 1 result but returned 0'
+        );
+        $this->assertCount(
+            1,
+            $result1->getBindings(),
+            'user + has_access should find exactly 1 binding'
+        );
         $this->assertEquals($binding1->getId(), $result1->getBindings()[0]->getId());
 
         // ✅ WORKS in bug report: This combination returns correct results
@@ -532,8 +577,10 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->type('owns')
             ->get();
 
-        $this->assertNotEmpty($result2->getBindings(),
-            'profile + owns query should return 1 result');
+        $this->assertNotEmpty(
+            $result2->getBindings(),
+            'profile + owns query should return 1 result'
+        );
         $this->assertCount(1, $result2->getBindings());
         $this->assertEquals($binding2->getId(), $result2->getBindings()[0]->getId());
 
@@ -542,15 +589,21 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->from($user)
             ->get();
 
-        $this->assertCount(1, $result3->getBindings(),
-            'user only query should return 1 result');
+        $this->assertCount(
+            1,
+            $result3->getBindings(),
+            'user only query should return 1 result'
+        );
 
         $result4 = $this->edgeBinder->query()
             ->type('has_access')
             ->get();
 
-        $this->assertCount(1, $result4->getBindings(),
-            'has_access only query should return 1 result');
+        $this->assertCount(
+            1,
+            $result4->getBindings(),
+            'has_access only query should return 1 result'
+        );
     }
 
     /**
@@ -576,8 +629,8 @@ abstract class AbstractAdapterTestSuite extends TestCase
         $createdBindings = [];
         $entityList = array_values($entities);
 
-        for ($i = 0; $i < count($entityList); $i++) {
-            for ($j = 0; $j < count($entityList); $j++) {
+        for ($i = 0; $i < count($entityList); ++$i) {
+            for ($j = 0; $j < count($entityList); ++$j) {
                 if ($i !== $j) {
                     $from = $entityList[$i];
                     $to = $entityList[$j];
@@ -602,9 +655,9 @@ abstract class AbstractAdapterTestSuite extends TestCase
         foreach ($createdBindings as $rel) {
             $testCases = [
                 // CRITICAL: These are the patterns that fail in the bug report
-                'from_and_type' => fn() => $this->edgeBinder->query()->from($rel['from'])->type($rel['type'])->get(),
-                'to_and_type' => fn() => $this->edgeBinder->query()->to($rel['to'])->type($rel['type'])->get(),
-                'from_and_to' => fn() => $this->edgeBinder->query()->from($rel['from'])->to($rel['to'])->get(),
+                'from_and_type' => fn () => $this->edgeBinder->query()->from($rel['from'])->type($rel['type'])->get(),
+                'to_and_type' => fn () => $this->edgeBinder->query()->to($rel['to'])->type($rel['type'])->get(),
+                'from_and_to' => fn () => $this->edgeBinder->query()->from($rel['from'])->to($rel['to'])->get(),
             ];
 
             foreach ($testCases as $testName => $queryFunc) {
@@ -616,6 +669,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
                 foreach ($bindings as $foundBinding) {
                     if ($foundBinding->getId() === $rel['binding']->getId()) {
                         $found = true;
+
                         break;
                     }
                 }
@@ -665,19 +719,19 @@ abstract class AbstractAdapterTestSuite extends TestCase
         // Test triple-criteria queries (most specific)
         $testCases = [
             [
-                'query' => fn() => $this->edgeBinder->query()->from($user)->to($project1)->type('has_access')->get(),
+                'query' => fn () => $this->edgeBinder->query()->from($user)->to($project1)->type('has_access')->get(),
                 'expected_binding' => $binding1,
-                'description' => 'user -> project1 with has_access'
+                'description' => 'user -> project1 with has_access',
             ],
             [
-                'query' => fn() => $this->edgeBinder->query()->from($user)->to($project2)->type('owns')->get(),
+                'query' => fn () => $this->edgeBinder->query()->from($user)->to($project2)->type('owns')->get(),
                 'expected_binding' => $binding2,
-                'description' => 'user -> project2 with owns'
+                'description' => 'user -> project2 with owns',
             ],
             [
-                'query' => fn() => $this->edgeBinder->query()->from($user)->to($workspace)->type('has_access')->get(),
+                'query' => fn () => $this->edgeBinder->query()->from($user)->to($workspace)->type('has_access')->get(),
                 'expected_binding' => $binding3,
-                'description' => 'user -> workspace with has_access'
+                'description' => 'user -> workspace with has_access',
             ],
         ];
 
@@ -685,11 +739,17 @@ abstract class AbstractAdapterTestSuite extends TestCase
             $result = $testCase['query']();
             $bindings = $result->getBindings();
 
-            $this->assertCount(1, $bindings,
-                "Triple-criteria query ({$testCase['description']}) should return exactly 1 result");
+            $this->assertCount(
+                1,
+                $bindings,
+                "Triple-criteria query ({$testCase['description']}) should return exactly 1 result"
+            );
 
-            $this->assertEquals($testCase['expected_binding']->getId(), $bindings[0]->getId(),
-                "Triple-criteria query ({$testCase['description']}) should find the correct binding");
+            $this->assertEquals(
+                $testCase['expected_binding']->getId(),
+                $bindings[0]->getId(),
+                "Triple-criteria query ({$testCase['description']}) should find the correct binding"
+            );
         }
     }
 
@@ -706,17 +766,37 @@ abstract class AbstractAdapterTestSuite extends TestCase
         // Create multiple sets of identical relationship patterns
         $testSets = [];
 
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 5; ++$i) {
             $user = new class("user-{$i}", "User {$i}") {
-                public function __construct(private string $id, private string $name) {}
-                public function getId(): string { return $this->id; }
-                public function getName(): string { return $this->name; }
+                public function __construct(private string $id, private string $name)
+                {
+                }
+
+                public function getId(): string
+                {
+                    return $this->id;
+                }
+
+                public function getName(): string
+                {
+                    return $this->name;
+                }
             };
 
             $project = new class("project-{$i}", "Project {$i}") {
-                public function __construct(private string $id, private string $name) {}
-                public function getId(): string { return $this->id; }
-                public function getName(): string { return $this->name; }
+                public function __construct(private string $id, private string $name)
+                {
+                }
+
+                public function getId(): string
+                {
+                    return $this->id;
+                }
+
+                public function getName(): string
+                {
+                    return $this->name;
+                }
             };
 
             // Create identical relationship pattern
@@ -726,7 +806,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
                 'user' => $user,
                 'project' => $project,
                 'binding' => $binding,
-                'set' => $i
+                'set' => $i,
             ];
         }
 
@@ -745,19 +825,22 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
             $count = count($result->getBindings());
 
-            if ($count !== 1) {
+            if (1 !== $count) {
                 $inconsistentResults[] = [
                     'set' => $setNum,
                     'user_id' => $user->getId(),
                     'expected' => 1,
                     'actual' => $count,
-                    'binding_id' => $set['binding']->getId()
+                    'binding_id' => $set['binding']->getId(),
                 ];
             } else {
                 // Verify we found the correct binding
                 $foundBinding = $result->getBindings()[0];
-                $this->assertEquals($set['binding']->getId(), $foundBinding->getId(),
-                    "Set {$setNum}: Found binding should match created binding");
+                $this->assertEquals(
+                    $set['binding']->getId(),
+                    $foundBinding->getId(),
+                    "Set {$setNum}: Found binding should match created binding"
+                );
             }
         }
 
@@ -797,15 +880,35 @@ abstract class AbstractAdapterTestSuite extends TestCase
             foreach ($entityTypes as $j => $toEntityData) {
                 if ($i !== $j) {
                     $fromEntity = new class($fromEntityData['id'], $fromEntityData['name']) {
-                        public function __construct(private string $id, private string $name) {}
-                        public function getId(): string { return $this->id; }
-                        public function getName(): string { return $this->name; }
+                        public function __construct(private string $id, private string $name)
+                        {
+                        }
+
+                        public function getId(): string
+                        {
+                            return $this->id;
+                        }
+
+                        public function getName(): string
+                        {
+                            return $this->name;
+                        }
                     };
 
                     $toEntity = new class($toEntityData['id'], $toEntityData['name']) {
-                        public function __construct(private string $id, private string $name) {}
-                        public function getId(): string { return $this->id; }
-                        public function getName(): string { return $this->name; }
+                        public function __construct(private string $id, private string $name)
+                        {
+                        }
+
+                        public function getId(): string
+                        {
+                            return $this->id;
+                        }
+
+                        public function getName(): string
+                        {
+                            return $this->name;
+                        }
                     };
 
                     $type = $relationshipTypes[$i % count($relationshipTypes)];
@@ -836,6 +939,7 @@ abstract class AbstractAdapterTestSuite extends TestCase
             foreach ($result->getBindings() as $foundBinding) {
                 if ($foundBinding->getId() === $data['binding']->getId()) {
                     $found = true;
+
                     break;
                 }
             }
@@ -853,6 +957,13 @@ abstract class AbstractAdapterTestSuite extends TestCase
             }
         }
 
+        // Ensure we tested a reasonable number of combinations
+        $this->assertGreaterThan(
+            5,
+            count($testData),
+            'Should have created multiple cross-entity-type test combinations'
+        );
+
         // Report any inconsistencies
         if (!empty($failedCombinations)) {
             $errorMessage = "Cross-entity-type query inconsistencies detected:\n";
@@ -862,10 +973,16 @@ abstract class AbstractAdapterTestSuite extends TestCase
             }
             $this->fail($errorMessage);
         }
+
+        // Positive assertion: All combinations should work consistently
+        $this->assertEmpty(
+            $failedCombinations,
+            'All cross-entity-type query combinations should work consistently'
+        );
     }
 
     /**
-     * CRITICAL: Weaviate Adapter Bug Reproduction Test
+     * CRITICAL: Weaviate Adapter Bug Reproduction Test.
      *
      * This test reproduces the exact scenario from the bug report to verify
      * that the adapter correctly handles the specific entity/type combinations
@@ -878,27 +995,67 @@ abstract class AbstractAdapterTestSuite extends TestCase
     {
         // Create the exact entities from the bug report
         $user = new class('user-123', 'Test User') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         $profile = new class('profile-789', 'Test Profile') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         $project = new class('project-456', 'Test Project') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         $workspace = new class('workspace-101', 'Test Workspace') {
-            public function __construct(private string $id, private string $name) {}
-            public function getId(): string { return $this->id; }
-            public function getName(): string { return $this->name; }
+            public function __construct(private string $id, private string $name)
+            {
+            }
+
+            public function getId(): string
+            {
+                return $this->id;
+            }
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
         };
 
         // Create the exact relationships from the bug report
@@ -911,8 +1068,11 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->type('has_access')
             ->get();
 
-        $this->assertCount(1, $result1->getBindings(),
-            'WEAVIATE BUG: user + has_access should return 1 result (was returning 0 in Weaviate)');
+        $this->assertCount(
+            1,
+            $result1->getBindings(),
+            'WEAVIATE BUG: user + has_access should return 1 result (was returning 0 in Weaviate)'
+        );
         $this->assertEquals($binding1->getId(), $result1->getBindings()[0]->getId());
 
         // Test the working pattern from the bug report (should still work)
@@ -921,8 +1081,11 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->type('owns')
             ->get();
 
-        $this->assertCount(1, $result2->getBindings(),
-            'profile + owns should return 1 result (was working in bug report)');
+        $this->assertCount(
+            1,
+            $result2->getBindings(),
+            'profile + owns should return 1 result (was working in bug report)'
+        );
         $this->assertEquals($binding2->getId(), $result2->getBindings()[0]->getId());
 
         // Verify individual queries work (these were working in the bug report)
@@ -930,15 +1093,21 @@ abstract class AbstractAdapterTestSuite extends TestCase
             ->from($user)
             ->get();
 
-        $this->assertCount(1, $result3->getBindings(),
-            'user only query should work (was working in bug report)');
+        $this->assertCount(
+            1,
+            $result3->getBindings(),
+            'user only query should work (was working in bug report)'
+        );
 
         $result4 = $this->edgeBinder->query()
             ->type('has_access')
             ->get();
 
-        $this->assertCount(1, $result4->getBindings(),
-            'has_access only query should work (was working in bug report)');
+        $this->assertCount(
+            1,
+            $result4->getBindings(),
+            'has_access only query should work (was working in bug report)'
+        );
 
         // Test systematic combinations as described in the bug report
         $testCases = [
@@ -956,8 +1125,11 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
             $actual = count($result->getBindings());
 
-            $this->assertEquals($test['expected'], $actual,
-                "Test case {$i}: {$test['description']} - expected {$test['expected']}, got {$actual}");
+            $this->assertEquals(
+                $test['expected'],
+                $actual,
+                "Test case {$i}: {$test['description']} - expected {$test['expected']}, got {$actual}"
+            );
         }
     }
 
