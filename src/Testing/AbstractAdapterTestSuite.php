@@ -2855,4 +2855,578 @@ abstract class AbstractAdapterTestSuite extends TestCase
 
         $this->assertCount(1, $results, "Standard field 'id' should always exist");
     }
+
+    /**
+     * CRITICAL: Systematic relationship type testing.
+     *
+     * This test ensures ALL relationship types work consistently across ALL query patterns.
+     * It's designed to catch bugs like the 'member_of' relationship type issue where
+     * specific types fail while others work.
+     *
+     * This test should PASS for InMemory adapter (source of truth) and
+     * FAIL for any adapter that has type-specific bugs.
+     */
+    public function testSystematicRelationshipTypeSupport(): void
+    {
+        $relationshipTypes = [
+            'owns',
+            'member_of',        // ← Known to fail in some adapters
+            'contains',
+            'has_access',
+            'manages',
+            'authenticates',
+            'belongs_to',
+            'controls',
+        ];
+
+        $entity1 = $this->createTestEntity('type-test-1', 'Type Test 1');
+        $entity2 = $this->createTestEntity('type-test-2', 'Type Test 2');
+
+        $createdBindings = [];
+        $failedQueries = [];
+
+        // Create relationships for all types
+        foreach ($relationshipTypes as $type) {
+            $binding = $this->edgeBinder->bind(from: $entity1, to: $entity2, type: $type);
+            $createdBindings[$type] = $binding;
+
+            $this->assertNotNull($binding, "Should create binding for type '{$type}'");
+            $this->assertEquals($type, $binding->getType(), "Binding should have correct type '{$type}'");
+        }
+
+        // Test all query patterns for each relationship type
+        foreach ($relationshipTypes as $type) {
+            $binding = $createdBindings[$type];
+
+            $queryPatterns = [
+                'from_only' => $this->edgeBinder->query()->from($entity1)->get(),
+                'to_only' => $this->edgeBinder->query()->to($entity2)->get(),
+                'type_only' => $this->edgeBinder->query()->type($type)->get(),
+                'from_and_type' => $this->edgeBinder->query()->from($entity1)->type($type)->get(),
+                'to_and_type' => $this->edgeBinder->query()->to($entity2)->type($type)->get(),
+                'from_and_to' => $this->edgeBinder->query()->from($entity1)->to($entity2)->get(),
+                'from_to_type' => $this->edgeBinder->query()->from($entity1)->to($entity2)->type($type)->get(),
+            ];
+
+            foreach ($queryPatterns as $patternName => $result) {
+                $bindings = $result->getBindings();
+                $found = false;
+
+                foreach ($bindings as $foundBinding) {
+                    if ($foundBinding->getId() === $binding->getId()) {
+                        $found = true;
+
+                        break;
+                    }
+                }
+
+                if (!$found) {
+                    $failedQueries[] = [
+                        'type' => $type,
+                        'pattern' => $patternName,
+                        'binding_id' => $binding->getId(),
+                        'results_count' => count($bindings),
+                    ];
+                }
+            }
+        }
+
+        // Report all failures
+        if (!empty($failedQueries)) {
+            $report = "Adapter relationship type failures detected:\n";
+            foreach ($failedQueries as $failure) {
+                $report .= "- Type '{$failure['type']}' with pattern '{$failure['pattern']}': ";
+                $report .= "expected binding {$failure['binding_id']}, got {$failure['results_count']} results\n";
+            }
+            $this->fail($report);
+        }
+    }
+
+    /**
+     * CRITICAL: Systematic query direction testing.
+     *
+     * This test ensures ALL entity types work consistently in ALL query directions.
+     * It's designed to catch bugs where specific entity types fail in certain
+     * query directions (like the 'to organization' issue).
+     *
+     * This test should PASS for InMemory adapter (source of truth) and
+     * FAIL for any adapter that has direction-specific bugs.
+     */
+    public function testSystematicQueryDirectionSupport(): void
+    {
+        // Create diverse entity types that mirror real-world usage
+        $entities = [
+            'profile' => $this->createTestEntity('dir-profile', 'Direction Profile'),
+            'organization' => $this->createTestEntity('dir-org', 'Direction Organization'),
+            'workspace' => $this->createTestEntity('dir-workspace', 'Direction Workspace'),
+            'user' => $this->createTestEntity('dir-user', 'Direction User'),
+            'project' => $this->createTestEntity('dir-project', 'Direction Project'),
+        ];
+
+        // Create comprehensive relationship matrix
+        $bindings = [];
+        foreach ($entities as $fromName => $fromEntity) {
+            foreach ($entities as $toName => $toEntity) {
+                if ($fromName !== $toName) {
+                    $binding = $this->edgeBinder->bind(
+                        from: $fromEntity,
+                        to: $toEntity,
+                        type: 'test_relation'
+                    );
+                    $bindings[] = [
+                        'from_name' => $fromName,
+                        'to_name' => $toName,
+                        'from_entity' => $fromEntity,
+                        'to_entity' => $toEntity,
+                        'binding' => $binding,
+                    ];
+                }
+            }
+        }
+
+        $this->assertNotEmpty($bindings, 'Should have created test relationships');
+
+        // Test that every entity works in both query directions
+        $failedDirections = [];
+
+        foreach ($entities as $entityName => $entity) {
+            // Test as 'from' entity
+            $fromResults = $this->edgeBinder->query()->from($entity)->get();
+            $expectedFromCount = count(array_filter($bindings, fn ($b) => $b['from_entity'] === $entity));
+
+            if (count($fromResults->getBindings()) !== $expectedFromCount) {
+                $failedDirections[] = [
+                    'entity' => $entityName,
+                    'direction' => 'from',
+                    'expected' => $expectedFromCount,
+                    'actual' => count($fromResults->getBindings()),
+                ];
+            }
+
+            // Test as 'to' entity
+            $toResults = $this->edgeBinder->query()->to($entity)->get();
+            $expectedToCount = count(array_filter($bindings, fn ($b) => $b['to_entity'] === $entity));
+
+            if (count($toResults->getBindings()) !== $expectedToCount) {
+                $failedDirections[] = [
+                    'entity' => $entityName,
+                    'direction' => 'to',
+                    'expected' => $expectedToCount,
+                    'actual' => count($toResults->getBindings()),
+                ];
+            }
+        }
+
+        // Report direction failures
+        if (!empty($failedDirections)) {
+            $report = "Adapter query direction failures detected:\n";
+            foreach ($failedDirections as $failure) {
+                $report .= "- Entity '{$failure['entity']}' in '{$failure['direction']}' direction: ";
+                $report .= "expected {$failure['expected']} results, got {$failure['actual']}\n";
+            }
+            $this->fail($report);
+        }
+    }
+
+    /**
+     * CRITICAL: Specific edge case bug reproduction.
+     *
+     * This test reproduces the exact scenarios from the bug reports to verify
+     * that the adapter correctly handles the specific combinations that were failing.
+     *
+     * This test should PASS for InMemory adapter (source of truth) and
+     * FAIL for adapters with the reported bugs until they are fixed.
+     */
+    public function testSpecificEdgeCaseBugReproduction(): void
+    {
+        // Test Case 1: member_of relationship type bug
+        $profile = $this->createTestEntity('bug-profile', 'Bug Profile');
+        $organization = $this->createTestEntity('bug-org', 'Bug Organization');
+
+        $memberBinding = $this->edgeBinder->bind(
+            from: $profile,
+            to: $organization,
+            type: 'member_of',
+            metadata: ['role' => 'admin']
+        );
+
+        // These queries should work but might fail in some adapters
+        $memberResult1 = $this->edgeBinder->query()->from($profile)->type('member_of')->get();
+        $this->assertNotEmpty(
+            $memberResult1->getBindings(),
+            "ADAPTER BUG: from() + type('member_of') should return results"
+        );
+
+        $memberResult2 = $this->edgeBinder->query()->to($organization)->type('member_of')->get();
+        $this->assertNotEmpty(
+            $memberResult2->getBindings(),
+            "ADAPTER BUG: to() + type('member_of') should return results"
+        );
+
+        $memberResult3 = $this->edgeBinder->query()->from($profile)->to($organization)->type('member_of')->get();
+        $this->assertNotEmpty(
+            $memberResult3->getBindings(),
+            "ADAPTER BUG: from() + to() + type('member_of') should return results"
+        );
+
+        // Test Case 2: 'to' query direction bug with organization entities
+        $workspace = $this->createTestEntity('bug-workspace', 'Bug Workspace');
+        $ownsBinding = $this->edgeBinder->bind(from: $profile, to: $organization, type: 'owns');
+
+        $toOrgResult = $this->edgeBinder->query()->to($organization)->get();
+        $this->assertNotEmpty(
+            $toOrgResult->getBindings(),
+            'ADAPTER BUG: to() queries should work for organization entities'
+        );
+
+        // Verify the specific bindings are found
+        $this->assertQueryFindsBinding(
+            $memberResult1,
+            $memberBinding,
+            'member_of query should find the created membership'
+        );
+        $this->assertQueryFindsBinding(
+            $toOrgResult,
+            $ownsBinding,
+            'to organization query should find the ownership'
+        );
+        $this->assertQueryFindsBinding(
+            $toOrgResult,
+            $memberBinding,
+            'to organization query should find the membership'
+        );
+    }
+
+    /**
+     * CRITICAL: Test problematic vs working relationship types.
+     *
+     * This test isolates specific relationship types that have been problematic
+     * and compares them against known working types to catch type-specific bugs.
+     */
+    public function testProblematicRelationshipTypes(): void
+    {
+        $problematicTypes = [
+            'member_of',    // Known to fail in some adapters
+            'belongs_to',   // Similar semantic meaning, might also fail
+        ];
+
+        $workingTypes = [
+            'owns',         // Known to work
+            'has_access',   // Known to work
+        ];
+
+        $profile = $this->createTestEntity('test-profile', 'Test Profile');
+        $organization = $this->createTestEntity('test-org', 'Test Organization');
+
+        // Test problematic types
+        foreach ($problematicTypes as $type) {
+            $binding = $this->edgeBinder->bind(from: $profile, to: $organization, type: $type);
+            $this->assertNotNull($binding, "Should create binding for problematic type '{$type}'");
+
+            // These should work but might fail in some adapters
+            $fromTypeResult = $this->edgeBinder->query()->from($profile)->type($type)->get();
+            $this->assertNotEmpty(
+                $fromTypeResult->getBindings(),
+                "ADAPTER BUG: from() + type('{$type}') should return results but returns empty"
+            );
+            $this->assertQueryFindsBinding(
+                $fromTypeResult,
+                $binding,
+                "from() + type('{$type}') should find the created binding"
+            );
+
+            $toTypeResult = $this->edgeBinder->query()->to($organization)->type($type)->get();
+            $this->assertNotEmpty(
+                $toTypeResult->getBindings(),
+                "ADAPTER BUG: to() + type('{$type}') should return results but returns empty"
+            );
+            $this->assertQueryFindsBinding(
+                $toTypeResult,
+                $binding,
+                "to() + type('{$type}') should find the created binding"
+            );
+
+            $tripleResult = $this->edgeBinder->query()->from($profile)->to($organization)->type($type)->get();
+            $this->assertNotEmpty(
+                $tripleResult->getBindings(),
+                "ADAPTER BUG: from() + to() + type('{$type}') should return results but returns empty"
+            );
+            $this->assertQueryFindsBinding(
+                $tripleResult,
+                $binding,
+                "from() + to() + type('{$type}') should find the created binding"
+            );
+        }
+
+        // Test working types (control group)
+        foreach ($workingTypes as $type) {
+            $binding = $this->edgeBinder->bind(from: $profile, to: $organization, type: $type);
+            $this->assertNotNull($binding, "Should create binding for working type '{$type}'");
+
+            // These should work and do work
+            $fromTypeResult = $this->edgeBinder->query()->from($profile)->type($type)->get();
+            $this->assertNotEmpty(
+                $fromTypeResult->getBindings(),
+                "Control test: from() + type('{$type}') should work"
+            );
+            $this->assertQueryFindsBinding(
+                $fromTypeResult,
+                $binding,
+                "Control: from() + type('{$type}') should find the created binding"
+            );
+
+            $toTypeResult = $this->edgeBinder->query()->to($organization)->type($type)->get();
+            $this->assertNotEmpty(
+                $toTypeResult->getBindings(),
+                "Control test: to() + type('{$type}') should work"
+            );
+            $this->assertQueryFindsBinding(
+                $toTypeResult,
+                $binding,
+                "Control: to() + type('{$type}') should find the created binding"
+            );
+
+            $tripleResult = $this->edgeBinder->query()->from($profile)->to($organization)->type($type)->get();
+            $this->assertNotEmpty(
+                $tripleResult->getBindings(),
+                "Control test: from() + to() + type('{$type}') should work"
+            );
+            $this->assertQueryFindsBinding(
+                $tripleResult,
+                $binding,
+                "Control: from() + to() + type('{$type}') should find the created binding"
+            );
+        }
+    }
+
+    /**
+     * CRITICAL: Test relationship types with special characters.
+     *
+     * This test ensures adapters handle relationship types with various
+     * character patterns correctly (underscores, hyphens, etc.).
+     */
+    public function testSpecialRelationshipTypes(): void
+    {
+        $specialTypes = [
+            'member_of',        // Underscore - known issue in some adapters
+            'member-of',        // Hyphen
+            'memberOf',         // CamelCase
+            'MEMBER_OF',        // Uppercase
+            'member.of',        // Dot
+            'member/of',        // Slash
+        ];
+
+        $entity1 = $this->createTestEntity('special-entity-1', 'Special Entity 1');
+        $entity2 = $this->createTestEntity('special-entity-2', 'Special Entity 2');
+
+        foreach ($specialTypes as $type) {
+            $binding = $this->edgeBinder->bind(from: $entity1, to: $entity2, type: $type);
+            $this->assertNotNull($binding, "Should create binding for special type '{$type}'");
+
+            // Test basic query patterns
+            $fromResult = $this->edgeBinder->query()->from($entity1)->type($type)->get();
+            $this->assertNotEmpty(
+                $fromResult->getBindings(),
+                "Special type '{$type}' should work in from() + type() queries"
+            );
+            $this->assertQueryFindsBinding(
+                $fromResult,
+                $binding,
+                "Special type '{$type}' should find the created binding in from() + type() queries"
+            );
+
+            $toResult = $this->edgeBinder->query()->to($entity2)->type($type)->get();
+            $this->assertNotEmpty(
+                $toResult->getBindings(),
+                "Special type '{$type}' should work in to() + type() queries"
+            );
+            $this->assertQueryFindsBinding(
+                $toResult,
+                $binding,
+                "Special type '{$type}' should find the created binding in to() + type() queries"
+            );
+        }
+    }
+
+    /**
+     * CRITICAL: Test bidirectional query symmetry.
+     *
+     * This test ensures that relationships work correctly in both directions
+     * and that the adapter maintains proper symmetry.
+     */
+    public function testBidirectionalQuerySymmetry(): void
+    {
+        $entityA = $this->createTestEntity('entity-a', 'Entity A');
+        $entityB = $this->createTestEntity('entity-b', 'Entity B');
+
+        // Create relationships in both directions
+        $bindingAtoB = $this->edgeBinder->bind(from: $entityA, to: $entityB, type: 'forward');
+        $bindingBtoA = $this->edgeBinder->bind(from: $entityB, to: $entityA, type: 'backward');
+
+        // Test that both entities work as 'from' entities
+        $fromA = $this->edgeBinder->query()->from($entityA)->get();
+        $fromB = $this->edgeBinder->query()->from($entityB)->get();
+
+        $this->assertCount(
+            1,
+            $fromA->getBindings(),
+            'Entity A should have 1 outgoing relationship'
+        );
+        $this->assertCount(
+            1,
+            $fromB->getBindings(),
+            'Entity B should have 1 outgoing relationship'
+        );
+
+        // Test that both entities work as 'to' entities
+        $toA = $this->edgeBinder->query()->to($entityA)->get();
+        $toB = $this->edgeBinder->query()->to($entityB)->get();
+
+        $this->assertCount(
+            1,
+            $toA->getBindings(),
+            'Entity A should have 1 incoming relationship'
+        );
+        $this->assertCount(
+            1,
+            $toB->getBindings(),
+            'Entity B should have 1 incoming relationship'
+        );
+
+        // Verify specific bindings are found
+        $this->assertEquals($bindingAtoB->getId(), $fromA->getBindings()[0]->getId());
+        $this->assertEquals($bindingBtoA->getId(), $fromB->getBindings()[0]->getId());
+        $this->assertEquals($bindingBtoA->getId(), $toA->getBindings()[0]->getId());
+        $this->assertEquals($bindingAtoB->getId(), $toB->getBindings()[0]->getId());
+    }
+
+    /**
+     * CRITICAL: Test complex hub-and-spoke relationship scenarios.
+     *
+     * This test creates complex relationship patterns to ensure adapters
+     * handle multi-entity scenarios correctly.
+     */
+    public function testComplexDirectionScenarios(): void
+    {
+        // Create a hub entity that has many incoming and outgoing relationships
+        $hub = $this->createTestEntity('hub-entity', 'Hub Entity');
+        $satellites = [];
+
+        for ($i = 1; $i <= 5; ++$i) {
+            $satellites[] = $this->createTestEntity("satellite-{$i}", "Satellite {$i}");
+        }
+
+        $incomingBindings = [];
+        $outgoingBindings = [];
+
+        // Create incoming relationships (satellites -> hub)
+        foreach ($satellites as $satellite) {
+            $binding = $this->edgeBinder->bind(from: $satellite, to: $hub, type: 'points_to_hub');
+            $incomingBindings[] = $binding;
+        }
+
+        // Create outgoing relationships (hub -> satellites)
+        foreach ($satellites as $satellite) {
+            $binding = $this->edgeBinder->bind(from: $hub, to: $satellite, type: 'manages');
+            $outgoingBindings[] = $binding;
+        }
+
+        // Test hub as 'from' entity (should find all outgoing)
+        $fromHub = $this->edgeBinder->query()->from($hub)->get();
+        $this->assertCount(
+            count($outgoingBindings),
+            $fromHub->getBindings(),
+            'Hub entity should find all outgoing relationships in from() query'
+        );
+
+        // Test hub as 'to' entity (should find all incoming)
+        $toHub = $this->edgeBinder->query()->to($hub)->get();
+        $this->assertCount(
+            count($incomingBindings),
+            $toHub->getBindings(),
+            'ADAPTER BUG: Hub entity should find all incoming relationships in to() query'
+        );
+
+        // Test each satellite in both directions
+        foreach ($satellites as $i => $satellite) {
+            $fromSatellite = $this->edgeBinder->query()->from($satellite)->get();
+            $this->assertCount(
+                1,
+                $fromSatellite->getBindings(),
+                "Satellite {$i} should have 1 outgoing relationship"
+            );
+
+            $toSatellite = $this->edgeBinder->query()->to($satellite)->get();
+            $this->assertCount(
+                1,
+                $toSatellite->getBindings(),
+                "Satellite {$i} should have 1 incoming relationship"
+            );
+        }
+    }
+
+    /**
+     * CRITICAL: Test environment-specific conditions.
+     *
+     * This test checks if adapter bugs are related to specific entity ID patterns
+     * or other environment-specific conditions.
+     */
+    public function testEnvironmentSpecificConditions(): void
+    {
+        // Test with different entity ID patterns
+        $entities = [
+            'simple' => $this->createTestEntity('simple', 'Simple'),
+            'hyphenated' => $this->createTestEntity('test-entity', 'Hyphenated'),
+            'numbered' => $this->createTestEntity('entity-123', 'Numbered'),
+            'uuid-like' => $this->createTestEntity('550e8400-e29b-41d4-a716-446655440000', 'UUID-like'),
+        ];
+
+        foreach ($entities as $name => $entity) {
+            $otherEntity = $this->createTestEntity("other-{$name}", "Other {$name}");
+
+            // Test member_of with different entity patterns
+            $binding = $this->edgeBinder->bind(from: $entity, to: $otherEntity, type: 'member_of');
+
+            $result = $this->edgeBinder->query()->from($entity)->type('member_of')->get();
+            $this->assertNotEmpty(
+                $result->getBindings(),
+                "member_of should work with {$name} entity pattern"
+            );
+            $this->assertQueryFindsBinding(
+                $result,
+                $binding,
+                "member_of query should find binding with {$name} entity pattern"
+            );
+
+            $toResult = $this->edgeBinder->query()->to($otherEntity)->get();
+            $this->assertNotEmpty(
+                $toResult->getBindings(),
+                "to() should work with {$name} entity pattern"
+            );
+            $this->assertQueryFindsBinding(
+                $toResult,
+                $binding,
+                "to() query should find binding with {$name} entity pattern"
+            );
+        }
+    }
+
+    /**
+     * Helper method to assert that a query result contains a specific binding.
+     */
+    private function assertQueryFindsBinding(mixed $queryResult, mixed $expectedBinding, string $message = ''): void
+    {
+        $bindings = $queryResult->getBindings();
+        $found = false;
+
+        foreach ($bindings as $binding) {
+            if ($binding->getId() === $expectedBinding->getId()) {
+                $found = true;
+
+                break;
+            }
+        }
+
+        $this->assertTrue($found, $message ?: "Query should find binding {$expectedBinding->getId()}");
+    }
 }
