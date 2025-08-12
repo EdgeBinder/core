@@ -88,6 +88,10 @@ class RelationshipTypeMatrixTest extends TestCase
 
         // Analyze results and report inconsistencies
         $this->analyzeTypeConsistency($typeResults);
+
+        // If we reach here, all relationship types worked correctly
+        $this->assertNotEmpty($typeResults, 'Should have tested relationship types');
+        $this->assertCount(count($relationshipTypes), $typeResults, 'Should have results for all relationship types');
     }
 
     /**
@@ -111,6 +115,7 @@ class RelationshipTypeMatrixTest extends TestCase
         // Test problematic types
         foreach ($problematicTypes as $type) {
             $binding = $this->edgeBinder->bind(from: $profile, to: $organization, type: $type);
+            $this->assertNotNull($binding, "Should create binding for problematic type '{$type}'");
 
             // These should work but might fail
             $fromTypeResult = $this->edgeBinder->query()->from($profile)->type($type)->get();
@@ -135,6 +140,7 @@ class RelationshipTypeMatrixTest extends TestCase
         // Test working types (control group)
         foreach ($workingTypes as $type) {
             $binding = $this->edgeBinder->bind(from: $profile, to: $organization, type: $type);
+            $this->assertNotNull($binding, "Should create binding for working type '{$type}'");
 
             // These should work and do work
             $fromTypeResult = $this->edgeBinder->query()->from($profile)->type($type)->get();
@@ -176,6 +182,7 @@ class RelationshipTypeMatrixTest extends TestCase
 
         foreach ($specialTypes as $type) {
             $binding = $this->edgeBinder->bind(from: $entity1, to: $entity2, type: $type);
+            $this->assertNotNull($binding, "Should create binding for special type '{$type}'");
 
             // Test basic query patterns
             $fromResult = $this->edgeBinder->query()->from($entity1)->type($type)->get();
