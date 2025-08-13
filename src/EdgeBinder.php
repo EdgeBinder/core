@@ -15,6 +15,8 @@ use EdgeBinder\Exception\PersistenceException;
 use EdgeBinder\Query\BindingQueryBuilder;
 use EdgeBinder\Registry\AdapterConfiguration;
 use EdgeBinder\Registry\AdapterRegistry;
+use EdgeBinder\Session\Session;
+use EdgeBinder\Session\SessionInterface;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -37,6 +39,8 @@ class EdgeBinder implements EdgeBinderInterface
      * EdgeBinder version for compatibility checks.
      */
     public const VERSION = '0.7.3';
+
+    private ?SessionInterface $currentSession = null;
 
     /**
      * Create a new EdgeBinder instance.
@@ -366,5 +370,56 @@ class EdgeBinder implements EdgeBinderInterface
         }
 
         return $query->count();
+    }
+
+    /**
+     * Create a new session for consistency management.
+     *
+     * Sessions provide immediate read-after-write consistency by maintaining
+     * an in-memory cache of recent operations.
+     *
+     * @param bool $autoFlush Whether to automatically flush operations
+     *
+     * @return SessionInterface New session instance
+     */
+    public function createSession(bool $autoFlush = false): SessionInterface
+    {
+        return new Session($this->persistenceAdapter, $autoFlush);
+    }
+
+    /**
+     * Get or create the current session.
+     *
+     * @return SessionInterface Current session instance
+     */
+    public function session(): SessionInterface
+    {
+        if (null === $this->currentSession) {
+            $this->currentSession = $this->createSession();
+        }
+
+        return $this->currentSession;
+    }
+
+    /**
+     * Execute a callback within a session scope.
+     *
+     * The session is automatically created, passed to the callback,
+     * and cleaned up after execution.
+     *
+     * @param callable $callback  Callback to execute with session
+     * @param bool     $autoFlush Whether to auto-flush the session
+     *
+     * @return mixed Result of the callback
+     */
+    public function withSession(callable $callback, bool $autoFlush = false): mixed
+    {
+        $session = $this->createSession($autoFlush);
+
+        try {
+            return $callback($session);
+        } finally {
+            $session->close();
+        }
     }
 }
