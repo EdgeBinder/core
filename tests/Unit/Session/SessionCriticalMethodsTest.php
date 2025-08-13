@@ -455,4 +455,314 @@ class SessionCriticalMethodsTest extends TestCase
         $this->assertEquals(1, $deletedCount);
         $this->assertNull($this->adapter->find($binding->getId()));
     }
+
+    // ========================================
+    // Phase 3 Convenience Methods Tests
+    // ========================================
+
+    // bindMany() Tests
+    public function testBindManyCreatesMultipleBindings(): void
+    {
+        $bindingSpecs = [
+            [
+                'from' => $this->profile,
+                'to' => $this->organization,
+                'type' => 'member_of',
+                'metadata' => ['role' => 'developer'],
+            ],
+            [
+                'from' => $this->profile,
+                'to' => $this->team,
+                'type' => 'member_of',
+                'metadata' => ['role' => 'lead'],
+            ],
+            [
+                'from' => $this->organization,
+                'to' => $this->profile,
+                'type' => 'employs',
+            ],
+        ];
+
+        $createdBindings = $this->session->bindMany($bindingSpecs);
+
+        $this->assertCount(3, $createdBindings);
+
+        // Verify first binding
+        $this->assertEquals('member_of', $createdBindings[0]->getType());
+        $this->assertEquals(['role' => 'developer'], $createdBindings[0]->getMetadata());
+
+        // Verify second binding
+        $this->assertEquals('member_of', $createdBindings[1]->getType());
+        $this->assertEquals(['role' => 'lead'], $createdBindings[1]->getMetadata());
+
+        // Verify third binding (no metadata)
+        $this->assertEquals('employs', $createdBindings[2]->getType());
+        $this->assertEmpty($createdBindings[2]->getMetadata());
+
+        // Verify all bindings are tracked in session
+        $this->assertCount(3, $this->session->getTrackedBindings());
+    }
+
+    public function testBindManyWithEmptyArray(): void
+    {
+        $createdBindings = $this->session->bindMany([]);
+
+        $this->assertEmpty($createdBindings);
+        $this->assertEmpty($this->session->getTrackedBindings());
+    }
+
+    public function testBindManyWithMissingMetadata(): void
+    {
+        $bindingSpecs = [
+            [
+                'from' => $this->profile,
+                'to' => $this->organization,
+                'type' => 'member_of',
+                // metadata key is optional
+            ],
+        ];
+
+        $createdBindings = $this->session->bindMany($bindingSpecs);
+
+        $this->assertCount(1, $createdBindings);
+        $this->assertEmpty($createdBindings[0]->getMetadata());
+    }
+
+    // updateMetadata() Tests
+    public function testUpdateMetadataMergesWithExistingMetadata(): void
+    {
+        $binding = $this->session->bind(
+            $this->profile,
+            $this->organization,
+            'member_of',
+            ['role' => 'developer', 'level' => 'junior']
+        );
+
+        $updatedBinding = $this->session->updateMetadata($binding->getId(), [
+            'level' => 'senior',
+            'department' => 'engineering',
+        ]);
+
+        $expectedMetadata = [
+            'role' => 'developer',
+            'level' => 'senior',  // Updated
+            'department' => 'engineering',  // Added
+        ];
+
+        $this->assertEquals($expectedMetadata, $updatedBinding->getMetadata());
+        $this->assertEquals($binding->getId(), $updatedBinding->getId());
+    }
+
+    public function testUpdateMetadataThrowsExceptionForNonExistentBinding(): void
+    {
+        $this->expectException(\EdgeBinder\Exception\BindingNotFoundException::class);
+
+        $this->session->updateMetadata('non-existent-id', ['key' => 'value']);
+    }
+
+    public function testUpdateMetadataWorksWithAdapterOnlyBinding(): void
+    {
+        // Create binding directly in adapter
+        $binding = Binding::create(
+            fromType: 'Profile',
+            fromId: 'profile-123',
+            toType: 'Organization',
+            toId: 'org-456',
+            type: 'member_of',
+            metadata: ['role' => 'developer']
+        );
+        $this->adapter->store($binding);
+
+        $updatedBinding = $this->session->updateMetadata($binding->getId(), [
+            'level' => 'senior',
+        ]);
+
+        $expectedMetadata = [
+            'role' => 'developer',
+            'level' => 'senior',
+        ];
+
+        $this->assertEquals($expectedMetadata, $updatedBinding->getMetadata());
+    }
+
+    // replaceMetadata() Tests
+    public function testReplaceMetadataReplacesAllMetadata(): void
+    {
+        $binding = $this->session->bind(
+            $this->profile,
+            $this->organization,
+            'member_of',
+            ['role' => 'developer', 'level' => 'junior', 'department' => 'engineering']
+        );
+
+        $updatedBinding = $this->session->replaceMetadata($binding->getId(), [
+            'position' => 'team_lead',
+            'salary_grade' => 'L5',
+        ]);
+
+        $expectedMetadata = [
+            'position' => 'team_lead',
+            'salary_grade' => 'L5',
+        ];
+
+        $this->assertEquals($expectedMetadata, $updatedBinding->getMetadata());
+        $this->assertEquals($binding->getId(), $updatedBinding->getId());
+    }
+
+    public function testReplaceMetadataThrowsExceptionForNonExistentBinding(): void
+    {
+        $this->expectException(\EdgeBinder\Exception\BindingNotFoundException::class);
+
+        $this->session->replaceMetadata('non-existent-id', ['key' => 'value']);
+    }
+
+    public function testReplaceMetadataWithEmptyArray(): void
+    {
+        $binding = $this->session->bind(
+            $this->profile,
+            $this->organization,
+            'member_of',
+            ['role' => 'developer', 'level' => 'junior']
+        );
+
+        $updatedBinding = $this->session->replaceMetadata($binding->getId(), []);
+
+        $this->assertEmpty($updatedBinding->getMetadata());
+    }
+
+    // getMetadata() Tests
+    public function testGetMetadataReturnsBindingMetadata(): void
+    {
+        $metadata = ['role' => 'developer', 'level' => 'senior', 'active' => true];
+        $binding = $this->session->bind($this->profile, $this->organization, 'member_of', $metadata);
+
+        $result = $this->session->getMetadata($binding->getId());
+
+        $this->assertEquals($metadata, $result);
+    }
+
+    public function testGetMetadataThrowsExceptionForNonExistentBinding(): void
+    {
+        $this->expectException(\EdgeBinder\Exception\BindingNotFoundException::class);
+
+        $this->session->getMetadata('non-existent-id');
+    }
+
+    public function testGetMetadataWorksWithAdapterOnlyBinding(): void
+    {
+        $metadata = ['role' => 'developer', 'active' => true];
+
+        // Create binding directly in adapter
+        $binding = Binding::create(
+            fromType: 'Profile',
+            fromId: 'profile-123',
+            toType: 'Organization',
+            toId: 'org-456',
+            type: 'member_of',
+            metadata: $metadata
+        );
+        $this->adapter->store($binding);
+
+        $result = $this->session->getMetadata($binding->getId());
+
+        $this->assertEquals($metadata, $result);
+    }
+
+    public function testGetMetadataWithEmptyMetadata(): void
+    {
+        $binding = $this->session->bind($this->profile, $this->organization, 'member_of', []);
+
+        $result = $this->session->getMetadata($binding->getId());
+
+        $this->assertEmpty($result);
+    }
+
+    // ========================================
+    // Phase 3 Integration Tests
+    // ========================================
+
+    public function testPhase3MethodsWorkTogether(): void
+    {
+        // Create multiple bindings with bindMany
+        $bindingSpecs = [
+            [
+                'from' => $this->profile,
+                'to' => $this->organization,
+                'type' => 'member_of',
+                'metadata' => ['role' => 'developer'],
+            ],
+            [
+                'from' => $this->profile,
+                'to' => $this->team,
+                'type' => 'member_of',
+                'metadata' => ['role' => 'lead'],
+            ],
+        ];
+
+        $createdBindings = $this->session->bindMany($bindingSpecs);
+        $this->assertCount(2, $createdBindings);
+
+        $firstBinding = $createdBindings[0];
+        $secondBinding = $createdBindings[1];
+
+        // Test getMetadata
+        $metadata1 = $this->session->getMetadata($firstBinding->getId());
+        $this->assertEquals(['role' => 'developer'], $metadata1);
+
+        // Test updateMetadata (merge)
+        $updatedBinding = $this->session->updateMetadata($firstBinding->getId(), [
+            'level' => 'senior',
+            'active' => true,
+        ]);
+
+        $expectedMetadata = ['role' => 'developer', 'level' => 'senior', 'active' => true];
+        $this->assertEquals($expectedMetadata, $updatedBinding->getMetadata());
+
+        // Verify getMetadata reflects the update
+        $updatedMetadata = $this->session->getMetadata($firstBinding->getId());
+        $this->assertEquals($expectedMetadata, $updatedMetadata);
+
+        // Test replaceMetadata (complete replacement)
+        $replacedBinding = $this->session->replaceMetadata($secondBinding->getId(), [
+            'position' => 'team_lead',
+            'department' => 'engineering',
+        ]);
+
+        $this->assertEquals(['position' => 'team_lead', 'department' => 'engineering'], $replacedBinding->getMetadata());
+
+        // Verify getMetadata reflects the replacement
+        $replacedMetadata = $this->session->getMetadata($secondBinding->getId());
+        $this->assertEquals(['position' => 'team_lead', 'department' => 'engineering'], $replacedMetadata);
+    }
+
+    public function testAllPhasesWorkTogether(): void
+    {
+        // Phase 3: Create multiple bindings
+        $bindingSpecs = [
+            ['from' => $this->profile, 'to' => $this->organization, 'type' => 'member_of'],
+            ['from' => $this->profile, 'to' => $this->team, 'type' => 'member_of'],
+        ];
+        $bindings = $this->session->bindMany($bindingSpecs);
+
+        // Phase 1: Verify relationships exist
+        $this->assertTrue($this->session->areBound($this->profile, $this->organization, 'member_of'));
+        $this->assertCount(2, $this->session->findBindingsFor($this->profile));
+
+        // Phase 2: Check entity has bindings and count them
+        $this->assertTrue($this->session->hasBindings($this->profile));
+        $this->assertEquals(2, $this->session->countBindingsFor($this->profile, 'member_of'));
+
+        // Phase 3: Update metadata on first binding
+        $this->session->updateMetadata($bindings[0]->getId(), ['updated' => true]);
+        $metadata = $this->session->getMetadata($bindings[0]->getId());
+        $this->assertEquals(['updated' => true], $metadata);
+
+        // Phase 1: Unbind entities
+        $deletedCount = $this->session->unbindEntities($this->profile, $this->organization, 'member_of');
+        $this->assertEquals(1, $deletedCount);
+
+        // Verify final state
+        $this->assertFalse($this->session->areBound($this->profile, $this->organization, 'member_of'));
+        $this->assertEquals(1, $this->session->countBindingsFor($this->profile));
+    }
 }

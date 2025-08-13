@@ -8,6 +8,8 @@ use EdgeBinder\Binding;
 use EdgeBinder\Contracts\BindingInterface;
 use EdgeBinder\Contracts\PersistenceAdapterInterface;
 use EdgeBinder\Contracts\QueryBuilderInterface;
+use EdgeBinder\Exception\BindingNotFoundException;
+use EdgeBinder\Exception\PersistenceException;
 
 /**
  * Session implementation providing immediate read-after-write consistency.
@@ -325,6 +327,113 @@ class Session implements SessionInterface
         }
 
         return $deletedCount;
+    }
+
+    // ========================================
+    // Phase 3 Convenience Methods - API Gap Resolution
+    // ========================================
+
+    public function bindMany(array $bindings): array
+    {
+        $createdBindings = [];
+
+        foreach ($bindings as $bindingSpec) {
+            $metadata = $bindingSpec['metadata'] ?? [];
+
+            $binding = $this->bind(
+                from: $bindingSpec['from'],
+                to: $bindingSpec['to'],
+                type: $bindingSpec['type'],
+                metadata: $metadata
+            );
+
+            $createdBindings[] = $binding;
+        }
+
+        return $createdBindings;
+    }
+
+    public function updateMetadata(string $bindingId, array $metadata): BindingInterface
+    {
+        // Find the existing binding
+        $binding = $this->findBinding($bindingId);
+        if (null === $binding) {
+            throw BindingNotFoundException::withId($bindingId);
+        }
+
+        // Validate and normalize the new metadata
+        $normalizedMetadata = $this->adapter->validateAndNormalizeMetadata($metadata);
+
+        // Merge with existing metadata
+        $mergedMetadata = array_merge($binding->getMetadata(), $normalizedMetadata);
+
+        // Update the binding in adapter
+        $this->adapter->updateMetadata($bindingId, $mergedMetadata);
+
+        // Update in session cache if present
+        $cachedBinding = $this->cache->findById($bindingId);
+        if (null !== $cachedBinding) {
+            $updatedCachedBinding = $cachedBinding->withMetadata($mergedMetadata);
+            $this->cache->store($updatedCachedBinding);
+            $this->tracker->recordUpdate($updatedCachedBinding);
+        }
+
+        if ($this->autoFlush) {
+            $this->flush();
+        }
+
+        // Return the updated binding
+        $updatedBinding = $this->findBinding($bindingId);
+        if (null === $updatedBinding) {
+            throw new PersistenceException('update', 'Failed to retrieve updated binding');
+        }
+
+        return $updatedBinding;
+    }
+
+    public function replaceMetadata(string $bindingId, array $metadata): BindingInterface
+    {
+        // Find the existing binding
+        $binding = $this->findBinding($bindingId);
+        if (null === $binding) {
+            throw BindingNotFoundException::withId($bindingId);
+        }
+
+        // Validate and normalize the new metadata
+        $normalizedMetadata = $this->adapter->validateAndNormalizeMetadata($metadata);
+
+        // Replace the metadata entirely in adapter
+        $this->adapter->updateMetadata($bindingId, $normalizedMetadata);
+
+        // Update in session cache if present
+        $cachedBinding = $this->cache->findById($bindingId);
+        if (null !== $cachedBinding) {
+            $updatedCachedBinding = $cachedBinding->withMetadata($normalizedMetadata);
+            $this->cache->store($updatedCachedBinding);
+            $this->tracker->recordUpdate($updatedCachedBinding);
+        }
+
+        if ($this->autoFlush) {
+            $this->flush();
+        }
+
+        // Return the updated binding
+        $updatedBinding = $this->findBinding($bindingId);
+        if (null === $updatedBinding) {
+            throw new PersistenceException('update', 'Failed to retrieve updated binding');
+        }
+
+        return $updatedBinding;
+    }
+
+    public function getMetadata(string $bindingId): array
+    {
+        $binding = $this->findBinding($bindingId);
+        if (null === $binding) {
+            throw BindingNotFoundException::withId($bindingId);
+        }
+
+        return $binding->getMetadata();
     }
 
     /**

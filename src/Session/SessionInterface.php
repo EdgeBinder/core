@@ -198,4 +198,58 @@ interface SessionInterface
      * @return int Number of bindings removed
      */
     public function unbindEntity(object $entity): int;
+
+    // ========================================
+    // Phase 3 Convenience Methods - API Gap Resolution
+    // ========================================
+
+    /**
+     * Create multiple bindings in a batch operation within this session.
+     *
+     * Provides bulk creation optimization, creating multiple bindings
+     * efficiently with session cache integration.
+     *
+     * @param array<array{from: object, to: object, type: string, metadata?: array<string, mixed>}> $bindings Array of binding specifications
+     *
+     * @return array<BindingInterface> Array of created bindings
+     */
+    public function bindMany(array $bindings): array;
+
+    /**
+     * Update metadata for a binding within this session.
+     *
+     * Merges new metadata with existing metadata, providing convenient
+     * metadata updates without requiring find + unbind + bind pattern.
+     *
+     * @param string               $bindingId The binding identifier
+     * @param array<string, mixed> $metadata  New metadata to merge
+     *
+     * @return BindingInterface The updated binding
+     */
+    public function updateMetadata(string $bindingId, array $metadata): BindingInterface;
+
+    /**
+     * Replace all metadata for a binding within this session.
+     *
+     * Completely replaces existing metadata with new metadata, providing
+     * convenient metadata replacement without requiring find + unbind + bind pattern.
+     *
+     * @param string               $bindingId The binding identifier
+     * @param array<string, mixed> $metadata  New metadata to replace with
+     *
+     * @return BindingInterface The updated binding
+     */
+    public function replaceMetadata(string $bindingId, array $metadata): BindingInterface;
+
+    /**
+     * Get metadata for a binding within this session.
+     *
+     * Provides convenient metadata access without requiring find + property access,
+     * checking both session cache and adapter.
+     *
+     * @param string $bindingId The binding identifier
+     *
+     * @return array<string, mixed> The binding metadata
+     */
+    public function getMetadata(string $bindingId): array;
 }
