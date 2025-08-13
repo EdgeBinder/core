@@ -11,14 +11,17 @@ use EdgeBinder\Persistence\InMemory\InMemoryAdapter;
 
 /**
  * Test adapter that simulates persistent database timing issues.
- * 
+ *
  * This adapter wraps InMemoryAdapter but introduces artificial delays
  * to simulate the indexing/consistency delays found in real persistent databases.
  */
 class DelayedConsistencyAdapter implements PersistenceAdapterInterface
 {
     private InMemoryAdapter $underlyingAdapter;
+
+    /** @var array<string, array{binding: BindingInterface, created_at: float, queryable_at: float}> */
     private array $recentBindings = [];
+
     private int $consistencyDelayMs;
 
     public function __construct(
@@ -40,10 +43,8 @@ class DelayedConsistencyAdapter implements PersistenceAdapterInterface
         $this->recentBindings[$binding->getId()] = [
             'binding' => $binding,
             'created_at' => $now,
-            'queryable_at' => $queryableAt
+            'queryable_at' => $queryableAt,
         ];
-
-
     }
 
     public function query(): QueryBuilderInterface
@@ -102,6 +103,7 @@ class DelayedConsistencyAdapter implements PersistenceAdapterInterface
     public function count(\EdgeBinder\Query\QueryCriteria $criteria): int
     {
         $result = $this->executeQuery($criteria);
+
         return count($result->getBindings());
     }
 
@@ -140,13 +142,13 @@ class DelayedConsistencyAdapter implements PersistenceAdapterInterface
     {
         $now = microtime(true);
         $pending = 0;
-        
+
         foreach ($this->recentBindings as $entry) {
             if ($entry['queryable_at'] > $now) {
-                $pending++;
+                ++$pending;
             }
         }
-        
+
         return $pending;
     }
 
@@ -160,11 +162,16 @@ class DelayedConsistencyAdapter implements PersistenceAdapterInterface
         }
 
         $now = microtime(true);
+
         return $this->recentBindings[$bindingId]['queryable_at'] <= $now;
     }
 
     /**
      * Filter bindings to only include those that are "queryable" based on timing simulation.
+     *
+     * @param array<BindingInterface> $bindings
+     *
+     * @return array<BindingInterface>
      */
     private function filterQueryableBindings(array $bindings): array
     {
@@ -177,6 +184,7 @@ class DelayedConsistencyAdapter implements PersistenceAdapterInterface
             // If binding is not in recent tracking, it's old and queryable
             if (!isset($this->recentBindings[$bindingId])) {
                 $queryableBindings[] = $binding;
+
                 continue;
             }
 

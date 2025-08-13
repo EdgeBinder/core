@@ -217,8 +217,11 @@ final class SessionPerformanceTest extends TestCase
 
             // Test that repeated queries are consistent (indexing doesn't cause issues)
             $secondResults = $pattern();
-            $this->assertEquals(count($finalResults), count($secondResults),
-                'Repeated queries should return consistent results');
+            $this->assertEquals(
+                count($finalResults),
+                count($secondResults),
+                'Repeated queries should return consistent results'
+            );
         }
     }
 
@@ -294,7 +297,7 @@ final class SessionPerformanceTest extends TestCase
         $this->assertCount(500, $finalBindings, 'Query should merge adapter and session results correctly');
 
         // Test that merging doesn't create duplicates
-        $bindingIds = array_map(fn($b) => $b->getId(), $finalBindings);
+        $bindingIds = array_map(fn ($b) => $b->getId(), $finalBindings);
         $uniqueIds = array_unique($bindingIds);
         $this->assertCount(500, $uniqueIds, 'Merged results should not contain duplicates');
     }
@@ -397,14 +400,14 @@ final class SessionPerformanceTest extends TestCase
         // Create test data
         $users = [];
         $orgs = [];
-        for ($i = 0; $i < 50; $i++) {
+        for ($i = 0; $i < 50; ++$i) {
             $users[] = new TestEntity("user-{$i}", 'User');
             $orgs[] = new TestEntity("org-{$i}", 'Organization');
         }
 
         // Test 1: Direct adapter queries (no session cache)
         $directStartTime = microtime(true);
-        for ($i = 0; $i < 50; $i++) {
+        for ($i = 0; $i < 50; ++$i) {
             $this->edgeBinder->bind(from: $users[$i], to: $orgs[$i], type: 'member_of');
             // Immediate query after each bind (the problematic pattern)
             $results = $this->edgeBinder->query()->from($users[$i])->type('member_of')->get();
@@ -416,14 +419,14 @@ final class SessionPerformanceTest extends TestCase
         // Note: We use different entities to avoid interference
         $sessionUsers = [];
         $sessionOrgs = [];
-        for ($i = 0; $i < 50; $i++) {
+        for ($i = 0; $i < 50; ++$i) {
             $sessionUsers[] = new TestEntity("session-user-{$i}", 'User');
             $sessionOrgs[] = new TestEntity("session-org-{$i}", 'Organization');
         }
 
         $sessionStartTime = microtime(true);
         $session = $this->edgeBinder->createSession();
-        for ($i = 0; $i < 50; $i++) {
+        for ($i = 0; $i < 50; ++$i) {
             $session->bind(from: $sessionUsers[$i], to: $sessionOrgs[$i], type: 'member_of');
             // Immediate query after each bind (should be fast due to cache)
             $results = $session->query()->from($sessionUsers[$i])->type('member_of')->get();
@@ -442,7 +445,9 @@ final class SessionPerformanceTest extends TestCase
         $this->addToAssertionCount(1); // Mark that we did compare performance
 
         // The real test: both approaches should provide correct functionality
-        $this->assertTrue($directTime > 0 && $sessionTime > 0,
-            'Both direct and session approaches should work functionally');
+        $this->assertTrue(
+            $directTime > 0 && $sessionTime > 0,
+            'Both direct and session approaches should work functionally'
+        );
     }
 }

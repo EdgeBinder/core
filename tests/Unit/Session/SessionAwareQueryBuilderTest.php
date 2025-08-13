@@ -257,7 +257,7 @@ final class SessionAwareQueryBuilderTest extends TestCase
 
     public function testOrWhereMethod(): void
     {
-        $builder = $this->queryBuilder->orWhere(function($query) {
+        $builder = $this->queryBuilder->orWhere(function ($query) {
             return $query->where('field', '=', 'value');
         });
 
@@ -371,6 +371,267 @@ final class SessionAwareQueryBuilderTest extends TestCase
         // Should return both bindings (filtering happens at adapter level)
         $bindings = $results->getBindings();
         $this->assertCount(2, $bindings);
+    }
+
+    public function testWhereInMethod(): void
+    {
+        $builder = $this->queryBuilder->whereIn('status', ['active', 'pending']);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testWhereBetweenMethod(): void
+    {
+        $builder = $this->queryBuilder->whereBetween('score', 10, 90);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testWhereNotInMethod(): void
+    {
+        $builder = $this->queryBuilder->whereNotIn('status', ['deleted', 'archived']);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testWhereNullMethod(): void
+    {
+        $builder = $this->queryBuilder->whereNull('deleted_at');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testWhereNotNullMethod(): void
+    {
+        $builder = $this->queryBuilder->whereNotNull('created_at');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testWhereExistsMethod(): void
+    {
+        $builder = $this->queryBuilder->whereExists('metadata.tags');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testComplexWhereChaining(): void
+    {
+        $builder = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->to($this->toEntity)
+            ->type('member_of')
+            ->where('active', '=', true)
+            ->whereIn('role', ['admin', 'member'])
+            ->whereBetween('score', 50, 100)
+            ->whereNotIn('status', ['banned', 'suspended'])
+            ->whereNull('deleted_at')
+            ->whereNotNull('created_at')
+            ->whereExists('metadata.permissions')
+            ->orderBy('created_at', 'desc')
+            ->limit(25)
+            ->offset(10);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testOrWhereWithComplexCallback(): void
+    {
+        $builder = $this->queryBuilder->orWhere(function ($query) {
+            return $query
+                ->where('status', '=', 'active')
+                ->whereIn('role', ['admin', 'moderator'])
+                ->whereNotNull('last_login');
+        });
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testNestedOrWhereCallbacks(): void
+    {
+        $builder = $this->queryBuilder
+            ->where('active', '=', true)
+            ->orWhere(function ($query) {
+                return $query
+                    ->where('role', '=', 'admin')
+                    ->whereNotIn('status', ['banned']);
+            })
+            ->orWhere(function ($query) {
+                return $query
+                    ->whereIn('permissions', ['read', 'write'])
+                    ->whereExists('metadata.special_access');
+            });
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testGetCriteriaMethod(): void
+    {
+        $builder = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->to($this->toEntity)
+            ->type('member_of')
+            ->where('active', '=', true);
+
+        $criteria = $builder->getCriteria();
+
+        $this->assertIsArray($criteria);
+        // The criteria should contain the underlying adapter query builder's criteria
+    }
+
+    public function testCloneMethod(): void
+    {
+        $originalBuilder = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->type('member_of');
+
+        $clonedBuilder = clone $originalBuilder;
+
+        // Should be different instances
+        $this->assertNotSame($originalBuilder, $clonedBuilder);
+
+        // Modifying clone shouldn't affect original
+        $modifiedClone = $clonedBuilder->to($this->toEntity);
+
+        $this->assertNotSame($originalBuilder, $modifiedClone);
+        $this->assertNotSame($clonedBuilder, $modifiedClone);
+    }
+
+    public function testFromWithStringEntityId(): void
+    {
+        $builder = $this->queryBuilder->from('user', 'user-123');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testToWithStringEntityId(): void
+    {
+        $builder = $this->queryBuilder->to('organization', 'org-456');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testFromWithStringButNoEntityId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Entity ID is required when entity is provided as string');
+
+        $this->queryBuilder->from('user');
+    }
+
+    public function testToWithStringButNoEntityId(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Entity ID is required when entity is provided as string');
+
+        $this->queryBuilder->to('organization');
+    }
+
+    public function testFromWithNullEntityIdAfterExtraction(): void
+    {
+        // Create a mock entity that returns null for ID extraction
+        $mockEntity = new class {
+            // This entity has no getId() method, so extraction might return null
+        };
+
+        // This should still work, just won't set session criteria
+        $builder = $this->queryBuilder->from($mockEntity);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testToWithNullEntityIdAfterExtraction(): void
+    {
+        // Create a mock entity that returns null for ID extraction
+        $mockEntity = new class {
+            // This entity has no getId() method, so extraction might return null
+        };
+
+        // This should still work, just won't set session criteria
+        $builder = $this->queryBuilder->to($mockEntity);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testExistsMethod(): void
+    {
+        // Test exists() method which calls count()
+        $exists = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->type('nonexistent_type')
+            ->exists();
+
+        $this->assertFalse($exists);
+
+        // Add a binding to cache
+        $binding = Binding::create(
+            fromType: 'User',
+            fromId: 'user-1',
+            toType: 'Organization',
+            toId: 'org-1',
+            type: 'member_of',
+            metadata: []
+        );
+        $this->cache->store($binding);
+
+        $existsWithData = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->type('member_of')
+            ->exists();
+
+        $this->assertTrue($existsWithData);
+    }
+
+    public function testCountMethod(): void
+    {
+        // Test count() method
+        $count = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->type('member_of')
+            ->count();
+
+        $this->assertEquals(0, $count);
+
+        // Add bindings to cache
+        $binding1 = Binding::create(
+            fromType: 'User',
+            fromId: 'user-1',
+            toType: 'Organization',
+            toId: 'org-1',
+            type: 'member_of',
+            metadata: []
+        );
+        $binding2 = Binding::create(
+            fromType: 'User',
+            fromId: 'user-1',
+            toType: 'Team',
+            toId: 'team-1',
+            type: 'member_of',
+            metadata: []
+        );
+
+        $this->cache->store($binding1);
+        $this->cache->store($binding2);
+
+        $countWithData = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->type('member_of')
+            ->count();
+
+        $this->assertEquals(2, $countWithData);
     }
 }
 
