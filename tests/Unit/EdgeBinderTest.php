@@ -848,7 +848,7 @@ class EdgeBinderTest extends TestCase
 
         $this->assertIsString($version);
         $this->assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $version);
-        $this->assertEquals('0.8.0', $version);
+        $this->assertEquals('0.9.0', $version);
     }
 
     public function testUpdateMetadataFailureToRetrieveUpdated(): void

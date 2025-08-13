@@ -38,7 +38,7 @@ class EdgeBinder implements EdgeBinderInterface
     /**
      * EdgeBinder version for compatibility checks.
      */
-    public const VERSION = '0.8.0';
+    public const VERSION = '0.9.0';
 
     private ?SessionInterface $currentSession = null;
 
