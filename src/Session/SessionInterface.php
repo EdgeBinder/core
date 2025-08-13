@@ -87,4 +87,48 @@ interface SessionInterface
      * @return array<BindingInterface> Array of cached bindings
      */
     public function getTrackedBindings(): array;
+
+    // ========================================
+    // Phase 1 Critical Methods - API Gap Resolution
+    // ========================================
+
+    /**
+     * Remove all bindings between two entities within this session.
+     *
+     * This method provides bulk unbinding functionality, eliminating the need
+     * for inefficient query + loop + individual unbind patterns.
+     *
+     * @param object      $from Source entity
+     * @param object      $to   Target entity
+     * @param string|null $type Optional binding type filter
+     *
+     * @return int Number of bindings removed
+     */
+    public function unbindEntities(object $from, object $to, ?string $type = null): int;
+
+    /**
+     * Find all bindings for an entity within this session.
+     *
+     * Returns bindings where the entity appears as either source or target,
+     * merging results from session cache and adapter.
+     *
+     * @param object $entity The entity to find bindings for
+     *
+     * @return array<BindingInterface> Array of bindings involving the entity
+     */
+    public function findBindingsFor(object $entity): array;
+
+    /**
+     * Check if two entities are bound within this session.
+     *
+     * Essential for relationship validation logic, checking both session
+     * cache and adapter for existing relationships.
+     *
+     * @param object      $from Source entity
+     * @param object      $to   Target entity
+     * @param string|null $type Optional binding type filter
+     *
+     * @return bool True if entities are bound
+     */
+    public function areBound(object $from, object $to, ?string $type = null): bool;
 }

@@ -160,4 +160,174 @@ class Session implements SessionInterface
         //     $this->waitForWeaviateIndexing($operation->getBindingId());
         // }
     }
+
+    // ========================================
+    // Phase 1 Critical Methods - API Gap Resolution
+    // ========================================
+
+    public function unbindEntities(object $from, object $to, ?string $type = null): int
+    {
+        // Extract entity information
+        $fromType = $this->adapter->extractEntityType($from);
+        $fromId = $this->adapter->extractEntityId($from);
+        $toType = $this->adapter->extractEntityType($to);
+        $toId = $this->adapter->extractEntityId($to);
+
+        // Find bindings between entities using adapter (includes both cache and adapter results via query)
+        $bindings = $this->adapter->findBetweenEntities(
+            fromType: $fromType,
+            fromId: $fromId,
+            toType: $toType,
+            toId: $toId,
+            bindingType: $type
+        );
+
+        // Also check session cache for any additional bindings not yet in adapter
+        $cacheBindings = $this->findBindingsInCache($fromId, $toId, $type);
+
+        // Merge and deduplicate bindings
+        $allBindings = $this->mergeAndDeduplicateBindings($bindings, $cacheBindings);
+
+        $deletedCount = 0;
+        foreach ($allBindings as $binding) {
+            // Delete from adapter
+            try {
+                $this->adapter->delete($binding->getId());
+            } catch (\Exception $e) {
+                // If adapter delete fails, binding might not exist there
+                // Continue with cache removal
+            }
+
+            // Remove from cache
+            $this->cache->remove($binding->getId());
+            $this->tracker->recordDelete($binding);
+            ++$deletedCount;
+        }
+
+        if ($this->autoFlush && $deletedCount > 0) {
+            $this->flush();
+        }
+
+        return $deletedCount;
+    }
+
+    public function findBindingsFor(object $entity): array
+    {
+        // Extract entity information
+        $entityType = $this->adapter->extractEntityType($entity);
+        $entityId = $this->adapter->extractEntityId($entity);
+
+        // Get bindings from adapter
+        $adapterBindings = $this->adapter->findByEntity($entityType, $entityId);
+
+        // Get bindings from cache
+        $cacheBindings = $this->findEntityBindingsInCache($entityId);
+
+        // Merge and deduplicate
+        return $this->mergeAndDeduplicateBindings($adapterBindings, $cacheBindings);
+    }
+
+    public function areBound(object $from, object $to, ?string $type = null): bool
+    {
+        $bindings = $this->findBindingsBetween($from, $to, $type);
+
+        return count($bindings) > 0;
+    }
+
+    /**
+     * Find bindings between two entities (helper method for areBound).
+     *
+     * @return array<BindingInterface>
+     */
+    private function findBindingsBetween(object $from, object $to, ?string $type = null): array
+    {
+        // Extract entity information
+        $fromType = $this->adapter->extractEntityType($from);
+        $fromId = $this->adapter->extractEntityId($from);
+        $toType = $this->adapter->extractEntityType($to);
+        $toId = $this->adapter->extractEntityId($to);
+
+        // Get bindings from adapter
+        $adapterBindings = $this->adapter->findBetweenEntities(
+            fromType: $fromType,
+            fromId: $fromId,
+            toType: $toType,
+            toId: $toId,
+            bindingType: $type
+        );
+
+        // Get bindings from cache
+        $cacheBindings = $this->findBindingsInCache($fromId, $toId, $type);
+
+        // Merge and deduplicate
+        return $this->mergeAndDeduplicateBindings($adapterBindings, $cacheBindings);
+    }
+
+    /**
+     * Find bindings in cache between two specific entities.
+     *
+     * @return array<BindingInterface>
+     */
+    private function findBindingsInCache(string $fromId, string $toId, ?string $type = null): array
+    {
+        $allCacheBindings = $this->cache->getAll();
+        $matchingBindings = [];
+
+        foreach ($allCacheBindings as $binding) {
+            // Check if binding matches the from/to criteria
+            if ($binding->getFromId() === $fromId && $binding->getToId() === $toId) {
+                // Check type filter if specified
+                if (null === $type || $binding->getType() === $type) {
+                    $matchingBindings[] = $binding;
+                }
+            }
+        }
+
+        return $matchingBindings;
+    }
+
+    /**
+     * Find all bindings in cache involving a specific entity.
+     *
+     * @return array<BindingInterface>
+     */
+    private function findEntityBindingsInCache(string $entityId): array
+    {
+        $allCacheBindings = $this->cache->getAll();
+        $matchingBindings = [];
+
+        foreach ($allCacheBindings as $binding) {
+            // Check if entity is involved as either from or to
+            if ($binding->getFromId() === $entityId || $binding->getToId() === $entityId) {
+                $matchingBindings[] = $binding;
+            }
+        }
+
+        return $matchingBindings;
+    }
+
+    /**
+     * Merge and deduplicate bindings from different sources.
+     *
+     * @param array<BindingInterface> $adapterBindings
+     * @param array<BindingInterface> $cacheBindings
+     *
+     * @return array<BindingInterface>
+     */
+    private function mergeAndDeduplicateBindings(array $adapterBindings, array $cacheBindings): array
+    {
+        $bindingMap = [];
+
+        // Add adapter bindings
+        foreach ($adapterBindings as $binding) {
+            $bindingMap[$binding->getId()] = $binding;
+        }
+
+        // Add cache bindings (will overwrite adapter bindings with same ID)
+        foreach ($cacheBindings as $binding) {
+            $bindingMap[$binding->getId()] = $binding;
+        }
+
+        return array_values($bindingMap);
+    }
 }
