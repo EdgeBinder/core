@@ -17,6 +17,9 @@
         <testsuite name="session-integration">
             <directory>tests/Integration/Session</directory>
         </testsuite>
+        <testsuite name="session-validation">
+            <file>tests/Integration/Session/DatabaseTimingValidationTest.php</file>
+        </testsuite>
         <testsuite name="session-all">
             <directory>tests/Unit/Session</directory>
             <directory>tests/Integration/Session</directory>
