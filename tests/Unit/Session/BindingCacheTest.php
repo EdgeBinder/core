@@ -308,4 +308,197 @@ final class BindingCacheTest extends TestCase
         $fromResults = $this->cache->findByFrom('user-1');
         $this->assertSame($this->binding1, $fromResults[0], 'Index results should be references');
     }
+
+    public function testRemoveNonExistentBinding(): void
+    {
+        // Test removing a binding that doesn't exist (should not cause errors)
+        $this->cache->remove('nonexistent-binding-id');
+
+        // Cache should remain empty
+        $this->assertEquals(0, $this->cache->size());
+    }
+
+    public function testRemoveFromIndexEdgeCases(): void
+    {
+        // Test the removeFromIndex method edge cases
+        $this->cache->store($this->binding1);
+        $this->cache->store($this->binding2);
+
+        // Remove one binding - index should still contain the other
+        $this->cache->remove($this->binding1->getId());
+
+        $fromResults = $this->cache->findByFrom('user-1');
+        $this->assertCount(1, $fromResults);
+        $this->assertContains($this->binding2, $fromResults);
+
+        // Remove the last binding for this from entity - index entry should be cleaned up
+        $this->cache->remove($this->binding2->getId());
+
+        $fromResultsAfter = $this->cache->findByFrom('user-1');
+        $this->assertEmpty($fromResultsAfter);
+    }
+
+    public function testFindByQueryWithEmptyCriteria(): void
+    {
+        $this->cache->store($this->binding1);
+        $this->cache->store($this->binding2);
+        $this->cache->store($this->binding3);
+
+        // Query with no criteria should return all bindings
+        $emptyCriteria = new QueryCriteria();
+        $results = $this->cache->findByQuery($emptyCriteria);
+
+        $this->assertCount(3, $results);
+        $this->assertContains($this->binding1, $results);
+        $this->assertContains($this->binding2, $results);
+        $this->assertContains($this->binding3, $results);
+    }
+
+    public function testFindByQueryWithPartialCriteria(): void
+    {
+        $this->cache->store($this->binding1);
+        $this->cache->store($this->binding2);
+        $this->cache->store($this->binding3);
+
+        // Query with only from criteria
+        $fromOnlyCriteria = new QueryCriteria();
+        $fromOnlyCriteria->setFrom('user-1');
+        $fromResults = $this->cache->findByQuery($fromOnlyCriteria);
+
+        $this->assertCount(2, $fromResults);
+        $this->assertContains($this->binding1, $fromResults);
+        $this->assertContains($this->binding2, $fromResults);
+
+        // Query with only to criteria
+        $toOnlyCriteria = new QueryCriteria();
+        $toOnlyCriteria->setTo('org-1');
+        $toResults = $this->cache->findByQuery($toOnlyCriteria);
+
+        $this->assertCount(2, $toResults);
+        $this->assertContains($this->binding1, $toResults);
+        $this->assertContains($this->binding3, $toResults);
+
+        // Query with only type criteria
+        $typeOnlyCriteria = new QueryCriteria();
+        $typeOnlyCriteria->setType('member_of');
+        $typeResults = $this->cache->findByQuery($typeOnlyCriteria);
+
+        $this->assertCount(2, $typeResults);
+        $this->assertContains($this->binding1, $typeResults);
+        $this->assertContains($this->binding2, $typeResults);
+    }
+
+    public function testIndexConsistencyWithDuplicateStores(): void
+    {
+        // Store the same binding multiple times
+        $this->cache->store($this->binding1);
+        $this->cache->store($this->binding1);
+        $this->cache->store($this->binding1);
+
+        // Should only be stored once
+        $this->assertEquals(1, $this->cache->size());
+
+        // Indexes should not have duplicates
+        $fromResults = $this->cache->findByFrom('user-1');
+        $this->assertCount(1, $fromResults);
+
+        $toResults = $this->cache->findByTo('org-1');
+        $this->assertCount(1, $toResults);
+
+        $typeResults = $this->cache->findByType('member_of');
+        $this->assertCount(1, $typeResults);
+    }
+
+    public function testRemoveFromIndexWithNonExistentKey(): void
+    {
+        // This test exercises the edge case in removeFromIndex where the key doesn't exist
+        // We can't directly test the private method, but we can test the scenario
+
+        // Store a binding
+        $this->cache->store($this->binding1);
+
+        // Create a binding with a different from entity that shares the same to entity
+        $binding4 = Binding::create(
+            fromType: 'User',
+            fromId: 'user-different',
+            toType: 'Organization',
+            toId: 'org-1',
+            type: 'member_of',
+            metadata: []
+        );
+        $this->cache->store($binding4);
+
+        // Remove binding1 - this should exercise removeFromIndex with existing keys
+        $this->cache->remove($this->binding1->getId());
+
+        // Verify the other binding is still there and indexes are correct
+        $this->assertTrue($this->cache->has($binding4->getId()));
+        $this->assertFalse($this->cache->has($this->binding1->getId()));
+
+        // The to index should still have the other binding
+        $toResults = $this->cache->findByTo('org-1');
+        $this->assertCount(1, $toResults);
+        $this->assertContains($binding4, $toResults);
+    }
+
+    public function testFindByNonExistentKeys(): void
+    {
+        // Test finding by keys that don't exist in indexes
+        $this->cache->store($this->binding1);
+
+        // These should return empty arrays, not cause errors
+        $fromResults = $this->cache->findByFrom('nonexistent-user');
+        $this->assertEmpty($fromResults);
+
+        $toResults = $this->cache->findByTo('nonexistent-org');
+        $this->assertEmpty($toResults);
+
+        $typeResults = $this->cache->findByType('nonexistent-type');
+        $this->assertEmpty($typeResults);
+    }
+
+    public function testFindByIdWithNonExistentId(): void
+    {
+        $this->cache->store($this->binding1);
+
+        $result = $this->cache->findById('nonexistent-id');
+        $this->assertNull($result);
+    }
+
+    public function testRemoveFromIndexWithCorruptedState(): void
+    {
+        // This test exercises the edge case where removeFromIndex is called
+        // with a key that doesn't exist in the index (line 203-204 in removeFromIndex)
+
+        // Store a binding normally
+        $this->cache->store($this->binding1);
+        $this->assertEquals(1, $this->cache->size());
+
+        // Manually create a binding that bypasses normal indexing to simulate corrupted state
+        $corruptedBinding = Binding::create(
+            fromType: 'User',
+            fromId: 'corrupted-user',
+            toType: 'Organization',
+            toId: 'corrupted-org',
+            type: 'corrupted_type',
+            metadata: []
+        );
+
+        // Manually add to main storage without updating indexes (simulating corruption)
+        $reflection = new \ReflectionClass($this->cache);
+        $bindingsProperty = $reflection->getProperty('bindings');
+        $bindingsProperty->setAccessible(true);
+        $bindings = $bindingsProperty->getValue($this->cache);
+        $bindings[$corruptedBinding->getId()] = $corruptedBinding;
+        $bindingsProperty->setValue($this->cache, $bindings);
+
+        // Now remove this corrupted binding - this should exercise the early return
+        // in removeFromIndex when the index key doesn't exist
+        $this->cache->remove($corruptedBinding->getId());
+
+        // Cache should still work normally
+        $this->assertEquals(1, $this->cache->size());
+        $this->assertTrue($this->cache->has($this->binding1->getId()));
+        $this->assertFalse($this->cache->has($corruptedBinding->getId()));
+    }
 }
