@@ -246,6 +246,132 @@ final class SessionAwareQueryBuilderTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function testWhereMethod(): void
+    {
+        $builder = $this->queryBuilder->where('field', '=', 'value');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testOrWhereMethod(): void
+    {
+        $builder = $this->queryBuilder->orWhere(function($query) {
+            return $query->where('field', '=', 'value');
+        });
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testOrderByMethod(): void
+    {
+        $builder = $this->queryBuilder->orderBy('field', 'asc');
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testLimitMethod(): void
+    {
+        $builder = $this->queryBuilder->limit(10);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testOffsetMethod(): void
+    {
+        $builder = $this->queryBuilder->offset(5);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testFromWithEntityObject(): void
+    {
+        $builder = $this->queryBuilder->from($this->fromEntity);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testToWithEntityObject(): void
+    {
+        $builder = $this->queryBuilder->to($this->toEntity);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testFromWithStringId(): void
+    {
+        // String IDs need to be passed differently - this tests the error handling
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Entity ID is required when entity is provided as string');
+
+        $this->queryBuilder->from('user-123');
+    }
+
+    public function testToWithStringId(): void
+    {
+        // String IDs need to be passed differently - this tests the error handling
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Entity ID is required when entity is provided as string');
+
+        $this->queryBuilder->to('org-456');
+    }
+
+    public function testChainedMethods(): void
+    {
+        $builder = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->to($this->toEntity)
+            ->type('member_of')
+            ->where('active', '=', true)
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->offset(5);
+
+        $this->assertInstanceOf(SessionAwareQueryBuilder::class, $builder);
+        $this->assertNotSame($this->queryBuilder, $builder);
+    }
+
+    public function testQueryWithComplexCriteria(): void
+    {
+        // Create test bindings
+        $binding1 = Binding::create(
+            fromType: 'User',
+            fromId: 'user-1',
+            toType: 'Organization',
+            toId: 'org-1',
+            type: 'member_of',
+            metadata: ['active' => true]
+        );
+
+        $binding2 = Binding::create(
+            fromType: 'User',
+            fromId: 'user-1',
+            toType: 'Organization',
+            toId: 'org-2',
+            type: 'member_of',
+            metadata: ['active' => false]
+        );
+
+        $this->cache->store($binding1);
+        $this->cache->store($binding2);
+
+        // Query with criteria
+        $results = $this->queryBuilder
+            ->from($this->fromEntity)
+            ->type('member_of')
+            ->get();
+
+        // Should return both bindings (filtering happens at adapter level)
+        $bindings = $results->getBindings();
+        $this->assertCount(2, $bindings);
+    }
 }
 
 /**
