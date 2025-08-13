@@ -71,10 +71,16 @@ final class SessionPerformanceTest extends TestCase
         $maxBindingTime = getenv('CI') ? 5.0 : 2.0;
         $maxQueryTime = getenv('CI') ? 2.0 : 0.5;
 
-        $this->assertLessThan($maxBindingTime, $bindingTime,
-            sprintf('Binding creation should be reasonably fast (took %.2fs)', $bindingTime));
-        $this->assertLessThan($maxQueryTime, $queryTime,
-            sprintf('Queries should be fast with proper indexing (took %.2fs)', $queryTime));
+        $this->assertLessThan(
+            $maxBindingTime,
+            $bindingTime,
+            sprintf('Binding creation should be reasonably fast (took %.2fs)', $bindingTime)
+        );
+        $this->assertLessThan(
+            $maxQueryTime,
+            $queryTime,
+            sprintf('Queries should be fast with proper indexing (took %.2fs)', $queryTime)
+        );
 
         // Verify correctness
         $totalResults = $session->query()->type('member_of')->get();
@@ -152,8 +158,11 @@ final class SessionPerformanceTest extends TestCase
 
         // Should handle concurrent sessions efficiently - environment aware
         $maxTime = getenv('CI') ? 10.0 : 3.0;
-        $this->assertLessThan($maxTime, $totalTime,
-            sprintf('Concurrent sessions should perform reasonably (took %.2fs)', $totalTime));
+        $this->assertLessThan(
+            $maxTime,
+            $totalTime,
+            sprintf('Concurrent sessions should perform reasonably (took %.2fs)', $totalTime)
+        );
     }
 
     /**
@@ -206,8 +215,11 @@ final class SessionPerformanceTest extends TestCase
             // CI environments are slower and less predictable than local development
             $maxTime = getenv('CI') ? 5.0 : 1.0; // 5 seconds on CI, 1 second locally
 
-            $this->assertLessThan($maxTime, $queryTime,
-                sprintf('Query pattern should complete in reasonable time (took %.2fs, max %.2fs)', $queryTime, $maxTime));
+            $this->assertLessThan(
+                $maxTime,
+                $queryTime,
+                sprintf('Query pattern should complete in reasonable time (took %.2fs, max %.2fs)', $queryTime, $maxTime)
+            );
         }
     }
 
@@ -232,8 +244,11 @@ final class SessionPerformanceTest extends TestCase
 
         // Flush should be reasonably fast (InMemory adapter is immediate) - environment aware
         $maxFlushTime = getenv('CI') ? 2.0 : 1.0;
-        $this->assertLessThan($maxFlushTime, $flushTime,
-            sprintf('Session flush should be reasonably fast (took %.2fs)', $flushTime));
+        $this->assertLessThan(
+            $maxFlushTime,
+            $flushTime,
+            sprintf('Session flush should be reasonably fast (took %.2fs)', $flushTime)
+        );
 
         // Verify all bindings are accessible through direct queries
         $directResults = $this->edgeBinder->query()->type('member_of')->get();
@@ -273,8 +288,11 @@ final class SessionPerformanceTest extends TestCase
 
         // Query merging should be efficient - environment aware
         $maxQueryTime = getenv('CI') ? 3.0 : 1.0;
-        $this->assertLessThan($maxQueryTime, $queryTime,
-            sprintf('Query result merging should be efficient (took %.2fs)', $queryTime));
+        $this->assertLessThan(
+            $maxQueryTime,
+            $queryTime,
+            sprintf('Query result merging should be efficient (took %.2fs)', $queryTime)
+        );
     }
 
     /**
@@ -343,9 +361,15 @@ final class SessionPerformanceTest extends TestCase
         $maxCreationTime = getenv('CI') ? 5.0 : 2.0;
         $maxQueryTime = getenv('CI') ? 2.0 : 0.5;
 
-        $this->assertLessThan($maxCreationTime, $creationTime,
-            sprintf('Complex relationship creation should be reasonably fast (took %.2fs)', $creationTime));
-        $this->assertLessThan($maxQueryTime, $queryTime,
-            sprintf('Complex queries should be reasonably fast (took %.2fs)', $queryTime));
+        $this->assertLessThan(
+            $maxCreationTime,
+            $creationTime,
+            sprintf('Complex relationship creation should be reasonably fast (took %.2fs)', $creationTime)
+        );
+        $this->assertLessThan(
+            $maxQueryTime,
+            $queryTime,
+            sprintf('Complex queries should be reasonably fast (took %.2fs)', $queryTime)
+        );
     }
 }
