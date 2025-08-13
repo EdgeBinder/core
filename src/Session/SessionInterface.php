@@ -131,4 +131,71 @@ interface SessionInterface
      * @return bool True if entities are bound
      */
     public function areBound(object $from, object $to, ?string $type = null): bool;
+
+    // ========================================
+    // Phase 2 Important Methods - API Gap Resolution
+    // ========================================
+
+    /**
+     * Find a binding by its identifier within this session.
+     *
+     * Provides direct binding lookup functionality, checking both session
+     * cache and adapter for the binding.
+     *
+     * @param string $bindingId The binding identifier
+     *
+     * @return BindingInterface|null The binding if found, null otherwise
+     */
+    public function findBinding(string $bindingId): ?BindingInterface;
+
+    /**
+     * Find bindings between two entities within this session.
+     *
+     * Returns bindings where the specified entities are connected in the
+     * given direction, merging results from session cache and adapter.
+     *
+     * @param object      $from Source entity
+     * @param object      $to   Target entity
+     * @param string|null $type Optional binding type filter
+     *
+     * @return array<BindingInterface> Array of bindings between the entities
+     */
+    public function findBindingsBetween(object $from, object $to, ?string $type = null): array;
+
+    /**
+     * Check if an entity has any bindings within this session.
+     *
+     * Essential for entity relationship checking, verifying if an entity
+     * is involved in any relationships as either source or target.
+     *
+     * @param object $entity The entity to check
+     *
+     * @return bool True if entity has bindings
+     */
+    public function hasBindings(object $entity): bool;
+
+    /**
+     * Count bindings for an entity within this session.
+     *
+     * Provides efficient counting of entity relationships with optional
+     * type filtering, merging counts from session cache and adapter.
+     *
+     * @param object      $entity The entity to count bindings for
+     * @param string|null $type   Optional binding type filter
+     *
+     * @return int Number of bindings
+     */
+    public function countBindingsFor(object $entity, ?string $type = null): int;
+
+    /**
+     * Remove all bindings involving an entity within this session.
+     *
+     * Bulk entity cleanup functionality, removing all relationships where
+     * the entity appears as either source or target.
+     *
+     * @param object $entity The entity to unbind
+     *
+     * @return int Number of bindings removed
+     */
+    public function unbindEntity(object $entity): int;
 }

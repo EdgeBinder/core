@@ -234,12 +234,24 @@ class Session implements SessionInterface
         return count($bindings) > 0;
     }
 
-    /**
-     * Find bindings between two entities (helper method for areBound).
-     *
-     * @return array<BindingInterface>
-     */
-    private function findBindingsBetween(object $from, object $to, ?string $type = null): array
+    // ========================================
+    // Phase 2 Important Methods - API Gap Resolution
+    // ========================================
+
+    public function findBinding(string $bindingId): ?BindingInterface
+    {
+        // Try to find binding in cache first
+        $binding = $this->cache->findById($bindingId);
+
+        // If not in cache, try to find in adapter
+        if (null === $binding) {
+            $binding = $this->adapter->find($bindingId);
+        }
+
+        return $binding;
+    }
+
+    public function findBindingsBetween(object $from, object $to, ?string $type = null): array
     {
         // Extract entity information
         $fromType = $this->adapter->extractEntityType($from);
@@ -261,6 +273,58 @@ class Session implements SessionInterface
 
         // Merge and deduplicate
         return $this->mergeAndDeduplicateBindings($adapterBindings, $cacheBindings);
+    }
+
+    public function hasBindings(object $entity): bool
+    {
+        $bindings = $this->findBindingsFor($entity);
+
+        return count($bindings) > 0;
+    }
+
+    public function countBindingsFor(object $entity, ?string $type = null): int
+    {
+        // Get all bindings for entity (both as source and target)
+        $bindings = $this->findBindingsFor($entity);
+
+        // Apply type filter if specified
+        if (null !== $type) {
+            $bindings = array_filter($bindings, fn ($binding) => $binding->getType() === $type);
+        }
+
+        return count($bindings);
+    }
+
+    public function unbindEntity(object $entity): int
+    {
+        // Extract entity information
+        $entityType = $this->adapter->extractEntityType($entity);
+        $entityId = $this->adapter->extractEntityId($entity);
+
+        // Find all bindings involving this entity
+        $bindings = $this->findBindingsFor($entity);
+
+        $deletedCount = 0;
+        foreach ($bindings as $binding) {
+            // Delete from adapter
+            try {
+                $this->adapter->delete($binding->getId());
+            } catch (\Exception $e) {
+                // If adapter delete fails, binding might not exist there
+                // Continue with cache removal
+            }
+
+            // Remove from cache
+            $this->cache->remove($binding->getId());
+            $this->tracker->recordDelete($binding);
+            ++$deletedCount;
+        }
+
+        if ($this->autoFlush && $deletedCount > 0) {
+            $this->flush();
+        }
+
+        return $deletedCount;
     }
 
     /**

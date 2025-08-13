@@ -264,4 +264,195 @@ class SessionCriticalMethodsTest extends TestCase
         $this->assertCount(1, $remainingBindings);
         $this->assertTrue($this->session->areBound($this->profile, $this->team, 'member_of'));
     }
+
+    // ========================================
+    // Phase 2 Important Methods Tests
+    // ========================================
+
+    // findBinding() Tests
+    public function testFindBindingReturnsBindingById(): void
+    {
+        $binding = $this->session->bind($this->profile, $this->organization, 'member_of');
+
+        $foundBinding = $this->session->findBinding($binding->getId());
+
+        $this->assertNotNull($foundBinding);
+        $this->assertEquals($binding->getId(), $foundBinding->getId());
+        $this->assertEquals($binding->getType(), $foundBinding->getType());
+    }
+
+    public function testFindBindingReturnsNullForNonExistentBinding(): void
+    {
+        $result = $this->session->findBinding('non-existent-id');
+
+        $this->assertNull($result);
+    }
+
+    public function testFindBindingWorksWithAdapterOnlyBinding(): void
+    {
+        // Create binding directly in adapter
+        $binding = Binding::create(
+            fromType: 'Profile',
+            fromId: 'profile-123',
+            toType: 'Organization',
+            toId: 'org-456',
+            type: 'member_of',
+            metadata: []
+        );
+        $this->adapter->store($binding);
+
+        $foundBinding = $this->session->findBinding($binding->getId());
+
+        $this->assertNotNull($foundBinding);
+        $this->assertEquals($binding->getId(), $foundBinding->getId());
+    }
+
+    // findBindingsBetween() Tests
+    public function testFindBindingsBetweenReturnsAllBindings(): void
+    {
+        $binding1 = $this->session->bind($this->profile, $this->organization, 'member_of');
+        $binding2 = $this->session->bind($this->profile, $this->organization, 'admin_of');
+
+        // Create binding in different direction (should not be included)
+        $this->session->bind($this->organization, $this->profile, 'employs');
+
+        $bindings = $this->session->findBindingsBetween($this->profile, $this->organization);
+
+        $this->assertCount(2, $bindings);
+        $bindingIds = array_map(fn ($b) => $b->getId(), $bindings);
+        $this->assertContains($binding1->getId(), $bindingIds);
+        $this->assertContains($binding2->getId(), $bindingIds);
+    }
+
+    public function testFindBindingsBetweenWithSpecificType(): void
+    {
+        $memberBinding = $this->session->bind($this->profile, $this->organization, 'member_of');
+        $this->session->bind($this->profile, $this->organization, 'admin_of');
+
+        $bindings = $this->session->findBindingsBetween($this->profile, $this->organization, 'member_of');
+
+        $this->assertCount(1, $bindings);
+        $this->assertEquals($memberBinding->getId(), $bindings[0]->getId());
+    }
+
+    public function testFindBindingsBetweenWithNoBindings(): void
+    {
+        $bindings = $this->session->findBindingsBetween($this->profile, $this->organization);
+
+        $this->assertEmpty($bindings);
+    }
+
+    // hasBindings() Tests
+    public function testHasBindingsReturnsTrueWhenEntityHasBindings(): void
+    {
+        $this->session->bind($this->profile, $this->organization, 'member_of');
+
+        $result = $this->session->hasBindings($this->profile);
+
+        $this->assertTrue($result);
+    }
+
+    public function testHasBindingsReturnsFalseWhenEntityHasNoBindings(): void
+    {
+        $result = $this->session->hasBindings($this->profile);
+
+        $this->assertFalse($result);
+    }
+
+    public function testHasBindingsWorksWithAdapterOnlyBindings(): void
+    {
+        // Create binding directly in adapter
+        $binding = Binding::create(
+            fromType: 'Profile',
+            fromId: 'profile-123',
+            toType: 'Organization',
+            toId: 'org-456',
+            type: 'member_of',
+            metadata: []
+        );
+        $this->adapter->store($binding);
+
+        $result = $this->session->hasBindings($this->profile);
+
+        $this->assertTrue($result);
+    }
+
+    // countBindingsFor() Tests
+    public function testCountBindingsForReturnsCorrectCount(): void
+    {
+        $this->session->bind($this->profile, $this->organization, 'member_of');
+        $this->session->bind($this->profile, $this->team, 'member_of');
+        $this->session->bind($this->organization, $this->profile, 'employs');
+
+        $count = $this->session->countBindingsFor($this->profile);
+
+        $this->assertEquals(3, $count);
+    }
+
+    public function testCountBindingsForWithSpecificType(): void
+    {
+        $this->session->bind($this->profile, $this->organization, 'member_of');
+        $this->session->bind($this->profile, $this->team, 'member_of');
+        $this->session->bind($this->profile, $this->organization, 'admin_of');
+
+        $count = $this->session->countBindingsFor($this->profile, 'member_of');
+
+        $this->assertEquals(2, $count);
+    }
+
+    public function testCountBindingsForWithNoBindings(): void
+    {
+        $count = $this->session->countBindingsFor($this->profile);
+
+        $this->assertEquals(0, $count);
+    }
+
+    // unbindEntity() Tests
+    public function testUnbindEntityRemovesAllEntityBindings(): void
+    {
+        $binding1 = $this->session->bind($this->profile, $this->organization, 'member_of');
+        $binding2 = $this->session->bind($this->profile, $this->team, 'member_of');
+        $binding3 = $this->session->bind($this->organization, $this->profile, 'employs');
+
+        // Create binding not involving profile (should remain)
+        $binding4 = $this->session->bind($this->organization, $this->team, 'sponsors');
+
+        $deletedCount = $this->session->unbindEntity($this->profile);
+
+        $this->assertEquals(3, $deletedCount);
+
+        // Verify profile bindings are removed
+        $this->assertNull($this->adapter->find($binding1->getId()));
+        $this->assertNull($this->adapter->find($binding2->getId()));
+        $this->assertNull($this->adapter->find($binding3->getId()));
+
+        // Verify unrelated binding remains
+        $this->assertNotNull($this->adapter->find($binding4->getId()));
+    }
+
+    public function testUnbindEntityWithNoBindings(): void
+    {
+        $deletedCount = $this->session->unbindEntity($this->profile);
+
+        $this->assertEquals(0, $deletedCount);
+    }
+
+    public function testUnbindEntityWorksWithAdapterOnlyBindings(): void
+    {
+        // Create binding directly in adapter
+        $binding = Binding::create(
+            fromType: 'Profile',
+            fromId: 'profile-123',
+            toType: 'Organization',
+            toId: 'org-456',
+            type: 'member_of',
+            metadata: []
+        );
+        $this->adapter->store($binding);
+
+        $deletedCount = $this->session->unbindEntity($this->profile);
+
+        $this->assertEquals(1, $deletedCount);
+        $this->assertNull($this->adapter->find($binding->getId()));
+    }
 }
