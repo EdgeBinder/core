@@ -38,7 +38,7 @@ class SessionTest extends TestCase
     {
         $autoFlushSession = new Session($this->adapter, autoFlush: true);
         // We can test auto-flush behavior by checking if operations are immediately flushed
-        $binding = $autoFlushSession->bind(
+        $autoFlushSession->bind(
             from: $this->fromEntity,
             to: $this->toEntity,
             type: 'member_of'
@@ -88,7 +88,7 @@ class SessionTest extends TestCase
 
     public function testFlushOperations(): void
     {
-        $binding = $this->session->bind(
+        $this->session->bind(
             from: $this->fromEntity,
             to: $this->toEntity,
             type: 'member_of'
@@ -178,7 +178,7 @@ class SessionTest extends TestCase
     public function testQueryBuilder(): void
     {
         $queryBuilder = $this->session->query();
-        
+
         $this->assertInstanceOf(\EdgeBinder\Session\SessionAwareQueryBuilder::class, $queryBuilder);
     }
 
@@ -212,5 +212,57 @@ class SessionTest extends TestCase
         $this->assertFalse($this->session->isDirty());
         $this->assertEmpty($this->session->getPendingOperations());
         $this->assertEmpty($this->session->getTrackedBindings());
+    }
+
+    public function testFlushWithPendingOperations(): void
+    {
+        // Create some operations to exercise waitForConsistency
+        $binding1 = $this->session->bind(
+            from: $this->fromEntity,
+            to: $this->toEntity,
+            type: 'member_of'
+        );
+
+        $this->session->unbind($binding1->getId());
+
+        $this->session->bind(
+            from: $this->toEntity,
+            to: $this->fromEntity,
+            type: 'admin_of'
+        );
+
+        // Should have pending operations
+        $this->assertTrue($this->session->isDirty());
+        $this->assertCount(3, $this->session->getPendingOperations()); // bind + unbind + bind
+
+        // Flush should process all operations and call waitForConsistency
+        $this->session->flush();
+
+        // After flush, no pending operations
+        $this->assertFalse($this->session->isDirty());
+        $this->assertEmpty($this->session->getPendingOperations());
+
+        // But tracked bindings should remain (only binding2 since binding1 was unbound)
+        $this->assertCount(1, $this->session->getTrackedBindings());
+    }
+
+    public function testUnbindWithAdapterException(): void
+    {
+        // Create a binding first
+        $binding = $this->session->bind(
+            from: $this->fromEntity,
+            to: $this->toEntity,
+            type: 'member_of'
+        );
+
+        // Manually remove from adapter to simulate adapter exception during unbind
+        $this->adapter->delete($binding->getId());
+
+        // Unbind should still work (removes from cache even if adapter delete fails)
+        $result = $this->session->unbind($binding->getId());
+
+        $this->assertTrue($result);
+        $this->assertCount(0, $this->session->getTrackedBindings());
+        $this->assertTrue($this->session->isDirty()); // Should have recorded the delete operation
     }
 }

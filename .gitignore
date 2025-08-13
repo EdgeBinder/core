@@ -4,6 +4,7 @@ composer.lock
 
 # PHPUnit
 /.phpunit.cache/
+/coverage/
 /coverage-html/
 /coverage.xml
 
